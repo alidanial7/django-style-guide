@@ -5,6 +5,7 @@ lisence = "{{cookiecutter.license}}"
 jwt = "{{cookiecutter.use_jwt}}"
 sentry = "{{cookiecutter.use_sentry}}"
 vscode = "{{cookiecutter.use_vscode}}"
+code_style = "{{cookiecutter.use_code_style}}"
 celery = "{{cookiecutter.use_celery}}"
 project_slug = "{{cookiecutter.project_slug}}"
 
@@ -27,6 +28,12 @@ if sentry == "n":
     delete_resource("config/settings/sentry.py")
 if vscode == "n":
     delete_resource(".vscode")
+if code_style == "n":
+    delete_resource("pyproject.toml")
+    delete_resource(".pre-commit-config.yaml")
+    delete_resource(".flake8")
+else:
+    delete_resource("setup.cfg")
 if celery == "n":
     delete_resource("config/celery.py")
     delete_resource("config/tasks.py")

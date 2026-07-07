@@ -16,6 +16,9 @@ source venv/bin/activate
 3- install Dependencies
 ```
 pip install -r requirements_dev.txt
+{%- if cookiecutter.use_code_style == "y" %}
+pre-commit install
+{%- endif %}
 ```
 
 4- create your env

@@ -11,8 +11,20 @@
   /*                                 🐍 python                                  */
   /* -------------------------------------------------------------------------- */
   "[python]": {
+{%- if cookiecutter.use_code_style == "y" %}
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "never",
+      "source.organizeImports": "never",
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+{%- else %}
     "editor.formatOnSave": false,
     "editor.codeActionsOnSave": {}
+{%- endif %}
   },
   "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python",
   "python.terminal.activateEnvironment": true,
@@ -20,9 +32,23 @@
   "python.analysis.autoImportCompletions": true,
   "python.analysis.extraPaths": ["${workspaceFolder}"],
   "python.envFile": "${workspaceFolder}/.env",
+{%- if cookiecutter.use_code_style == "y" %}
+  "ruff.enable": true,
+  "ruff.nativeServer": "on",
+  "ruff.lint.enable": true,
+  "ruff.format.enable": true,
+  "ruff.lineLength": 120,
+  "ruff.lint.select": ["E", "F", "W", "I"],
+  "ruff.lint.ignore": ["F403"],
+  "ruff.organizeImports": true,
+  "ruff.fixAll": true,
+  "ruff.path": ["${workspaceFolder}/venv/bin/ruff"],
+  "ruff.importStrategy": "fromEnvironment",
+{%- else %}
   "python.linting.enabled": true,
   "python.linting.flake8Enabled": true,
   "python.linting.flake8Args": ["--max-line-length=120"],
+{%- endif %}
   "python.linting.mypyEnabled": true,
 
   /* -------------------------------------------------------------------------- */
@@ -80,6 +106,9 @@
     "authentication",
     "autofetch",
     "batisteo",
+{%- if cookiecutter.use_code_style == "y" %}
+    "charliermarsh",
+{%- endif %}
     "django",
     "djlint",
     "eamodio",

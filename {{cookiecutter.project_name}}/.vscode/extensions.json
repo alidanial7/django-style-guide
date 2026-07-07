@@ -2,6 +2,9 @@
   "recommendations": [
     "ms-python.python",
     "ms-python.vscode-pylance",
+{%- if cookiecutter.use_code_style == "y" %}
+    "charliermarsh.ruff",
+{%- endif %}
     "batisteo.vscode-django",
     "djlint.djlint",
     "njpwerner.autodocstring",

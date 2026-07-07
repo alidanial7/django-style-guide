@@ -1,6 +1,13 @@
 -r base.txt
 
+{%- if cookiecutter.use_code_style == "y" %}
+ruff==0.12.9
+pydoclint==0.8.6
+pyupgrade==3.20.0
+pre-commit==4.2.0
+{%- else %}
 flake8==7.1.2
+{%- endif %}
 
 ipdb==0.13.13
 ipython==9.0.0
