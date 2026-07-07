@@ -21,7 +21,7 @@ Production deployment uses **Docker Compose on your own server** — not Heroku 
 - [Docker](https://www.docker.com/) (for Postgres and optional services)
 
 ```bash
-pip install cookiecutter
+pip install "cookiecutter>=2.4"
 ```
 
 ## Generate a project
@@ -29,18 +29,20 @@ pip install cookiecutter
 ### Interactive (recommended)
 
 ```bash
-git clone https://github.com/alidanial7/django_style_guide.git
-cd django_style_guide
-./init.sh
-```
-
-`./init.sh` provides a styled terminal UI with **y/n** prompts (default shown first). It accepts `y`, `n`, `yes`, `no`, or `1`/`2`.
-
-Or run cookiecutter directly:
-
-```bash
 cookiecutter https://github.com/alidanial7/django_style_guide.git
 ```
+
+Requires [cookiecutter 2.4+](https://cookiecutter.readthedocs.io/) (for the `pre_prompt` hook).
+
+The interactive UI uses **radio-button** prompts:
+
+- **↑ / ↓** — move focus
+- **Space** — select option
+- **Enter** — confirm
+
+You can also clone the repo and run `./init.sh`, which uses the same UI.
+
+When generation finishes, cookiecutter may print a hook error — that is expected; your project is already created.
 
 ### Non-interactive
 
