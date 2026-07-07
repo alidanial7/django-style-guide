@@ -34,11 +34,13 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git
 
 Requires [cookiecutter 2.4+](https://cookiecutter.readthedocs.io/) (for the `pre_prompt` hook).
 
-The interactive UI uses **radio-button** prompts:
+The interactive UI uses keyboard-driven prompts:
 
 - **↑ / ↓** — move focus
-- **Space** — select option
+- **Space** — toggle (features) or select (single-choice)
 - **Enter** — confirm
+
+Features are shown as a single checklist — select everything you want in one screen.
 
 You can also clone the repo and run `./init.sh`, which uses the same UI.
 

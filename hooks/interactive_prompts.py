@@ -37,9 +37,25 @@ class _Colors:
         self.radio_hint = (
             f"{self.dim}  ↑↓ move  ·  space select  ·  enter confirm{self.reset}"
         )
+        self.multiselect_hint = (
+            f"{self.dim}  ↑↓ move  ·  space toggle  ·  enter confirm{self.reset}"
+        )
 
 
 COLORS = _Colors()
+
+FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
+    ("use_jwt", "JWT authentication"),
+    ("use_sentry", "Sentry monitoring"),
+    ("use_vscode", "VS Code configuration"),
+    ("use_pgadmin", "pgAdmin (dev)"),
+    ("use_redis", "Redis"),
+    ("use_rabbitmq", "RabbitMQ"),
+    ("use_celery", "Celery"),
+    ("use_code_style", "Code style tooling"),
+)
+
+DEFAULT_FEATURES: frozenset[str] = frozenset({"use_jwt"})
 
 
 def slugify(value: str) -> str:
@@ -124,6 +140,75 @@ def prompt_radio(
     return options[selected][0]
 
 
+def prompt_multiselect(
+    title: str,
+    help_text: str,
+    options: Sequence[tuple[str, str]],
+    default_keys: frozenset[str] | set[str] | None = None,
+) -> set[str]:
+    """Checkbox list: arrows move focus, space toggles, enter confirms."""
+    count = len(options)
+    focus = 0
+    selected = set(default_keys or ())
+    redraw = False
+    block_lines = count + 5
+
+    sys.stdout.write(COLORS.hide_cursor)
+    sys.stdout.flush()
+
+    try:
+        while True:
+            if redraw:
+                _cursor_up(block_lines)
+
+            print(f"  {COLORS.bold}{title}{COLORS.reset}")
+            if help_text:
+                print(f"  {COLORS.dim}{help_text}{COLORS.reset}")
+            print()
+
+            for index, (key, label) in enumerate(options):
+                marker = "•" if key in selected else " "
+                pointer = "›" if index == focus else " "
+                style = f"{COLORS.bold}{COLORS.green}" if index == focus else ""
+                print(f"  {pointer} {style}({marker}) {label}{COLORS.reset}")
+
+            print()
+            print(COLORS.multiselect_hint)
+
+            redraw = True
+            key = _read_key()
+
+            if key == "\x1b[A":
+                focus = max(0, focus - 1)
+            elif key == "\x1b[B":
+                focus = min(count - 1, focus + 1)
+            elif key == " ":
+                option_key = options[focus][0]
+                if option_key in selected:
+                    selected.remove(option_key)
+                else:
+                    selected.add(option_key)
+            elif key in ("\r", "\n"):
+                break
+    finally:
+        sys.stdout.write(COLORS.show_cursor)
+        sys.stdout.flush()
+
+    print()
+    return selected
+
+
+def yn(selected_keys: set[str], key: str) -> str:
+    return "y" if key in selected_keys else "n"
+
+
+def format_feature_summary(selected_keys: set[str]) -> str:
+    enabled = [label for key, label in FEATURE_OPTIONS if key in selected_keys]
+    if not enabled:
+        return "none"
+    return ", ".join(enabled)
+
+
 def prompt_radio_yn(title: str, help_text: str, default: str = "y") -> str:
     default_index = 0 if default == "y" else 1
     return prompt_radio(
@@ -204,49 +289,21 @@ def collect_answers() -> dict[str, str] | None:
     postgres_password = prompt_text("PostgreSQL password", "password")
 
     print_section("Features")
-    print(f"  {COLORS.dim}Toggle optional components for your project.{COLORS.reset}")
-    print()
+    selected_features = prompt_multiselect(
+        "Features",
+        "Select the optional components to include in your project.",
+        FEATURE_OPTIONS,
+        default_keys=DEFAULT_FEATURES,
+    )
 
-    use_jwt = prompt_radio_yn(
-        "JWT authentication",
-        "Users app, authentication app, and JWT settings.",
-        "y",
-    )
-    use_sentry = prompt_radio_yn(
-        "Sentry monitoring",
-        "Adds sentry-sdk. Only active when SENTRY_DSN is set in .env.",
-        "n",
-    )
-    use_vscode = prompt_radio_yn(
-        "VS Code configuration",
-        "Adds .vscode settings and recommended extensions.",
-        "n",
-    )
-    use_pgadmin = prompt_radio_yn(
-        "pgAdmin (dev)",
-        "Database UI at http://localhost:5050 in dev Docker Compose.",
-        "n",
-    )
-    use_redis = prompt_radio_yn(
-        "Redis",
-        "Dev Docker service and django-redis cache backend.",
-        "n",
-    )
-    use_rabbitmq = prompt_radio_yn(
-        "RabbitMQ",
-        "Message broker in Docker Compose. Required for Celery.",
-        "n",
-    )
-    use_celery = prompt_radio_yn(
-        "Celery",
-        "Background tasks: worker + beat in production Docker Compose.",
-        "n",
-    )
-    use_code_style = prompt_radio_yn(
-        "Code style tooling",
-        "Ruff + pre-commit git hooks (replaces flake8-only setup).",
-        "n",
-    )
+    use_jwt = yn(selected_features, "use_jwt")
+    use_sentry = yn(selected_features, "use_sentry")
+    use_vscode = yn(selected_features, "use_vscode")
+    use_pgadmin = yn(selected_features, "use_pgadmin")
+    use_redis = yn(selected_features, "use_redis")
+    use_rabbitmq = yn(selected_features, "use_rabbitmq")
+    use_celery = yn(selected_features, "use_celery")
+    use_code_style = yn(selected_features, "use_code_style")
 
     if use_celery == "y" and use_rabbitmq != "y":
         print()
@@ -254,6 +311,7 @@ def collect_answers() -> dict[str, str] | None:
             f"  {COLORS.yellow}↳ Celery requires RabbitMQ — RabbitMQ will be enabled.{COLORS.reset}"
         )
         use_rabbitmq = "y"
+        selected_features.add("use_rabbitmq")
 
     print_section("Summary")
     c = COLORS
@@ -262,12 +320,7 @@ def collect_answers() -> dict[str, str] | None:
     )
     print(f"  {c.bold}License{c.reset}     {license_choice}")
     print(
-        f"  {c.bold}Features{c.reset}    jwt={use_jwt}  sentry={use_sentry}  "
-        f"vscode={use_vscode}  pgadmin={use_pgadmin}"
-    )
-    print(
-        f"              redis={use_redis}  rabbitmq={use_rabbitmq}  "
-        f"celery={use_celery}  code_style={use_code_style}"
+        f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}"
     )
     print()
 
