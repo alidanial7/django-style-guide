@@ -1,10 +1,10 @@
 import os
 import shutil
 
-
 lisence = "{{cookiecutter.license}}"
 jwt = "{{cookiecutter.use_jwt}}"
 project_slug = "{{cookiecutter.project_slug}}"
+
 
 def delete_resource(resource):
     if os.path.isfile(resource):
@@ -20,5 +20,3 @@ if lisence == "None":
 if jwt == "n":
     delete_resource(f"{project_slug}/authentication/")
     delete_resource(f"{project_slug}/users/")
-
-
