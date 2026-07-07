@@ -13,6 +13,16 @@
   "use_jwt": "y",
   "use_sentry": ["n", "y"],
   "use_vscode": ["n", "y"],
+  "use_pgadmin": ["n", "y"],
+  "use_redis": ["n", "y"],
+  "use_rabbitmq": ["n", "y"],
+  "use_celery": ["n", "y"],
+
+  "__prompts__": {
+    "use_redis": "Include Redis for Django caching (independent of Celery).",
+    "use_rabbitmq": "Include RabbitMQ as the message broker. Required when Celery is enabled.",
+    "use_celery": "Include Celery worker and beat for background tasks. Requires RabbitMQ."
+  },
 
   "_copy_without_render": [
     ".vscode/*"

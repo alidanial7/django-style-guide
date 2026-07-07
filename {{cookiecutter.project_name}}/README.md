@@ -28,9 +28,9 @@ cp .env.example .env
 python manage.py migrate
 ```
 
-6- spin off docker compose
+6- start development services
 ```
-docker compose -f docker-compose.dev.yml up -d
+./start-dev-services.sh
 ```
 
 7- run the project
@@ -52,6 +52,6 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-This starts Postgres, RabbitMQ, Django (gunicorn), Celery worker, and Celery beat.
+This starts Postgres{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}, Django (gunicorn){%- if cookiecutter.use_celery == "y" %}, Celery worker, and Celery beat{%- endif %}.
 
 The app will be available at `http://localhost:8000`.

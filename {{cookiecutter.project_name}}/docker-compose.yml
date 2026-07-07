@@ -13,6 +13,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data/
 
+{%- if cookiecutter.use_rabbitmq == "y" %}
   rabbitmq:
     image: "rabbitmq:alpine"
     container_name: {{cookiecutter.project_slug}}_rabbitmq
@@ -22,6 +23,7 @@ services:
       timeout: 30s
       retries: 3
 
+{%- endif %}
   django:
     build:
       context: .
@@ -32,7 +34,9 @@ services:
       - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
+{%- if cookiecutter.use_celery == "y" %}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+{%- endif %}
       - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - .:/app
@@ -40,9 +44,12 @@ services:
       - "8000:8000"
     depends_on:
       - db
+{%- if cookiecutter.use_rabbitmq == "y" %}
       - rabbitmq
+{%- endif %}
     restart: on-failure
 
+{%- if cookiecutter.use_celery == "y" %}
   celery:
     build:
       context: .
@@ -80,6 +87,8 @@ services:
       - db
       - rabbitmq
     restart: on-failure
+
+{%- endif %}
 
 volumes:
   postgres-data:

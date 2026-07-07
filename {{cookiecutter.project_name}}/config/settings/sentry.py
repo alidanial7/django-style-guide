@@ -11,7 +11,9 @@ if SENTRY_DSN:
 
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+{%- if cookiecutter.use_celery == "y" %}
     from sentry_sdk.integrations.celery import CeleryIntegration
+{%- endif %}
 
     # We are implementing this following the official documentation:
     # https://docs.sentry.io/platforms/python/performance/
@@ -69,7 +71,9 @@ if SENTRY_DSN:
         traces_sampler=traces_sampler,
         integrations=[
             DjangoIntegration(),
+{%- if cookiecutter.use_celery == "y" %}
             CeleryIntegration(),
+{%- endif %}
         ],
         # If you wish to associate users to errors (assuming you are using
         # django.contrib.auth) you may enable sending PII data.

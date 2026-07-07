@@ -3,7 +3,9 @@ from config.env import env  # noqa
 from config.settings.apps import *  # noqa
 from config.settings.auth import *  # noqa
 from config.settings.cache import *  # noqa
+{%- if cookiecutter.use_celery == "y" %}
 from config.settings.celery import *  # noqa
+{%- endif %}
 from config.settings.core import *  # noqa
 from config.settings.cors import *  # noqa
 from config.settings.database import *  # noqa

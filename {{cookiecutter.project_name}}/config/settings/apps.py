@@ -10,8 +10,10 @@ LOCAL_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'django_filters',
+{%- if cookiecutter.use_celery == "y" %}
     'django_celery_results',
     'django_celery_beat',
+{%- endif %}
     'corsheaders',
     'drf_spectacular',
     'django_extensions',
