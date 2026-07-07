@@ -1,7 +1,7 @@
 import os
 import shutil
 
-lisence = "{{cookiecutter.license}}"
+license_choice = "{{cookiecutter.license}}"
 jwt = "{{cookiecutter.use_jwt}}"
 sentry = "{{cookiecutter.use_sentry}}"
 vscode = "{{cookiecutter.use_vscode}}"
@@ -12,18 +12,21 @@ project_slug = "{{cookiecutter.project_slug}}"
 
 def delete_resource(resource):
     if os.path.isfile(resource):
-        print(f"removing file: {resource}")
+        print(f"  - removed {resource}")
         os.remove(resource)
     elif os.path.isdir(resource):
-        print(f"removing directory: {resource}")
+        print(f"  - removed {resource}/")
         shutil.rmtree(resource)
 
 
-if lisence == "None":
+print()
+print("Customizing generated project...")
+
+if license_choice == "None":
     delete_resource("LICENSE")
 if jwt == "n":
-    delete_resource(f"{project_slug}/authentication/")
-    delete_resource(f"{project_slug}/users/")
+    delete_resource(f"{project_slug}/authentication")
+    delete_resource(f"{project_slug}/users")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
 if vscode == "n":
@@ -40,3 +43,6 @@ if celery == "n":
     delete_resource("config/settings/celery.py")
     delete_resource("docker/celery_entrypoint.sh")
     delete_resource("docker/beats_entrypoint.sh")
+
+print("Done.")
+print()

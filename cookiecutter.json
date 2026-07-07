@@ -1,16 +1,16 @@
 {
-  "project_name":"MyProject",
+  "project_name": "MyProject",
   "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '_') }}",
 
-  "first_name":"author",
-  "last_name":"author lastname",
+  "first_name": "author",
+  "last_name": "author lastname",
 
   "license": ["MIT", "BEER", "None"],
 
   "postgres_user": "user",
   "postgres_password": "password",
 
-  "use_jwt": "y",
+  "use_jwt": ["y", "n"],
   "use_sentry": ["n", "y"],
   "use_vscode": ["n", "y"],
   "use_pgadmin": ["n", "y"],
@@ -20,10 +20,66 @@
   "use_code_style": ["n", "y"],
 
   "__prompts__": {
-    "use_redis": "Include Redis for Django caching (independent of Celery).",
-    "use_rabbitmq": "Include RabbitMQ as the message broker. Required when Celery is enabled.",
-    "use_celery": "Include Celery worker and beat for background tasks. Requires RabbitMQ.",
-    "use_code_style": "Include Ruff formatting/linting and pre-commit git hooks (Python git hooks; ITS backend uses pre-commit, not Husky)."
+    "project_name": {
+      "prompt": "Project name",
+      "help": "Display name for your Django project (e.g. My Project)."
+    },
+    "project_slug": {
+      "prompt": "Project slug",
+      "help": "Python package name. Press Enter to auto-generate from the project name."
+    },
+    "first_name": {
+      "prompt": "Author first name",
+      "help": "Used for project metadata."
+    },
+    "last_name": {
+      "prompt": "Author last name",
+      "help": "Used for project metadata."
+    },
+    "license": {
+      "prompt": "License",
+      "help": "Choose MIT, BEER, or None (no LICENSE file)."
+    },
+    "postgres_user": {
+      "prompt": "PostgreSQL user",
+      "help": "Database user for local Docker Compose and .env defaults."
+    },
+    "postgres_password": {
+      "prompt": "PostgreSQL password",
+      "help": "Database password for local Docker Compose and .env defaults."
+    },
+    "use_jwt": {
+      "prompt": "Include JWT authentication",
+      "help": "Adds users + authentication apps, JWT settings, and token endpoints."
+    },
+    "use_sentry": {
+      "prompt": "Include Sentry integration",
+      "help": "Adds sentry-sdk and settings. Only activates when SENTRY_DSN is set in .env."
+    },
+    "use_vscode": {
+      "prompt": "Include VS Code settings",
+      "help": "Adds .vscode/settings.json and recommended extensions for Django development."
+    },
+    "use_pgadmin": {
+      "prompt": "Include pgAdmin in dev Docker Compose",
+      "help": "Adds pgAdmin at http://localhost:5050 for database management."
+    },
+    "use_redis": {
+      "prompt": "Include Redis",
+      "help": "Adds Redis to dev Docker Compose and django-redis cache backend."
+    },
+    "use_rabbitmq": {
+      "prompt": "Include RabbitMQ",
+      "help": "Adds RabbitMQ as the message broker. Required when Celery is enabled."
+    },
+    "use_celery": {
+      "prompt": "Include Celery",
+      "help": "Adds Celery worker + beat, task config, and production Docker services. Requires RabbitMQ."
+    },
+    "use_code_style": {
+      "prompt": "Include code style tooling",
+      "help": "Adds Ruff, pre-commit git hooks, and pyproject.toml (replaces flake8-only setup)."
+    }
   },
 
   "_copy_without_render": []
