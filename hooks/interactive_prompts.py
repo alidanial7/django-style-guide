@@ -209,14 +209,23 @@ def format_feature_summary(selected_keys: set[str]) -> str:
     return ", ".join(enabled)
 
 
-def prompt_radio_yn(title: str, help_text: str, default: str = "y") -> str:
-    default_index = 0 if default == "y" else 1
-    return prompt_radio(
-        title,
-        help_text,
-        (("y", "Yes"), ("n", "No")),
-        default_index=default_index,
+def prompt_yn(label: str, default: str = "y") -> str:
+    print(f"  {COLORS.bold}{label}{COLORS.reset}")
+    print(
+        f"  {COLORS.dim}›{COLORS.reset} "
+        f"[{COLORS.green}{default}{COLORS.reset}] (y/n): ",
+        end="",
     )
+    sys.stdout.flush()
+
+    value = input().strip().lower()
+    if not value:
+        return default
+    if value in ("y", "yes"):
+        return "y"
+    if value in ("n", "no"):
+        return "n"
+    return default
 
 
 def prompt_text(label: str, default: str = "") -> str:
@@ -324,11 +333,7 @@ def collect_answers() -> dict[str, str] | None:
     )
     print()
 
-    confirm = prompt_radio_yn(
-        "Generate project?",
-        "Create the project with these settings.",
-        "y",
-    )
+    confirm = prompt_yn("Generate project?", "y")
     if confirm == "n":
         print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
         return None
