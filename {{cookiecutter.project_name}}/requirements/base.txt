@@ -12,11 +12,8 @@ whitenoise==6.9.0
 django-filter==25.1
 django-extensions==3.2.3
 django-cors-headers==4.7.0
-django-storages==1.14.5
 
 drf-jwt==1.19.2
-
-boto3==1.37.4
 attrs==25.1.0
 
 djangorestframework-simplejwt==5.5.0

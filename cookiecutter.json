@@ -11,11 +11,7 @@
   "postgres_password": "password",
 
   "use_jwt": "y",
+  "use_sentry": ["n", "y"],
 
-  "_copy_without_render": [
-        "markdown_tools/*",
-        "frontend/src/**/*.vue",
-        "frontend/node_modules/*",
-        "backend/app/app/email-templates/**"
-    ]
+  "_copy_without_render": []
 }

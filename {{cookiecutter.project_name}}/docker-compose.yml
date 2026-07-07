@@ -3,17 +3,19 @@ version: "3.9"
 services:
   db:
     image: postgres:14.1
-    container_name: postgres
+    container_name: {{cookiecutter.project_slug}}_postgres
     ports:
       - 5432:5432
     environment:
       - POSTGRES_DB={{cookiecutter.project_slug}}
       - POSTGRES_USER={{cookiecutter.postgres_user}}
       - POSTGRES_PASSWORD={{cookiecutter.postgres_password}}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/
 
   rabbitmq:
     image: "rabbitmq:alpine"
-    container_name: rabbitmq
+    container_name: {{cookiecutter.project_slug}}_rabbitmq
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 30s
@@ -24,11 +26,14 @@ services:
     build:
       context: .
       dockerfile: docker/production.Dockerfile
-    container_name: django
+    container_name: {{cookiecutter.project_slug}}_django
     command: ./docker/web_entrypoint.sh
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - .:/app
     ports:
@@ -42,12 +47,14 @@ services:
     build:
       context: .
       dockerfile: docker/production.Dockerfile
-    # command: celery -A {{cookiecutter.project_slug}}.tasks worker -l info --without-gossip --without-mingle --without-heartbeat
-    container_name: worker
+    container_name: {{cookiecutter.project_slug}}_worker
     command: ./docker/celery_entrypoint.sh
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - .:/app
     depends_on:
@@ -59,15 +66,20 @@ services:
     build:
       context: .
       dockerfile: docker/production.Dockerfile
-    # command: celery -A {{cookiecutter.project_slug}}.tasks beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    container_name: beats
+    container_name: {{cookiecutter.project_slug}}_beats
     command: ./docker/beats_entrypoint.sh
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - .:/app
     depends_on:
       - db
       - rabbitmq
     restart: on-failure
+
+volumes:
+  postgres-data:
