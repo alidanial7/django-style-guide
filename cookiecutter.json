@@ -12,6 +12,9 @@
 
   "use_jwt": "y",
   "use_sentry": ["n", "y"],
+  "use_vscode": ["n", "y"],
 
-  "_copy_without_render": []
+  "_copy_without_render": [
+    ".vscode/*"
+  ]
 }

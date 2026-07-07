@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "batisteo.vscode-django",
+    "djlint.djlint",
+    "njpwerner.autodocstring",
+    "eamodio.gitlens",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-ssh",
+    "streetsidesoftware.code-spell-checker",
+    "stackbreak.comment-divider"
+  ]
+}

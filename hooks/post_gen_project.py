@@ -4,6 +4,7 @@ import shutil
 lisence = "{{cookiecutter.license}}"
 jwt = "{{cookiecutter.use_jwt}}"
 sentry = "{{cookiecutter.use_sentry}}"
+vscode = "{{cookiecutter.use_vscode}}"
 project_slug = "{{cookiecutter.project_slug}}"
 
 
@@ -23,3 +24,5 @@ if jwt == "n":
     delete_resource(f"{project_slug}/users/")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
+if vscode == "n":
+    delete_resource(".vscode")
