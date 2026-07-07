@@ -49,35 +49,35 @@
       "help": "Database password for local Docker Compose and .env defaults."
     },
     "use_jwt": {
-      "prompt": "Include JWT authentication",
+      "prompt": "Include JWT authentication [Y/n]",
       "help": "Adds users + authentication apps, JWT settings, and token endpoints."
     },
     "use_sentry": {
-      "prompt": "Include Sentry integration",
+      "prompt": "Include Sentry integration [y/N]",
       "help": "Adds sentry-sdk and settings. Only activates when SENTRY_DSN is set in .env."
     },
     "use_vscode": {
-      "prompt": "Include VS Code settings",
+      "prompt": "Include VS Code settings [y/N]",
       "help": "Adds .vscode/settings.json and recommended extensions for Django development."
     },
     "use_pgadmin": {
-      "prompt": "Include pgAdmin in dev Docker Compose",
+      "prompt": "Include pgAdmin in dev Docker Compose [y/N]",
       "help": "Adds pgAdmin at http://localhost:5050 for database management."
     },
     "use_redis": {
-      "prompt": "Include Redis",
+      "prompt": "Include Redis [y/N]",
       "help": "Adds Redis to dev Docker Compose and django-redis cache backend."
     },
     "use_rabbitmq": {
-      "prompt": "Include RabbitMQ",
+      "prompt": "Include RabbitMQ [y/N]",
       "help": "Adds RabbitMQ as the message broker. Required when Celery is enabled."
     },
     "use_celery": {
-      "prompt": "Include Celery",
+      "prompt": "Include Celery [y/N]",
       "help": "Adds Celery worker + beat, task config, and production Docker services. Requires RabbitMQ."
     },
     "use_code_style": {
-      "prompt": "Include code style tooling",
+      "prompt": "Include code style tooling [y/N]",
       "help": "Adds Ruff, pre-commit git hooks, and pyproject.toml (replaces flake8-only setup)."
     }
   },

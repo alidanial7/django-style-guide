@@ -34,7 +34,9 @@ cd django_style_guide
 ./init.sh
 ```
 
-Or from anywhere:
+`./init.sh` provides a styled terminal UI with **y/n** prompts (default shown first). It accepts `y`, `n`, `yes`, `no`, or `1`/`2`.
+
+Or run cookiecutter directly:
 
 ```bash
 cookiecutter https://github.com/alidanial7/django_style_guide.git
