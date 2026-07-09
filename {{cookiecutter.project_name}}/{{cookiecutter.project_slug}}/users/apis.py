@@ -1,5 +1,5 @@
 from django.core.validators import MinLengthValidator
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,7 +19,11 @@ class ProfileApi(ApiAuthMixin, APIView):
             model = Profile
             fields = ("bio", "posts_count", "subscriber_count", "subscription_count")
 
-    @extend_schema(responses=OutPutSerializer)
+    @extend_schema(
+        tags=["users"],
+        summary="Current user profile",
+        responses=OutPutSerializer,
+    )
     def get(self, request):
         query = get_profile(user=request.user)
         return Response(self.OutPutSerializer(query, context={"request": request}).data)
@@ -54,6 +58,12 @@ class RegisterApi(APIView):
             model = BaseUser
             fields = ("email", "token", "created_at", "updated_at")
 
+        @extend_schema_field(
+            serializers.DictField(
+                child=serializers.CharField(),
+                help_text="JWT refresh and access tokens",
+            )
+        )
         def get_token(self, user):
             data = {}
             token_class = RefreshToken
@@ -65,7 +75,12 @@ class RegisterApi(APIView):
 
             return data
 
-    @extend_schema(request=InputRegisterSerializer, responses=OutPutRegisterSerializer)
+    @extend_schema(
+        tags=["users"],
+        summary="Register a new user",
+        request=InputRegisterSerializer,
+        responses=OutPutRegisterSerializer,
+    )
     def post(self, request):
         serializer = self.InputRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
