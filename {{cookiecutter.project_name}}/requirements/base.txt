@@ -1,30 +1,30 @@
-Django==5.1.2
-django-environ==0.12.0
-psycopg2-binary==2.9.10
-djangorestframework==3.15.2
+Django==5.2.16
+django-environ==0.14.0
+psycopg2-binary==2.9.12
+djangorestframework==3.16.1
 
 {%- if cookiecutter.use_celery == "y" %}
-celery==5.4.0
-django-celery-results==2.5.1
-django-celery-beat==2.7.0
+celery==5.5.3
+django-celery-results==2.6.0
+django-celery-beat==2.8.1
 
 {%- endif %}
-whitenoise==6.9.0
+whitenoise==6.12.0
 
-django-filter==25.1
+django-filter==25.2
 django-extensions==3.2.3
-django-cors-headers==4.7.0
+django-cors-headers==4.9.0
 
 drf-jwt==1.19.2
-attrs==25.1.0
+attrs==25.3.0
 
-djangorestframework-simplejwt==5.5.0
-drf-spectacular==0.28.0
+djangorestframework-simplejwt==5.5.1
+drf-spectacular==0.30.0
 
 {%- if cookiecutter.use_redis == "y" %}
-django-redis==5.4.0
+django-redis==6.0.0
 {%- endif %}
-Faker==36.1.1
+Faker==37.9.0
 factory-boy==3.3.3
-pytest==8.3.4
-pytest-django==4.10.0
+pytest==8.4.2
+pytest-django==4.12.0

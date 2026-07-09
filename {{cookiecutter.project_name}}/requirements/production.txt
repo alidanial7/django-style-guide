@@ -1,6 +1,6 @@
 -r base.txt
 
-gunicorn==23.0.0
+gunicorn==24.1.1
 {%- if cookiecutter.use_sentry == "y" %}
-sentry-sdk==2.22.0
+sentry-sdk==2.64.0
 {%- endif %}

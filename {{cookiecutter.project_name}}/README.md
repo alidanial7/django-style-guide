@@ -6,7 +6,7 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 
 ## Stack
 
-- Python 3.10 · Django 5 · Django REST Framework · drf-spectacular
+- Python 3.12 · Django 5.2 · Django REST Framework · drf-spectacular
 - PostgreSQL · modular `config/settings/` layout
 - Production via Docker Compose (self-hosted, not Heroku)
 {%- if cookiecutter.use_jwt == "y" %}
@@ -29,7 +29,7 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 
 ## Prerequisites
 
-- Python 3.10
+- Python 3.12
 - Docker and Docker Compose
 - virtualenv (or pyenv)
 
@@ -44,7 +44,7 @@ cd {{cookiecutter.project_name}}
 ### 2. Create and activate a virtualenv
 
 ```bash
-python3.10 -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
 ```
 

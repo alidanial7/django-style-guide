@@ -16,7 +16,7 @@ Production deployment uses **Docker Compose on your own server** — not Heroku 
 
 ## Prerequisites
 
-- Python 3.10
+- Python 3.12
 - [Cookiecutter](https://cookiecutter.readthedocs.io/)
 - [Docker](https://www.docker.com/) (for Postgres and optional services)
 
@@ -113,7 +113,7 @@ Quick start:
 
 ```bash
 cd my_project
-python3.10 -m venv venv && source venv/bin/activate
+python3.12 -m venv venv && source venv/bin/activate
 pip install -r requirements_dev.txt
 cp .env.example .env
 ./start-dev-services.sh    # in another terminal, or run with -d via compose
