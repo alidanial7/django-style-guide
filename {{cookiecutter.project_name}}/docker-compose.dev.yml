@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   db:
-    image: postgres:14.1
+    image: postgres:17.10
     container_name: postgres
     ports:
       - 5432:5432
@@ -41,7 +41,7 @@ services:
 {%- endif %}
 {%- if cookiecutter.use_redis == "y" %}
   redis:
-    image: redis:7
+    image: redis:7.4.9
     container_name: redis
     ports:
       - 6379:6379

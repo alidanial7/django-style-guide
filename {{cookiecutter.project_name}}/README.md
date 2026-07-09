@@ -7,13 +7,13 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 ## Stack
 
 - Python 3.12 · Django 5.2 · Django REST Framework · drf-spectacular
-- PostgreSQL · modular `config/settings/` layout
+- PostgreSQL 17.10 · modular `config/settings/` layout
 - Production via Docker Compose (self-hosted, not Heroku)
 {%- if cookiecutter.use_jwt == "y" %}
 - JWT authentication (`users`, `authentication` apps)
 {%- endif %}
 {%- if cookiecutter.use_redis == "y" %}
-- Redis caching
+- Redis 7.4.9 caching
 {%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
 - RabbitMQ message broker
@@ -77,9 +77,9 @@ This starts:
 
 | Service | Address |
 |---------|---------|
-| PostgreSQL | `localhost:5432` |
+| PostgreSQL 17.10 | `localhost:5432` |
 {%- if cookiecutter.use_redis == "y" %}
-| Redis | `localhost:6379` |
+| Redis 7.4.9 | `localhost:6379` |
 {%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
 | RabbitMQ | `localhost:5672` |
@@ -213,7 +213,7 @@ docker compose up --build -d
 
 This starts:
 
-- PostgreSQL
+- PostgreSQL 17.10
 {%- if cookiecutter.use_rabbitmq == "y" %}
 - RabbitMQ
 {%- endif %}
