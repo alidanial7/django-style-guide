@@ -12,6 +12,11 @@ services:
       - POSTGRES_PASSWORD={{cookiecutter.postgres_password}}
     volumes:
       - postgres-data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{cookiecutter.postgres_user}} -d {{cookiecutter.project_slug}}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 {%- if cookiecutter.use_rabbitmq == "y" %}
   rabbitmq:
@@ -43,9 +48,11 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 {%- if cookiecutter.use_rabbitmq == "y" %}
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
 {%- endif %}
     restart: on-failure
 
@@ -65,8 +72,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: on-failure
 
   beats:
@@ -84,8 +93,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: on-failure
 
 {%- endif %}

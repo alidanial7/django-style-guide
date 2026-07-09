@@ -54,7 +54,7 @@ docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 echo "Waiting for Postgres..."
 POSTGRES_READY=false
 for _ in $(seq 1 30); do
-    if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "{{cookiecutter.postgres_user}}" >/dev/null 2>&1; then
+    if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "{{cookiecutter.postgres_user}}" -d "{{cookiecutter.project_slug}}" >/dev/null 2>&1; then
         POSTGRES_READY=true
         break
     fi
