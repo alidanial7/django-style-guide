@@ -91,5 +91,5 @@ class RegisterApi(APIView):
                 bio=serializer.validated_data.get("bio"),
             )
         except Exception as ex:
-            return Response(f"Database Error {ex}", status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": f"database error: {ex}"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.OutPutRegisterSerializer(user, context={"request": request}).data)

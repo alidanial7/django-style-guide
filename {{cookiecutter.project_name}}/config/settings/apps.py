@@ -15,6 +15,9 @@ THIRD_PARTY_APPS = [
     "django_celery_results",
     "django_celery_beat",
 {%- endif %}
+{%- if cookiecutter.use_jwt == "y" %}
+    "rest_framework_simplejwt.token_blacklist",
+{%- endif %}
     "corsheaders",
     "drf_spectacular",
     "django_extensions",

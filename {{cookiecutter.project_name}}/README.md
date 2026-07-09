@@ -112,9 +112,27 @@ Created automatically by `devserver` if it does not exist:
 {%- if cookiecutter.use_jwt == "y" %}
 - Email: `admin@example.com`
 - Password: `admin`
+
+A `Profile` row is created automatically for every new user (including `createsuperuser` and registration).
 {%- else %}
 - Username: `admin`
 - Password: `admin`
+{%- endif %}
+
+{%- if cookiecutter.use_jwt == "y" %}
+## JWT authentication
+
+Login at `POST /api/auth/jwt/login/` with `username` (your email) and `password`. Use the access token in the `Authorization: Bearer …` header.
+
+Refresh tokens **rotate on every** `POST /api/auth/jwt/refresh/` call: the response includes a new `access` and a new `refresh`. The previous refresh token is blacklisted and cannot be reused.
+
+| Setting | Default | Env variable |
+|---------|---------|--------------|
+| Access token lifetime | 15 minutes | `JWT_ACCESS_TOKEN_LIFETIME_SECONDS` |
+| Refresh token lifetime | 7 days | `JWT_REFRESH_TOKEN_LIFETIME_SECONDS` |
+
+After upgrading, run `python manage.py migrate` to create the token blacklist tables.
+
 {%- endif %}
 
 ## URLs
