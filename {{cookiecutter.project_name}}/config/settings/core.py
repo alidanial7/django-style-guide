@@ -1,7 +1,7 @@
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = "config.wsgi.application"
 
-ASGI_APPLICATION = 'config.asgi.application'
+ASGI_APPLICATION = "config.asgi.application"
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

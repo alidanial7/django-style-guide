@@ -1,16 +1,16 @@
-{%- if cookiecutter.use_redis == "y" %}
+{%- if cookiecutter.use_redis == "y" -%}
 from config.env import env
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': env('REDIS_LOCATION', default='redis://localhost:6379'),
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("REDIS_LOCATION", default="redis://localhost:6379"),
     }
 }
-{%- else %}
+{%- else -%}
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
 {%- endif %}

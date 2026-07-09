@@ -1,10 +1,8 @@
-from django.db import models
-from {{cookiecutter.project_slug}}.common.models import BaseModel
-
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import BaseUserManager as BUM
-from django.contrib.auth.models import PermissionsMixin
+from django.db import models
 
+from {{cookiecutter.project_slug}}.common.models import BaseModel
 
 
 class BaseUserManager(BUM):
@@ -39,9 +37,7 @@ class BaseUserManager(BUM):
 
 
 class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
-
-    email = models.EmailField(verbose_name = "email address",
-                              unique=True)
+    email = models.EmailField(verbose_name="email address", unique=True)
 
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -66,9 +62,3 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user} >> {self.bio}"
-
-
-
-
-
-

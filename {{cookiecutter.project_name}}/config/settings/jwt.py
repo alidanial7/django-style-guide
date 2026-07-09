@@ -17,10 +17,8 @@ JWT_AUTH = {
     "JWT_RESPONSE_PAYLOAD_HANDLER": "{{cookiecutter.project_slug}}.authentication.services.auth_jwt_response_payload_handler",
     "JWT_EXPIRATION_DELTA": datetime.timedelta(seconds=JWT_EXPIRATION_DELTA_SECONDS),
     "JWT_ALLOW_REFRESH": False,
-
     "JWT_AUTH_COOKIE": JWT_AUTH_COOKIE,
     "JWT_AUTH_COOKIE_SECURE": True,
     "JWT_AUTH_COOKIE_SAMESITE": JWT_AUTH_COOKIE_SAMESITE,
-
-    "JWT_AUTH_HEADER_PREFIX": JWT_AUTH_HEADER_PREFIX
+    "JWT_AUTH_HEADER_PREFIX": JWT_AUTH_HEADER_PREFIX,
 }
