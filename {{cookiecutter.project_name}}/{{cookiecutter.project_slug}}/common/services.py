@@ -1,9 +1,9 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from {{cookiecutter.project_slug}}.common.types import DjangoModelType
 
 
-def model_update(*, instance: DjangoModelType, fields: List[str], data: Dict[str, Any]) -> Tuple[DjangoModelType, bool]:
+def model_update(*, instance: DjangoModelType, fields: list[str], data: dict[str, Any]) -> tuple[DjangoModelType, bool]:
     """
     Generic update service meant to be reused in local update services
 

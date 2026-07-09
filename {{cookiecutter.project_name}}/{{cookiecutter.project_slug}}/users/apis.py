@@ -55,7 +55,7 @@ class RegisterApi(APIView):
             fields = ("email", "token", "created_at", "updated_at")
 
         def get_token(self, user):
-            data = dict()
+            data = {}
             token_class = RefreshToken
 
             refresh = token_class.for_user(user)

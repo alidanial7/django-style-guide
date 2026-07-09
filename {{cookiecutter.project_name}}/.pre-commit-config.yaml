@@ -1,6 +1,10 @@
+# Pre-commit hooks — see README.md § Pre-commit hooks for what each group does.
+# Selected at project generation when code style tooling is enabled.
 exclude: '^docs/|/migrations/|locale/|devcontainer.json$|^\.vscode/settings\.json$'
 
 repos:
+{%- if cookiecutter.precommit_base == "y" %}
+  # File hygiene: whitespace, EOF, JSON/YAML/XML, merge conflicts, private keys, AST.
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -18,12 +22,18 @@ repos:
       - id: check-added-large-files
       - id: check-ast
 
+{%- endif %}
+{%- if cookiecutter.precommit_pyupgrade == "y" %}
+  # Modernize Python syntax for the project's Python version.
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:
       - id: pyupgrade
         args: [--py312-plus]
 
+{%- endif %}
+{%- if cookiecutter.precommit_ruff == "y" %}
+  # Lint (E/F/W/I) and format Python with Ruff.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.20
     hooks:
@@ -31,9 +41,22 @@ repos:
         args: [--fix]
       - id: ruff-format
 
+{%- endif %}
+{%- if cookiecutter.precommit_pydoclint == "y" %}
+  # Google-style docstring linting.
   - repo: https://github.com/jsh9/pydoclint
     rev: 0.9.1
     hooks:
       - id: pydoclint
         args:
           - --style=google
+
+{%- endif %}
+{%- if cookiecutter.precommit_translation_lint == "y" %}
+  # Ensures Django gettext strings use lowercase text (i18n convention).
+  - repo: https://github.com/alidanial7/django-translation-lint
+    rev: v0.2.0
+    hooks:
+      - id: django-translation-lint
+
+{%- endif %}

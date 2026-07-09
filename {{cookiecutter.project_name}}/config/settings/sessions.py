@@ -1,11 +1,12 @@
-from config.env import env
-
 """
 Do read:
 
     1. https://docs.djangoproject.com/en/3.1/ref/settings/#sessions
     2. https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
 """
+
+from config.env import env
+
 SESSION_COOKIE_AGE = env.int("SESSION_COOKIE_AGE", default=1209600)  # Default - 2 weeks in seconds
 SESSION_COOKIE_HTTPONLY = env.bool("SESSION_COOKIE_HTTPONLY", default=True)
 SESSION_COOKIE_NAME = env("SESSION_COOKIE_NAME", default="sessionid")

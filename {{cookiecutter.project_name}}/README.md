@@ -177,11 +177,31 @@ Uses `config.django.test` (SQLite, eager Celery{%- if cookiecutter.use_celery ==
 ## Code quality
 
 {%- if cookiecutter.use_code_style == "y" %}
+This project uses [pre-commit](https://pre-commit.com/) to run checks before each commit. Hook groups were chosen at project generation; see `.pre-commit-config.yaml`.
+
+```bash
+pre-commit install          # once, after pip install
+pre-commit run --all-files  # run every hook on the whole tree
+```
+
+You can also run tools directly:
+
 ```bash
 ruff check .
 ruff format .
-pre-commit run --all-files
 ```
+
+### Pre-commit hook groups
+
+| Group | What it does |
+|-------|----------------|
+| **File hygiene** (`pre-commit-hooks`) | Trims trailing whitespace, fixes EOF newlines, validates JSON/YAML/XML, blocks debug statements and merge conflicts, detects private keys, and checks Python AST. |
+| **pyupgrade** | Rewrites older Python syntax to match Python 3.12 (e.g. `list[str]` instead of `List[str]`). |
+| **Ruff** | Lints with Ruff (`ruff check --fix`) and formats with `ruff format`. |
+| **pydoclint** | Enforces [Google-style](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) docstrings on functions and methods. |
+| **django-translation-lint** | Ensures Django `gettext` / `_()` strings use lowercase text (i18n convention). |
+
+To change which groups are active, edit `.pre-commit-config.yaml` and remove or comment out a `repo:` block, then run `pre-commit autoupdate` if you bump versions.
 {%- else %}
 ```bash
 flake8

@@ -57,6 +57,16 @@ FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
 
 DEFAULT_FEATURES: frozenset[str] = frozenset({"use_jwt"})
 
+PRE_COMMIT_OPTIONS: tuple[tuple[str, str], ...] = (
+    ("precommit_base", "File hygiene (whitespace, EOF, JSON/YAML, merge conflicts, …)"),
+    ("precommit_pyupgrade", "pyupgrade — modern Python syntax"),
+    ("precommit_ruff", "Ruff — lint and format"),
+    ("precommit_pydoclint", "pydoclint — Google-style docstrings"),
+    ("precommit_translation_lint", "django-translation-lint — lowercase gettext strings"),
+)
+
+DEFAULT_PRE_COMMIT: frozenset[str] = frozenset(key for key, _ in PRE_COMMIT_OPTIONS)
+
 
 def slugify(value: str) -> str:
     slug = value.lower()
@@ -209,6 +219,13 @@ def format_feature_summary(selected_keys: set[str]) -> str:
     return ", ".join(enabled)
 
 
+def format_precommit_summary(selected_keys: set[str]) -> str:
+    enabled = [label for key, label in PRE_COMMIT_OPTIONS if key in selected_keys]
+    if not enabled:
+        return "none"
+    return ", ".join(enabled)
+
+
 def prompt_yn(label: str, default: str = "y") -> str:
     print(f"  {COLORS.bold}{label}{COLORS.reset}")
     print(
@@ -314,6 +331,28 @@ def collect_answers() -> dict[str, str] | None:
     use_celery = yn(selected_features, "use_celery")
     use_code_style = yn(selected_features, "use_code_style")
 
+    selected_precommit: set[str] = set()
+    if use_code_style == "y":
+        print_section("Pre-commit hooks")
+        selected_precommit = prompt_multiselect(
+            "Pre-commit hooks",
+            "Choose which checks run on every commit. All recommended; space to toggle.",
+            PRE_COMMIT_OPTIONS,
+            default_keys=DEFAULT_PRE_COMMIT,
+        )
+        if not selected_precommit:
+            print()
+            print(
+                f"  {COLORS.yellow}↳ No hooks selected — enabling all pre-commit hooks.{COLORS.reset}"
+            )
+            selected_precommit = set(DEFAULT_PRE_COMMIT)
+
+    precommit_base = yn(selected_precommit, "precommit_base")
+    precommit_pyupgrade = yn(selected_precommit, "precommit_pyupgrade")
+    precommit_ruff = yn(selected_precommit, "precommit_ruff")
+    precommit_pydoclint = yn(selected_precommit, "precommit_pydoclint")
+    precommit_translation_lint = yn(selected_precommit, "precommit_translation_lint")
+
     if use_celery == "y" and use_rabbitmq != "y":
         print()
         print(
@@ -331,6 +370,10 @@ def collect_answers() -> dict[str, str] | None:
     print(
         f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}"
     )
+    if use_code_style == "y":
+        print(
+            f"  {c.bold}Pre-commit{c.reset}  {format_precommit_summary(selected_precommit)}"
+        )
     print()
 
     confirm = prompt_yn("Generate project?", "y")
@@ -354,6 +397,13 @@ def collect_answers() -> dict[str, str] | None:
         "use_rabbitmq": use_rabbitmq,
         "use_celery": use_celery,
         "use_code_style": use_code_style,
+        "precommit_base": precommit_base if use_code_style == "y" else "n",
+        "precommit_pyupgrade": precommit_pyupgrade if use_code_style == "y" else "n",
+        "precommit_ruff": precommit_ruff if use_code_style == "y" else "n",
+        "precommit_pydoclint": precommit_pydoclint if use_code_style == "y" else "n",
+        "precommit_translation_lint": (
+            precommit_translation_lint if use_code_style == "y" else "n"
+        ),
     }
 
 

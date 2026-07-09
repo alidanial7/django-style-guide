@@ -18,6 +18,11 @@
   "use_rabbitmq": "n",
   "use_celery": "n",
   "use_code_style": "n",
+  "precommit_base": "y",
+  "precommit_pyupgrade": "y",
+  "precommit_ruff": "y",
+  "precommit_pydoclint": "y",
+  "precommit_translation_lint": "y",
 
   "__prompts__": {
     "project_name": {
@@ -79,6 +84,26 @@
     "use_code_style": {
       "prompt": "Include code style tooling (y/n)",
       "help": "Ruff + pre-commit git hooks."
+    },
+    "precommit_base": {
+      "prompt": "Pre-commit: file hygiene hooks (y/n)",
+      "help": "Whitespace, EOF, JSON/YAML/XML, merge conflicts, private keys, etc."
+    },
+    "precommit_pyupgrade": {
+      "prompt": "Pre-commit: pyupgrade (y/n)",
+      "help": "Modernize Python syntax for the project Python version."
+    },
+    "precommit_ruff": {
+      "prompt": "Pre-commit: Ruff (y/n)",
+      "help": "Lint and format Python with Ruff."
+    },
+    "precommit_pydoclint": {
+      "prompt": "Pre-commit: pydoclint (y/n)",
+      "help": "Google-style docstring checks."
+    },
+    "precommit_translation_lint": {
+      "prompt": "Pre-commit: django-translation-lint (y/n)",
+      "help": "Ensures Django gettext strings use lowercase text."
     }
   },
 

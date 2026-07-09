@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Sequence, Type
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.permissions import BasePermission, IsAuthenticated
@@ -23,11 +24,11 @@ if TYPE_CHECKING:
 
     PermissionClassesType = Sequence[_PermissionClass]
 else:
-    PermissionClassesType = Sequence[Type[BasePermission]]
+    PermissionClassesType = Sequence[type[BasePermission]]
 
 
 class ApiAuthMixin:
-    authentication_classes: Sequence[Type[BaseAuthentication]] = [
+    authentication_classes: Sequence[type[BaseAuthentication]] = [
         JWTAuthentication,
     ]
     permission_classes: PermissionClassesType = (IsAuthenticated,)

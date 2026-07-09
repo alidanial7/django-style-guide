@@ -42,6 +42,8 @@ The interactive UI uses keyboard-driven prompts:
 
 Features are shown as a single checklist — select everything you want in one screen.
 
+When **code style tooling** is enabled, a second checklist lets you pick which **pre-commit hook groups** to include (all selected by default; use Space to deselect any you do not want).
+
 You can also clone the repo and run `./init.sh`, which uses the same UI.
 
 ### Non-interactive
@@ -71,6 +73,23 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
 | `use_rabbitmq` | n | RabbitMQ message broker in Docker Compose |
 | `use_celery` | n | Celery worker + beat (**requires RabbitMQ**) |
 | `use_code_style` | n | Ruff + pre-commit hooks (replaces flake8-only setup) |
+| `precommit_base` | y | File hygiene hooks (only when `use_code_style=y`) |
+| `precommit_pyupgrade` | y | pyupgrade syntax modernizer |
+| `precommit_ruff` | y | Ruff lint + format |
+| `precommit_pydoclint` | y | Google-style docstring lint |
+| `precommit_translation_lint` | y | Django gettext lowercase lint |
+
+When using the interactive UI with code style enabled, hook groups are selected via a multiselect (all on by default). With `--no-input`, all hook groups default to `y` if `use_code_style=y`.
+
+### Pre-commit hook groups (when `use_code_style=y`)
+
+| Group | Purpose |
+|-------|---------|
+| **File hygiene** | Whitespace, EOF, JSON/YAML/XML, merge conflicts, private keys, AST checks |
+| **pyupgrade** | Modern Python 3.12 syntax |
+| **Ruff** | Lint (`E`, `F`, `W`, `I`) and format |
+| **pydoclint** | Google-style docstrings |
+| **django-translation-lint** | Lowercase Django translation strings |
 
 ### Dependencies between options
 
