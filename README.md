@@ -44,8 +44,6 @@ Features are shown as a single checklist — select everything you want in one s
 
 You can also clone the repo and run `./init.sh`, which uses the same UI.
 
-When generation finishes, cookiecutter may print a hook error — that is expected; your project is already created.
-
 ### Non-interactive
 
 ```bash

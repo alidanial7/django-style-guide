@@ -4,10 +4,27 @@
 from __future__ import annotations
 
 import os
+import signal
 import sys
 from pathlib import Path
 
 SKIP_ENV = "DSG_COOKIECUTTER_SKIP_PROMPT_UI"
+
+
+def _stop_outer_cookiecutter_run() -> None:
+    """End the parent cookiecutter process after we already generated the project.
+
+    The outer ``cookiecutter`` invocation cannot be told to skip its own prompts
+    after ``pre_prompt`` finishes, so we terminate it cleanly once generation
+    is done. The shell may exit with code 143 (SIGTERM) — that is expected.
+    """
+    sys.stdout.flush()
+    sys.stderr.flush()
+    try:
+        os.kill(os.getppid(), signal.SIGTERM)
+    except OSError:
+        pass
+    os._exit(0)
 
 
 def main() -> None:
@@ -31,19 +48,8 @@ def main() -> None:
     if answers is None:
         sys.exit(0)
 
-    try:
-        generate_project(repo_dir, output_dir, answers)
-    except Exception:
-        raise
-
-    # Generation finished in the nested cookiecutter run. Stop the parent
-    # invocation so it does not prompt again or try to regenerate.
-    print(
-        "  Note: cookiecutter may report a hook error below — "
-        "that is expected after generation completes."
-    )
-    print()
-    sys.exit(1)
+    generate_project(repo_dir, output_dir, answers)
+    _stop_outer_cookiecutter_run()
 
 
 if __name__ == "__main__":
