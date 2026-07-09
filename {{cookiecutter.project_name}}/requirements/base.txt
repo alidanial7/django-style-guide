@@ -15,7 +15,6 @@ django-filter==25.2
 django-extensions==3.2.3
 django-cors-headers==4.9.0
 
-drf-jwt==1.19.2
 attrs==25.3.0
 
 djangorestframework-simplejwt==5.5.1
