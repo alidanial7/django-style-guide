@@ -43,6 +43,8 @@ services:
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
 {%- endif %}
       - DJANGO_SETTINGS_MODULE=config.django.production
+    volumes:
+      - media-data:/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -67,6 +69,8 @@ services:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
       - DJANGO_SETTINGS_MODULE=config.django.production
+    volumes:
+      - media-data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -86,6 +90,8 @@ services:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
       - DJANGO_SETTINGS_MODULE=config.django.production
+    volumes:
+      - media-data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -97,3 +103,4 @@ services:
 
 volumes:
   postgres-data:
+  media-data:

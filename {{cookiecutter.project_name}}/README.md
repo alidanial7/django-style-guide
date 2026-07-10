@@ -163,7 +163,7 @@ Created automatically by `devserver` if it does not exist:
 
 A `Profile` (extended user data: `bio`, `avatar`) is created automatically for every new user.
 If no avatar is uploaded, the API returns the default static image at `/static/users/default_avatar.png`.
-Update profile with `PATCH /api/users/profile/` (`multipart/form-data` for avatar uploads).
+Update profile with `PATCH /api/v1/users/profile/` (`multipart/form-data` for avatar uploads).
 {%- else %}
 - Username: `admin`
 - Password: `admin`
@@ -172,9 +172,22 @@ Update profile with `PATCH /api/users/profile/` (`multipart/form-data` for avata
 {%- if cookiecutter.use_jwt == "y" %}
 ## JWT authentication
 
-Login at `POST /api/auth/jwt/login/` with `email` and `password`. Use the access token in the `Authorization: Bearer …` header.
+Login at `POST /api/v1/auth/jwt/login/` with `email` and `password`. Use the access token in the `Authorization: Bearer …` header.
 
-Refresh tokens **rotate on every** `POST /api/auth/jwt/refresh/` call: the response includes a new `access` and a new `refresh`. The previous refresh token is blacklisted and cannot be reused.
+Refresh tokens **rotate on every** `POST /api/v1/auth/jwt/refresh/` call: the response includes a new `access` and a new `refresh`. The previous refresh token is blacklisted and cannot be reused.
+
+Logout with `POST /api/v1/auth/jwt/logout/` and body `{ "refresh": "<token>" }` to blacklist the refresh token.
+
+| Endpoint | Auth | Notes |
+|----------|------|-------|
+| `POST /api/v1/auth/jwt/login/` | public | throttled (`auth`) |
+| `POST /api/v1/auth/jwt/refresh/` | public | throttled (`auth`) |
+| `POST /api/v1/auth/jwt/verify/` | public | throttled (`auth`) |
+| `POST /api/v1/auth/jwt/logout/` | public | blacklists refresh token |
+| `POST /api/v1/auth/password/change/` | JWT | current + new password |
+| `POST /api/v1/auth/password/reset/` | public | emails reset uid/token (console backend locally) |
+| `POST /api/v1/auth/password/reset/confirm/` | public | `{ uid, token, new_password, confirm_password }` |
+| `POST /api/v1/users/register/` | public | throttled (`register`) |
 
 | Setting | Default | Env variable |
 |---------|---------|--------------|
@@ -182,6 +195,8 @@ Refresh tokens **rotate on every** `POST /api/auth/jwt/refresh/` call: the respo
 | Refresh token lifetime | 7 days | `JWT_REFRESH_TOKEN_LIFETIME_SECONDS` |
 
 After upgrading, run `python manage.py migrate` to create the token blacklist tables.
+
+Password-reset emails use `EMAIL_*` / `DEFAULT_FROM_EMAIL` / `APP_DOMAIN` from `.env` (console backend by default).
 
 {%- endif %}
 
@@ -193,8 +208,8 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 | http://localhost:8000/redoc/ | ReDoc |
 | http://localhost:8000/schema/ | OpenAPI schema |
 | http://localhost:8000/admin/ | Django admin |
-| http://localhost:8000/api/ | API routes |
-| http://localhost:8000/api/health/ | Health check (Django, DB{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}{%- if cookiecutter.use_celery == "y" %}, Celery{%- endif %}) |
+| http://localhost:8000/api/v1/ | API routes (v1) |
+| http://localhost:8000/api/v1/health/ | Health check (Django, DB{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}{%- if cookiecutter.use_celery == "y" %}, Celery{%- endif %}) |
 
 ## Project structure
 
@@ -368,13 +383,26 @@ A short cheat sheet lives in [VALIDATION.md](VALIDATION.md). The sections below 
 | Serializers | `<app>/apis/...` | Input shape + cross-field `validate()` only |
 | Services / writes | `<app>/services/` + `common/services.py` | Business rules + persistence; always map integrity errors |
 | Integrity mapping | `common/db/integrity/` | `IntegrityError` → field-keyed Django `ValidationError` / controlled `APIException` |
-| API envelope | `common/http/exception_handler.py` | Single DRF `EXCEPTION_HANDLER` response shape |
+| API envelope | `common/http/` (`api_response` + `api_exception_handler`) | Single success/error response shape |
 
 **Do not** put domain password rules in `common`, raising validators in `errors/`, or business/permission rules in serializers/views.
 
-### API error envelope
+### API response envelope
 
-All handled API errors (validation, integrity, auth/DRF, `ApplicationError`, unexpected 500) use one shape:
+Success and error responses share one outer shape. Use `api_response(...)` from `common.http` in views (do not return raw `Response(data)` for API payloads).
+
+**Success**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "result": { "email": "a@example.com" },
+  "messages": {}
+}
+```
+
+**Error**
 
 ```json
 {
@@ -392,10 +420,12 @@ All handled API errors (validation, integrity, auth/DRF, `ApplicationError`, une
 }
 ```
 
-Each field maps to a list of `{ "message", "code" }` objects. If a raiser omitted `code=`, the handler falls back to `"invalid"`. Unexpected server errors use `"server_error"` and never leak internals.
+Each error field maps to a list of `{ "message", "code" }` objects. If a raiser omitted `code=`, the handler falls back to `"invalid"`. Unexpected server errors use `"server_error"` and never leak internals.
 
 Wired in `config/settings/drf.py` to `common.http.exception_handler.api_exception_handler`.  
 `api/exception_handlers.py` is a thin legacy alias only — do not add a second implementation.
+
+Auth/register endpoints are rate-limited via DRF `ScopedRateThrottle` (`auth`, `register`, `password_reset` rates in `config/settings/drf.py`). Prefer Redis (`use_redis=y`) in multi-worker production so throttle counters are shared.
 
 ### 1. Platform error codes (`common`)
 
@@ -430,6 +460,9 @@ class UserErrorCode(StrEnum):
     PASSWORD_MISSING_SPECIAL = "password_must_include_special_char"
     PASSWORD_MISMATCH = "password_mismatch"
     PASSWORD_TOO_SHORT = "password_too_short"
+    PASSWORD_INCORRECT = "password_incorrect"
+    INVALID_RESET_TOKEN = "invalid_reset_token"
+    INVALID_TOKEN = "invalid_token"
 ```
 
 Add new apps the same way: `<app>/errors/codes.py` with an app-prefixed enum name (e.g. `OrdersErrorCode`). Never reuse the platform name `ErrorCode` for domain codes.
@@ -668,10 +701,18 @@ App: http://localhost:8000
 
 The production Compose file runs the image as built (no source bind-mount). Rebuild after code changes: `docker compose up --build -d`.
 
+Uploaded media is stored in the named volume `media-data` mounted at `/app/media`. Django serves `/media/` in production for this self-hosted setup; put a reverse proxy in front for higher traffic.
+
 ## Useful commands
 
 | Command | Description |
 |---------|-------------|
+| `make install` | Install `requirements_dev.txt` |
+| `make up` / `make down` | Start/stop local Docker infra |
+| `make test` | Run pytest |
+| `make lint` | Lint |
+| `make migrate` | Apply migrations |
+| `make runserver` | `manage.py devserver` |
 | `./start-dev-services.sh` | Start dev Docker services |
 | `python manage.py start_domain_app <name>` | Scaffold a domain app (style-guide layout) |
 | `python manage.py start_domain_app <name> --register` | Scaffold + add to `LOCAL_APPS` |

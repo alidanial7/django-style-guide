@@ -10,7 +10,9 @@ class TestHealthApi:
         response = api_client.get(url)
 
         assert response.status_code in (status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE)
-        assert "django" in response.data["checks"]
-        assert "database" in response.data["checks"]
-        assert response.data["checks"]["django"]["status"] == "ok"
-        assert response.data["checks"]["database"]["status"] == "ok"
+        assert response.data["success"] is True
+        payload = response.data["result"]
+        assert "django" in payload["checks"]
+        assert "database" in payload["checks"]
+        assert payload["checks"]["django"]["status"] == "ok"
+        assert payload["checks"]["database"]["status"] == "ok"

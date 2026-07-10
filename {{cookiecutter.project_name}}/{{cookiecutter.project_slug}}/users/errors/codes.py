@@ -9,3 +9,6 @@ class UserErrorCode(StrEnum):
     PASSWORD_MISSING_SPECIAL = "password_must_include_special_char"
     PASSWORD_MISMATCH = "password_mismatch"
     PASSWORD_TOO_SHORT = "password_too_short"
+    PASSWORD_INCORRECT = "password_incorrect"
+    INVALID_RESET_TOKEN = "invalid_reset_token"
+    INVALID_TOKEN = "invalid_token"

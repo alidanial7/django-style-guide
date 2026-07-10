@@ -15,14 +15,15 @@ class TestUsersProfileApi:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["email"] == user.email
-        assert "bio" in response.data
-        assert "avatar" in response.data
-        assert response.data["avatar"]
+        assert response.data["success"] is True
+        assert response.data["result"]["email"] == user.email
+        assert "bio" in response.data["result"]
+        assert "avatar" in response.data["result"]
+        assert response.data["result"]["avatar"]
 
     def test_patch_profile_bio(self, auth_client):
         url = reverse("api:users:profile")
         response = auth_client.patch(url, data={"bio": "updated bio"}, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["bio"] == "updated bio"
+        assert response.data["result"]["bio"] == "updated bio"

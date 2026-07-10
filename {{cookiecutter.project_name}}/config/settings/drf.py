@@ -3,4 +3,9 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "{{cookiecutter.project_slug}}.common.http.exception_handler.api_exception_handler",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "20/minute",
+        "register": "10/minute",
+        "password_reset": "5/minute",
+    },
 }

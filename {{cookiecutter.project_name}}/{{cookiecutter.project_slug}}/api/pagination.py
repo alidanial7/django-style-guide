@@ -1,7 +1,8 @@
 from collections import OrderedDict
 
 from rest_framework.pagination import LimitOffsetPagination as _LimitOffsetPagination
-from rest_framework.response import Response
+
+from {{cookiecutter.project_slug}}.common.http import api_response
 
 
 def get_paginated_response(*, pagination_class, serializer_class, queryset, request, view):
@@ -15,7 +16,7 @@ def get_paginated_response(*, pagination_class, serializer_class, queryset, requ
 
     serializer = serializer_class(queryset, many=True)
 
-    return Response(data=serializer.data)
+    return api_response(data=serializer.data)
 
 
 def get_paginated_response_context(*, pagination_class, serializer_class, queryset, request, view):
@@ -29,7 +30,7 @@ def get_paginated_response_context(*, pagination_class, serializer_class, querys
 
     serializer = serializer_class(queryset, many=True, context={"request": request})
 
-    return Response(data=serializer.data)
+    return api_response(data=serializer.data)
 
 
 class LimitOffsetPagination(_LimitOffsetPagination):
@@ -53,8 +54,8 @@ class LimitOffsetPagination(_LimitOffsetPagination):
         We redefine this method in order to return `limit` and `offset`.
         This is used by the frontend to construct the pagination itself.
         """
-        return Response(
-            OrderedDict(
+        return api_response(
+            data=OrderedDict(
                 [
                     ("limit", self.limit),
                     ("offset", self.offset),

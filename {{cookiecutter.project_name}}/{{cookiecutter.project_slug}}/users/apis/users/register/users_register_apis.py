@@ -1,8 +1,9 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import parsers, status
-from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from {{cookiecutter.project_slug}}.common.http import api_response
 from {{cookiecutter.project_slug}}.users.apis.users.register.users_register_serializers import (
     UsersRegisterInputSerializer,
     UsersRegisterOutputSerializer,
@@ -13,6 +14,8 @@ from {{cookiecutter.project_slug}}.users.services.user_services import register
 
 class UsersRegisterApi(APIView):
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
 
     @extend_schema(
         tags=USERS_TAGS,
@@ -29,7 +32,7 @@ class UsersRegisterApi(APIView):
             bio=serializer.validated_data.get("bio"),
             avatar=serializer.validated_data.get("avatar"),
         )
-        return Response(
-            UsersRegisterOutputSerializer(user, context={"request": request}).data,
-            status=status.HTTP_201_CREATED,
+        return api_response(
+            data=UsersRegisterOutputSerializer(user, context={"request": request}).data,
+            http_status=status.HTTP_201_CREATED,
         )

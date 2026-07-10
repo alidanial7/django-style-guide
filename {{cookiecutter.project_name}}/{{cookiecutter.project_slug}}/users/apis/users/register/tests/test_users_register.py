@@ -29,8 +29,10 @@ class TestUsersRegisterValidation:
         response = api_client.post(url, data=payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["email"] == "new@example.com"
-        assert "access" in response.data["token"]
+        assert response.data["success"] is True
+        assert response.data["status"] == 201
+        assert response.data["result"]["email"] == "new@example.com"
+        assert "access" in response.data["result"]["token"]
 
     def test_register_password_mismatch(self, api_client):
         url = reverse("api:users:register")

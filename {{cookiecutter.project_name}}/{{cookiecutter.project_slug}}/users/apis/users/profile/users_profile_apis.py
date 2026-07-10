@@ -1,9 +1,9 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import parsers
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from {{cookiecutter.project_slug}}.api.mixins import ApiAuthMixin
+from {{cookiecutter.project_slug}}.common.http import api_response
 from {{cookiecutter.project_slug}}.users.apis.users.profile.users_profile_serializers import (
     UsersProfileOutputSerializer,
     UsersProfileUpdateInputSerializer,
@@ -23,7 +23,9 @@ class UsersProfileApi(ApiAuthMixin, APIView):
     )
     def get(self, request):
         profile = get_profile(user=request.user)
-        return Response(UsersProfileOutputSerializer(profile, context={"request": request}).data)
+        return api_response(
+            data=UsersProfileOutputSerializer(profile, context={"request": request}).data
+        )
 
     @extend_schema(
         tags=USERS_TAGS,
@@ -41,4 +43,6 @@ class UsersProfileApi(ApiAuthMixin, APIView):
             bio=serializer.validated_data.get("bio"),
             avatar=serializer.validated_data.get("avatar"),
         )
-        return Response(UsersProfileOutputSerializer(profile, context={"request": request}).data)
+        return api_response(
+            data=UsersProfileOutputSerializer(profile, context={"request": request}).data
+        )

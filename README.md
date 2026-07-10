@@ -149,6 +149,7 @@ python manage.py devserver
 
 - API docs: `http://localhost:8000/` (Swagger)
 - Admin: `http://localhost:8000/admin/`
+- API base: `http://localhost:8000/api/v1/`
 
 ## Contributing
 
