@@ -9,6 +9,8 @@ vscode = "{{cookiecutter.use_vscode}}"
 code_style = "{{cookiecutter.use_code_style}}"
 testing = "{{cookiecutter.use_testing}}"
 celery = "{{cookiecutter.use_celery}}"
+use_ci = "{{cookiecutter.use_ci}}"
+ci_provider = "{{cookiecutter.ci_provider}}"
 project_slug = "{{cookiecutter.project_slug}}"
 
 
@@ -57,6 +59,18 @@ if testing == "n":
     for path in root.rglob("*_factories.py"):
         if path.is_file():
             delete_resource(str(path))
+
+if use_ci != "y":
+    delete_resource(".github")
+    delete_resource(".gitlab-ci.yml")
+elif ci_provider == "github":
+    delete_resource(".gitlab-ci.yml")
+elif ci_provider == "gitlab":
+    delete_resource(".github")
+else:
+    # Unknown provider — drop both rather than leave the wrong one.
+    delete_resource(".github")
+    delete_resource(".gitlab-ci.yml")
 
 print("Done.")
 print()

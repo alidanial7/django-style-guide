@@ -19,6 +19,8 @@
   "use_celery": "n",
   "use_code_style": "n",
   "use_testing": "y",
+  "use_ci": "n",
+  "ci_provider": "github",
   "precommit_base": "y",
   "precommit_pyupgrade": "y",
   "precommit_ruff": "y",
@@ -89,6 +91,14 @@
     "use_testing": {
       "prompt": "Include testing setup (y/n)",
       "help": "pytest, pytest-django, factories, and default API/service tests."
+    },
+    "use_ci": {
+      "prompt": "Include CI pipeline (y/n)",
+      "help": "Adds a CI config file. Choose the provider with ci_provider."
+    },
+    "ci_provider": {
+      "prompt": "CI provider (github or gitlab)",
+      "help": "Only used when use_ci=y. github → .github/workflows/ci.yml; gitlab → .gitlab-ci.yml."
     },
     "precommit_base": {
       "prompt": "Pre-commit: file hygiene hooks (y/n)",

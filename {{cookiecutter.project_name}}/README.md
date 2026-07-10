@@ -26,6 +26,11 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 {%- else %}
 - flake8 linting
 {%- endif %}
+{%- if cookiecutter.use_ci == "y" and cookiecutter.ci_provider == "github" %}
+- GitHub Actions CI (`.github/workflows/ci.yml`)
+{%- elif cookiecutter.use_ci == "y" and cookiecutter.ci_provider == "gitlab" %}
+- GitLab CI (`.gitlab-ci.yml`)
+{%- endif %}
 
 ## Prerequisites
 
@@ -329,6 +334,22 @@ pytest
 Uses `config.django.test` (SQLite, eager Celery{%- if cookiecutter.use_celery == "y" %}{%- else %}, no Celery{%- endif %}). Default tests cover health{%- if cookiecutter.use_jwt == "y" %}, auth, register, profile, user services, and selectors{%- endif %}.
 {%- else %}
 Testing tooling was not included at project generation. Add pytest later if needed.
+{%- endif %}
+
+{%- if cookiecutter.use_ci == "y" %}
+## Continuous integration
+
+{%- if cookiecutter.ci_provider == "github" %}
+GitHub Actions workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+Runs on pushes/PRs to `main`/`master`: lint, `manage.py check`,{%- if cookiecutter.use_testing == "y" %} and `pytest`{%- endif %}.
+{%- elif cookiecutter.ci_provider == "gitlab" %}
+GitLab CI config: [`.gitlab-ci.yml`](.gitlab-ci.yml).
+
+Pipeline stage `check`: lint, `manage.py check`,{%- if cookiecutter.use_testing == "y" %} and `pytest`{%- endif %}.
+{%- endif %}
+
+CI uses{%- if cookiecutter.use_testing == "y" %} `config.django.test` (SQLite){%- else %} `config.django.local` with a SQLite `DATABASE_URL`{%- endif %} — no Postgres service is required for the default pipeline.
 {%- endif %}
 
 ## Validation & errors
@@ -644,6 +665,8 @@ This starts:
 {%- endif %}
 
 App: http://localhost:8000
+
+The production Compose file runs the image as built (no source bind-mount). Rebuild after code changes: `docker compose up --build -d`.
 
 ## Useful commands
 

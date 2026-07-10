@@ -9,7 +9,7 @@ Production deployment uses **Docker Compose on your own server** — not Heroku 
 - Modular `config/settings/` layout (thin `config/django/base.py` aggregator)
 - Django REST Framework + drf-spectacular (OpenAPI)
 - Docker Compose for local infrastructure and production deployment
-- Optional JWT auth, Celery, Redis, RabbitMQ, Sentry, pgAdmin, VS Code, Ruff/pre-commit, and pytest
+- Optional JWT auth, Celery, Redis, RabbitMQ, Sentry, pgAdmin, VS Code, Ruff/pre-commit, pytest, and CI (GitHub Actions or GitLab CI)
 - `python manage.py devserver` — migrate, create superuser, runserver, and optional Celery worker
 - `scripts/update_translations.sh` — i18n workflow with `makemessages`
 - `start-dev-services.sh` — one command to start dev Docker services
@@ -54,7 +54,9 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
   use_jwt=y \
   use_redis=y \
   use_rabbitmq=y \
-  use_celery=y
+  use_celery=y \
+  use_ci=y \
+  ci_provider=github
 ```
 
 ## Configuration options
@@ -74,6 +76,8 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
 | `use_celery` | n | Celery worker + beat (**requires RabbitMQ**) |
 | `use_code_style` | n | Ruff + pre-commit hooks (replaces flake8-only setup) |
 | `use_testing` | y | pytest, factories, and default tests |
+| `use_ci` | n | CI pipeline config |
+| `ci_provider` | github | `github` (Actions) or `gitlab` (GitLab CI); only when `use_ci=y` |
 | `precommit_base` | y | File hygiene hooks (only when `use_code_style=y`) |
 | `precommit_pyupgrade` | y | pyupgrade syntax modernizer |
 | `precommit_ruff` | y | Ruff lint + format |
@@ -95,6 +99,7 @@ When using the interactive UI with code style enabled, hook groups are selected 
 ### Dependencies between options
 
 - **Celery → RabbitMQ**: if you enable Celery, RabbitMQ must be enabled too. Generation fails with a clear message otherwise.
+- **CI → provider**: if you enable CI, choose **GitHub Actions** or **GitLab CI**. Interactive mode asks after the features checklist; with `--no-input` set `use_ci=y` and `ci_provider=github` or `ci_provider=gitlab`.
 - **Redis**, **pgAdmin**, **Sentry**, **VS Code**, and **code style** are independent.
 
 ## Project layout (generated)
@@ -117,6 +122,8 @@ my_project/
 ├── docker-compose.yml       # production stack
 ├── docker-compose.dev.yml   # local infrastructure
 ├── start-dev-services.sh
+├── .github/workflows/       # when use_ci=y and ci_provider=github
+├── .gitlab-ci.yml           # when use_ci=y and ci_provider=gitlab
 ├── scripts/
 │   └── update_translations.sh
 └── requirements/

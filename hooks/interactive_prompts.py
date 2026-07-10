@@ -54,6 +54,7 @@ FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_celery", "Celery"),
     ("use_code_style", "Code style tooling"),
     ("use_testing", "Testing (pytest + default tests)"),
+    ("use_ci", "CI pipeline"),
 )
 
 DEFAULT_FEATURES: frozenset[str] = frozenset({"use_jwt", "use_testing"})
@@ -332,6 +333,20 @@ def collect_answers() -> dict[str, str] | None:
     use_celery = yn(selected_features, "use_celery")
     use_code_style = yn(selected_features, "use_code_style")
     use_testing = yn(selected_features, "use_testing")
+    use_ci = yn(selected_features, "use_ci")
+
+    ci_provider = "none"
+    if use_ci == "y":
+        print_section("CI provider")
+        ci_provider = prompt_radio(
+            "CI provider",
+            "Which platform should the pipeline target?",
+            (
+                ("github", "GitHub Actions (.github/workflows/ci.yml)"),
+                ("gitlab", "GitLab CI (.gitlab-ci.yml)"),
+            ),
+            default_index=0,
+        )
 
     selected_precommit: set[str] = set()
     if use_code_style == "y":
@@ -372,6 +387,9 @@ def collect_answers() -> dict[str, str] | None:
     print(
         f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}"
     )
+    if use_ci == "y":
+        provider_label = "GitHub Actions" if ci_provider == "github" else "GitLab CI"
+        print(f"  {c.bold}CI{c.reset}          {provider_label}")
     if use_code_style == "y":
         print(
             f"  {c.bold}Pre-commit{c.reset}  {format_precommit_summary(selected_precommit)}"
@@ -400,6 +418,8 @@ def collect_answers() -> dict[str, str] | None:
         "use_celery": use_celery,
         "use_code_style": use_code_style,
         "use_testing": use_testing,
+        "use_ci": use_ci,
+        "ci_provider": ci_provider if use_ci == "y" else "none",
         "precommit_base": precommit_base if use_code_style == "y" else "n",
         "precommit_pyupgrade": precommit_pyupgrade if use_code_style == "y" else "n",
         "precommit_ruff": precommit_ruff if use_code_style == "y" else "n",

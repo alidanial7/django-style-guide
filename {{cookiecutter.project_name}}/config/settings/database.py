@@ -10,14 +10,15 @@ DATABASES = {
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
-if os.environ.get("GITHUB_WORKFLOW"):
+# GitHub Actions sets GITHUB_WORKFLOW; GitLab CI sets GITLAB_CI.
+if os.environ.get("GITHUB_WORKFLOW") or os.environ.get("GITLAB_CI"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": "github_actions",
-            "USER": "{{cookiecutter.postgres_user}}",
-            "PASSWORD": "{{cookiecutter.postgres_password}}",
-            "HOST": "127.0.0.1",
-            "PORT": "5432",
+            "NAME": os.environ.get("POSTGRES_DB", "ci"),
+            "USER": os.environ.get("POSTGRES_USER", "{{cookiecutter.postgres_user}}"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "{{cookiecutter.postgres_password}}"),
+            "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
         }
     }
