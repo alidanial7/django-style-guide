@@ -256,9 +256,7 @@ Logout at `POST /api/v1/auth/session/logout/` (authenticated). Browser / cookie 
 │   ├── core/
 │   ├── common/           # platform: validators/, errors/, db/integrity/, http/, services
 │   ├── commands/         # management commands (devserver)
-{%- if cookiecutter.use_jwt == "y" %}
 │   └── users/            # models/, validators/, errors/, services/, apis/, …
-{%- endif %}
 ├── docker/               # Dockerfiles and entrypoints
 ├── docker-compose.yml    # production
 ├── docker-compose.dev.yml
@@ -477,8 +475,7 @@ class ErrorCode(StrEnum):
 
 ### 2. Domain error codes (per app)
 
-{%- if cookiecutter.use_jwt == "y" %}
-Password and other identity codes live under `users`, not `common`:
+Password and other identity codes live under `users`:
 
 ```python
 # users/errors/codes.py
@@ -494,9 +491,6 @@ class UserErrorCode(StrEnum):
 ```
 
 Add new apps the same way: `<app>/errors/codes.py` with an app-prefixed enum name (e.g. `OrdersErrorCode`). Never reuse the platform name `ErrorCode` for domain codes.
-{%- else %}
-For each domain app, add `<app>/errors/codes.py` with an app-prefixed enum (e.g. `OrdersErrorCode`). Put only stable string codes there — never validator classes.
-{%- endif %}
 
 ### 3. Pure validators (`is_*`)
 
@@ -507,7 +501,6 @@ def is_slug(value: str) -> bool:
     return isinstance(value, str) and _SLUG_RE.fullmatch(value) is not None
 ```
 
-{%- if cookiecutter.use_jwt == "y" %}
 **Domain (users passwords):** pure checks live at the top of `users/validators/password.py` next to the raising validators:
 
 ```python
@@ -516,9 +509,6 @@ def is_password_with_number(value: str) -> bool:
 ```
 
 Naming separates concerns inside one file: `is_*` (bool) vs `*Validator` (raises).
-{%- else %}
-**Domain:** put domain-specific `is_*` functions in that app’s `validators/` module (not in `common`).
-{%- endif %}
 
 Rules for every pure check: return `bool` only; no `ValidationError`, no `gettext`, no user-facing messages.
 
@@ -557,7 +547,6 @@ class PasswordMinLengthValidator:
             )
 ```
 
-{%- if cookiecutter.use_jwt == "y" %}
 Export a list for DRF fields:
 
 ```python
@@ -583,7 +572,6 @@ password = serializers.CharField(validators=PASSWORD_VALIDATORS)
 | Django auth | `AUTH_PASSWORD_VALIDATORS` in `config/settings/auth.py` | Admin / `set_password` (includes `Password*DjangoValidator` adapters + Django built-ins) |
 
 Wire domain validators into `AUTH_PASSWORD_VALIDATORS` via the `Password*DjangoValidator` adapters (already configured) so admin/`set_password` and API share the same rules.
-{%- endif %}
 
 ### 5. Serializers (shape + object rules only)
 
@@ -646,14 +634,12 @@ common/
   db/integrity/            # parse.py + map.py → map_integrity_error
   http/exception_handler.py
   services.py              # model_create / model_save wrap IntegrityError
-{%- if cookiecutter.use_jwt == "y" %}
 
 users/
   errors/codes.py          # UserErrorCode only
   validators/password.py   # is_password_* + Password*Validator + PASSWORD_VALIDATORS
   services/                # create_user / register map integrity
   apis/.../register/       # serializers use PASSWORD_VALIDATORS + UserErrorCode
-{%- endif %}
 ```
 
 ## Code quality

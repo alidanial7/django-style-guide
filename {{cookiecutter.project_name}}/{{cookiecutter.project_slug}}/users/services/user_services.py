@@ -6,8 +6,10 @@ from django.db import IntegrityError, transaction
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.translation import gettext_lazy as _
+{%- if cookiecutter.use_jwt == "y" %}
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+{%- endif %}
 
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
 from {{cookiecutter.project_slug}}.common.services import model_save
@@ -81,6 +83,7 @@ def change_password(*, user: BaseUser, current_password: str, new_password: str)
     user.save(update_fields=["password"])
 
 
+{%- if cookiecutter.use_jwt == "y" %}
 def logout(*, refresh_token: str) -> None:
     try:
         token = RefreshToken(refresh_token)
@@ -96,6 +99,7 @@ def logout(*, refresh_token: str) -> None:
         ) from error
 
 
+{%- endif %}
 def request_password_reset(*, email: str) -> None:
     """Always succeeds. Sends a reset email only when the account exists."""
     try:
