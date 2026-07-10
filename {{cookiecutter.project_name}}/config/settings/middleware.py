@@ -1,5 +1,6 @@
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "config.request_id.RequestIdMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

@@ -65,6 +65,49 @@ cp .env.example .env
 
 Edit `.env` if needed. Defaults work with the local Docker Compose services.
 
+## Logging
+
+Configured in `config/settings/logging.py` (see also [LOGGING.md](LOGGING.md)).
+
+| Env var | Default | Purpose |
+|---------|---------|---------|
+| `DJANGO_LOGGING_LEVEL` | `INFO` | Root / console level (uppercased; invalid values fall back to `INFO`) |
+| `LOG_TO_FILE` | `true` | Write JSON logs under `logs/` |
+| `LOG_WHEN` | `midnight` | `TimedRotatingFileHandler` rollover |
+| `LOG_INTERVAL` | `1` | Rollover interval |
+| `LOG_BACKUP_COUNT` | `14` | Rotated files to keep |
+| `LOG_SQL` | `false` | Log SQL via `django.db.backends` |
+
+**Handlers**
+
+| Handler | Destination | Levels |
+|---------|-------------|--------|
+| `console` | stdout | `DJANGO_LOGGING_LEVEL`+ (readable) |
+| `app_file` | `logs/app/app.log` | `INFO`+ including **WARNING** (JSON lines) |
+| `error_file` | `logs/error/error.log` | `ERROR`+ (JSON lines) |
+| `sql_console` | stdout | only if `LOG_SQL=true` |
+
+`django.request` errors go to **console + app_file + error_file** (when files are on).  
+`logs/.gitkeep` keeps the folder in git; real log files under `logs/**` are ignored. Dirs for `app/` and `error/` are created at startup when `LOG_TO_FILE=true`.
+
+**Request ID** — `config.request_id.RequestIdMiddleware` sets `X-Request-ID` on every response (reuses inbound header or generates uuid4). JSON file logs include `"request_id"` when a request context is active.
+
+**Examples**
+
+Console:
+
+```text
+2026-07-10 13:00:00 | WARNING | myapp.users.services | user 42 failed login
+```
+
+File JSON line:
+
+```json
+{"timestamp":"2026-07-10T09:30:00+00:00","level":"WARNING","logger":"myapp.users.services","message":"user 42 failed login","pathname":".../services.py","lineno":20,"funcName":"login","request_id":"…"}
+```
+
+In code: `logger = logging.getLogger(__name__)`, prefer `logger.info("user %s", user_id)` and `logger.exception(...)` in `except`. Never log secrets. Tests use quiet console-only logging (`config/django/test.py`).
+
 ### 5. Start development infrastructure
 
 In one terminal:
@@ -154,7 +197,9 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 {{cookiecutter.project_name}}/
 ├── config/
 │   ├── django/           # base, local, production, test
-│   ├── settings/         # modular settings slices
+│   ├── settings/         # modular settings slices (incl. logging.py)
+│   ├── logging_formatters.py
+│   ├── request_id.py     # X-Request-ID middleware + log filter
 │   ├── urls.py
 │   ├── celery.py         # Celery app factory
 │   └── tasks.py
@@ -173,6 +218,7 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 ├── scripts/
 │   └── update_translations.sh
 ├── VALIDATION.md         # short validation layer cheat sheet
+├── LOGGING.md            # logging conventions cheat sheet
 └── locale/               # created by makemessages
 ```
 

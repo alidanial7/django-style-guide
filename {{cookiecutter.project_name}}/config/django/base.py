@@ -12,6 +12,7 @@ from config.settings.database import *  # noqa
 from config.settings.drf import *  # noqa
 from config.settings.extra import *  # noqa
 from config.settings.i18n import *  # noqa
+from config.settings.logging import *  # noqa
 {%- if cookiecutter.use_jwt == "y" %}
 from config.settings.jwt import *  # noqa
 {%- endif %}
