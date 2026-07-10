@@ -5,145 +5,153 @@
   "first_name": "author",
   "last_name": "author lastname",
 
-  "license": "MIT",
+  "license": ["MIT", "BEER", "None"],
 
   "postgres_user": "user",
   "postgres_password": "password",
-  "postgres_version": "17.10",
+  "postgres_version": ["17.10", "16.8", "15.12", "14.17"],
 
-  "use_jwt": "y",
-  "use_sentry": "n",
-  "use_vscode": "n",
-  "use_pgadmin": "n",
-  "use_redis": "n",
-  "use_rabbitmq": "n",
-  "use_celery": "n",
-  "celery_broker": "redis",
-  "use_asgi": "n",
-  "use_websockets": "n",
-  "reverse_proxy": "none",
-  "use_code_style": "y",
-  "use_testing": "y",
-  "use_ci": "n",
-  "ci_provider": "github",
-  "precommit_base": "y",
-  "precommit_pyupgrade": "y",
-  "precommit_ruff": "y",
-  "precommit_pydoclint": "y",
-  "precommit_translation_lint": "y",
+  "use_jwt": ["y", "n"],
+  "use_sentry": ["n", "y"],
+  "use_vscode": ["n", "y"],
+  "use_pgadmin": ["n", "y"],
+  "use_redis": ["n", "y"],
+  "use_rabbitmq": ["n", "y"],
+  "use_celery": ["n", "y"],
+  "celery_broker": ["redis", "rabbitmq"],
+  "use_asgi": ["n", "y"],
+  "use_websockets": ["n", "y"],
+  "reverse_proxy": ["none", "nginx", "traefik"],
+  "use_code_style": ["y", "n"],
+  "use_testing": ["y", "n"],
+  "use_ci": ["n", "y"],
+  "ci_provider": ["github", "gitlab"],
+  "precommit_base": ["y", "n"],
+  "precommit_pyupgrade": ["y", "n"],
+  "precommit_ruff": ["y", "n"],
+  "precommit_pydoclint": ["y", "n"],
+  "precommit_translation_lint": ["y", "n"],
 
   "__prompts__": {
-    "project_name": {
-      "prompt": "Project name",
-      "help": "Display name for your Django project."
-    },
-    "project_slug": {
-      "prompt": "Project slug",
-      "help": "Python package name. Press Enter to auto-generate from the project name."
-    },
-    "first_name": {
-      "prompt": "Author first name",
-      "help": "Used for project metadata."
-    },
-    "last_name": {
-      "prompt": "Author last name",
-      "help": "Used for project metadata."
-    },
+    "project_name": "Project name",
+    "project_slug": "Project slug (Python package; Enter = auto from name)",
+    "first_name": "Author first name",
+    "last_name": "Author last name",
     "license": {
-      "prompt": "License (MIT, BEER, or None)",
-      "help": "Choose MIT, BEER, or None (no LICENSE file)."
+      "__prompt__": "License",
+      "MIT": "MIT",
+      "BEER": "BEER",
+      "None": "None (no LICENSE file)"
     },
-    "postgres_user": {
-      "prompt": "PostgreSQL user",
-      "help": "Database user for local Docker Compose and .env defaults."
-    },
-    "postgres_password": {
-      "prompt": "PostgreSQL password",
-      "help": "Database password for local Docker Compose and .env defaults."
-    },
+    "postgres_user": "PostgreSQL user",
+    "postgres_password": "PostgreSQL password",
     "postgres_version": {
-      "prompt": "PostgreSQL version (e.g. 17.10, 16.8, 15.12)",
-      "help": "Docker image tag for postgres (postgres:<version>)."
+      "__prompt__": "PostgreSQL version",
+      "17.10": "17.10",
+      "16.8": "16.8",
+      "15.12": "15.12",
+      "14.17": "14.17"
     },
     "use_jwt": {
-      "prompt": "Use JWT authentication (y/n; n = session auth)",
-      "help": "y → JWT (simplejwt). n → session-based auth. Users app is always included."
+      "__prompt__": "Authentication mode",
+      "y": "JWT (simplejwt)",
+      "n": "Session auth"
     },
     "use_sentry": {
-      "prompt": "Include Sentry integration (y/n)",
-      "help": "Adds sentry-sdk. Only activates when SENTRY_DSN is set in .env."
+      "__prompt__": "Include Sentry?",
+      "n": "No",
+      "y": "Yes"
     },
     "use_vscode": {
-      "prompt": "Include VS Code settings (y/n)",
-      "help": "Adds .vscode/settings.json and recommended extensions."
+      "__prompt__": "Include VS Code settings?",
+      "n": "No",
+      "y": "Yes"
     },
     "use_pgadmin": {
-      "prompt": "Include pgAdmin in dev Docker Compose (y/n)",
-      "help": "Adds pgAdmin at http://localhost:5050."
+      "__prompt__": "Include pgAdmin in dev Compose?",
+      "n": "No",
+      "y": "Yes"
     },
     "use_redis": {
-      "prompt": "Include Redis (y/n)",
-      "help": "Adds Redis to Docker Compose and django-redis cache."
+      "__prompt__": "Include Redis?",
+      "n": "No",
+      "y": "Yes"
     },
     "use_rabbitmq": {
-      "prompt": "Include RabbitMQ (y/n)",
-      "help": "Message broker. Required when Celery uses the RabbitMQ broker."
+      "__prompt__": "Include RabbitMQ?",
+      "n": "No",
+      "y": "Yes"
     },
     "use_celery": {
-      "prompt": "Include Celery (y/n)",
-      "help": "Celery worker + beat. Choose broker with celery_broker."
+      "__prompt__": "Include Celery?",
+      "n": "No",
+      "y": "Yes"
     },
     "celery_broker": {
-      "prompt": "Celery broker (redis or rabbitmq)",
-      "help": "Only used when use_celery=y. redis requires use_redis=y; rabbitmq requires use_rabbitmq=y."
+      "__prompt__": "Celery broker (ignored if Celery is No)",
+      "redis": "Redis",
+      "rabbitmq": "RabbitMQ"
     },
     "use_asgi": {
-      "prompt": "Use ASGI server in production (y/n)",
-      "help": "y → Uvicorn instead of Gunicorn. Required for WebSockets."
+      "__prompt__": "Use ASGI (Uvicorn) in production?",
+      "n": "No (Gunicorn/WSGI)",
+      "y": "Yes (Uvicorn)"
     },
     "use_websockets": {
-      "prompt": "Include Django Channels / WebSockets (y/n)",
-      "help": "Requires use_asgi=y and Redis (channel layer)."
+      "__prompt__": "Include Django Channels / WebSockets? (needs ASGI + Redis)",
+      "n": "No",
+      "y": "Yes"
     },
     "reverse_proxy": {
-      "prompt": "Production reverse proxy (none, nginx, or traefik)",
-      "help": "none → expose app port only. nginx/traefik → TLS-ready proxy; Postgres stays internal."
+      "__prompt__": "Production reverse proxy",
+      "none": "None (expose app port)",
+      "nginx": "Nginx",
+      "traefik": "Traefik"
     },
     "use_code_style": {
-      "prompt": "Include code style tooling (y/n)",
-      "help": "Ruff + pre-commit git hooks."
+      "__prompt__": "Include Ruff + pre-commit?",
+      "y": "Yes",
+      "n": "No"
     },
     "use_testing": {
-      "prompt": "Include testing setup (y/n)",
-      "help": "pytest, pytest-django, factories, and default API/service tests."
+      "__prompt__": "Include pytest + default tests?",
+      "y": "Yes",
+      "n": "No"
     },
     "use_ci": {
-      "prompt": "Include CI pipeline (y/n)",
-      "help": "Adds a CI config file. Choose the provider with ci_provider."
+      "__prompt__": "Include CI pipeline?",
+      "n": "No",
+      "y": "Yes"
     },
     "ci_provider": {
-      "prompt": "CI provider (github or gitlab)",
-      "help": "Only used when use_ci=y. github → .github/workflows/ci.yml; gitlab → .gitlab-ci.yml."
+      "__prompt__": "CI provider (ignored if CI is No)",
+      "github": "GitHub Actions",
+      "gitlab": "GitLab CI"
     },
     "precommit_base": {
-      "prompt": "Pre-commit: file hygiene hooks (y/n)",
-      "help": "Whitespace, EOF, JSON/YAML/XML, merge conflicts, private keys, etc."
+      "__prompt__": "Pre-commit: file hygiene hooks?",
+      "y": "Yes",
+      "n": "No"
     },
     "precommit_pyupgrade": {
-      "prompt": "Pre-commit: pyupgrade (y/n)",
-      "help": "Modernize Python syntax for the project Python version."
+      "__prompt__": "Pre-commit: pyupgrade?",
+      "y": "Yes",
+      "n": "No"
     },
     "precommit_ruff": {
-      "prompt": "Pre-commit: Ruff (y/n)",
-      "help": "Lint and format Python with Ruff."
+      "__prompt__": "Pre-commit: Ruff?",
+      "y": "Yes",
+      "n": "No"
     },
     "precommit_pydoclint": {
-      "prompt": "Pre-commit: pydoclint (y/n)",
-      "help": "Google-style docstring checks."
+      "__prompt__": "Pre-commit: pydoclint?",
+      "y": "Yes",
+      "n": "No"
     },
     "precommit_translation_lint": {
-      "prompt": "Pre-commit: django-translation-lint (y/n)",
-      "help": "Ensures Django gettext strings use lowercase text."
+      "__prompt__": "Pre-commit: django-translation-lint?",
+      "y": "Yes",
+      "n": "No"
     }
   },
 

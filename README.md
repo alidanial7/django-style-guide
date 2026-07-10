@@ -31,29 +31,17 @@ pip install "cookiecutter>=2.4"
 
 ## Generate a project
 
-### Interactive UI (recommended)
-
-Clone the repo and run:
-
-```bash
-git clone https://github.com/alidanial7/django-style-guide.git
-cd django-style-guide
-./init.sh
-```
-
-The interactive UI uses keyboard-driven prompts:
-
-- **↑ / ↓** — move focus
-- **Space** — toggle (features) or select (single-choice)
-- **Enter** — confirm
-
-### Standard cookiecutter prompts
+### Interactive (recommended)
 
 ```bash
 cookiecutter https://github.com/alidanial7/django-style-guide.git
 ```
 
-Uses cookiecutter’s built-in prompts (same options). For the checklist UI, prefer `./init.sh`.
+Requires [cookiecutter 2.4+](https://cookiecutter.readthedocs.io/) (for the `pre_prompt` hook).
+
+On a TTY, the checklist UI runs automatically (↑/↓, Space, Enter). After generation the process may exit with code **143** — that is normal (the outer cookiecutter is stopped so you are not prompted twice).
+
+You can also clone and run `./init.sh` for the same UI.
 
 ### Non-interactive
 
