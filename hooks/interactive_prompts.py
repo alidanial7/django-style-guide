@@ -53,9 +53,10 @@ FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_rabbitmq", "RabbitMQ"),
     ("use_celery", "Celery"),
     ("use_code_style", "Code style tooling"),
+    ("use_testing", "Testing (pytest + default tests)"),
 )
 
-DEFAULT_FEATURES: frozenset[str] = frozenset({"use_jwt"})
+DEFAULT_FEATURES: frozenset[str] = frozenset({"use_jwt", "use_testing"})
 
 PRE_COMMIT_OPTIONS: tuple[tuple[str, str], ...] = (
     ("precommit_base", "File hygiene (whitespace, EOF, JSON/YAML, merge conflicts, …)"),
@@ -330,6 +331,7 @@ def collect_answers() -> dict[str, str] | None:
     use_rabbitmq = yn(selected_features, "use_rabbitmq")
     use_celery = yn(selected_features, "use_celery")
     use_code_style = yn(selected_features, "use_code_style")
+    use_testing = yn(selected_features, "use_testing")
 
     selected_precommit: set[str] = set()
     if use_code_style == "y":
@@ -397,6 +399,7 @@ def collect_answers() -> dict[str, str] | None:
         "use_rabbitmq": use_rabbitmq,
         "use_celery": use_celery,
         "use_code_style": use_code_style,
+        "use_testing": use_testing,
         "precommit_base": precommit_base if use_code_style == "y" else "n",
         "precommit_pyupgrade": precommit_pyupgrade if use_code_style == "y" else "n",
         "precommit_ruff": precommit_ruff if use_code_style == "y" else "n",

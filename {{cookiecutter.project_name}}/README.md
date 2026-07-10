@@ -10,7 +10,7 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 - PostgreSQL 17.10 · modular `config/settings/` layout
 - Production via Docker Compose (self-hosted, not Heroku)
 {%- if cookiecutter.use_jwt == "y" %}
-- JWT authentication (`users`, `authentication` apps)
+- JWT authentication (`users` app)
 {%- endif %}
 {%- if cookiecutter.use_redis == "y" %}
 - Redis 7.4.9 caching
@@ -124,7 +124,7 @@ Update profile with `PATCH /api/users/profile/` (`multipart/form-data` for avata
 {%- if cookiecutter.use_jwt == "y" %}
 ## JWT authentication
 
-Login at `POST /api/auth/jwt/login/` with `username` (your email) and `password`. Use the access token in the `Authorization: Bearer …` header.
+Login at `POST /api/auth/jwt/login/` with `email` and `password`. Use the access token in the `Authorization: Bearer …` header.
 
 Refresh tokens **rotate on every** `POST /api/auth/jwt/refresh/` call: the response includes a new `access` and a new `refresh`. The previous refresh token is blacklisted and cannot be reused.
 
@@ -164,8 +164,7 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 │   ├── common/
 │   ├── commands/         # management commands (devserver)
 {%- if cookiecutter.use_jwt == "y" %}
-│   ├── users/
-│   └── authentication/
+│   └── users/            # models/, manager/, selector/, services/, apis/, urls/
 {%- endif %}
 ├── docker/               # Dockerfiles and entrypoints
 ├── docker-compose.yml    # production
@@ -189,11 +188,15 @@ Update translation files:
 
 ## Testing
 
+{%- if cookiecutter.use_testing == "y" %}
 ```bash
 pytest
 ```
 
-Uses `config.django.test` (SQLite, eager Celery{%- if cookiecutter.use_celery == "y" %}{%- else %}, no Celery{%- endif %}).
+Uses `config.django.test` (SQLite, eager Celery{%- if cookiecutter.use_celery == "y" %}{%- else %}, no Celery{%- endif %}). Default tests cover health{%- if cookiecutter.use_jwt == "y" %}, auth, register, profile, user services, and selectors{%- endif %}.
+{%- else %}
+Testing tooling was not included at project generation. Add pytest later if needed.
+{%- endif %}
 
 ## Code quality
 

@@ -3,7 +3,7 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from {{cookiecutter.project_slug}}.core.health_checks import run_health_checks
+from {{cookiecutter.project_slug}}.core.services.health_checks import run_health_checks
 
 
 class ComponentHealthSerializer(serializers.Serializer):
@@ -33,9 +33,9 @@ class HealthApi(APIView):
         summary="Health check",
         description=(
             "Reports Django, database"
-{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}
-{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}
-{%- if cookiecutter.use_celery == "y" %}, and Celery{%- endif %}
+            "{% if cookiecutter.use_redis == 'y' %}, Redis{% endif %}"
+            "{% if cookiecutter.use_rabbitmq == 'y' %}, RabbitMQ{% endif %}"
+            "{% if cookiecutter.use_celery == 'y' %}, and Celery{% endif %}"
             " status. Returns HTTP 503 when any enabled dependency is unavailable."
         ),
         responses=OutputSerializer,

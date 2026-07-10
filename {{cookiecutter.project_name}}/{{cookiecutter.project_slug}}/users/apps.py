@@ -6,4 +6,4 @@ class UsersConfig(AppConfig):
     name = "{{cookiecutter.project_slug}}.users"
 
     def ready(self):
-        from . import signals  # noqa: F401
+        from {{cookiecutter.project_slug}}.users.signals import user_signals  # noqa: F401

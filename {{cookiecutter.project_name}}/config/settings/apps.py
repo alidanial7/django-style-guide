@@ -4,7 +4,6 @@ LOCAL_APPS = [
     "{{cookiecutter.project_slug}}.commands.apps.CommandsConfig",
 {%- if cookiecutter.use_jwt == "y" %}
     "{{cookiecutter.project_slug}}.users.apps.UsersConfig",
-    "{{cookiecutter.project_slug}}.authentication.apps.AuthenticationConfig",
 {%- endif %}
 ]
 

@@ -55,7 +55,7 @@ def check_database() -> dict[str, Any]:
         }
 
 
-{%- if cookiecutter.use_redis == "y" %}
+{% if cookiecutter.use_redis == "y" -%}
 def check_redis() -> dict[str, Any]:
     start = time.perf_counter()
     probe_key = "healthcheck:probe"
@@ -77,8 +77,7 @@ def check_redis() -> dict[str, Any]:
         }
 
 
-{%- endif %}
-{%- if cookiecutter.use_rabbitmq == "y" %}
+{% endif -%}{% if cookiecutter.use_rabbitmq == "y" -%}
 def _broker_url() -> str:
     return env(
         "RABBITMQ_URL",
@@ -111,8 +110,7 @@ def check_rabbitmq() -> dict[str, Any]:
         }
 
 
-{%- endif %}
-{%- if cookiecutter.use_celery == "y" %}
+{% endif -%}{% if cookiecutter.use_celery == "y" -%}
 def check_celery() -> dict[str, Any]:
     start = time.perf_counter()
     if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
@@ -145,23 +143,19 @@ def check_celery() -> dict[str, Any]:
         }
 
 
-{%- endif %}
+{% endif -%}
 def run_health_checks() -> dict[str, Any]:
     checks: dict[str, dict[str, Any]] = {
         "django": check_django(),
         "database": check_database(),
     }
 
-{%- if cookiecutter.use_redis == "y" %}
-    checks["redis"] = check_redis()
-{%- endif %}
-{%- if cookiecutter.use_rabbitmq == "y" %}
-    checks["rabbitmq"] = check_rabbitmq()
-{%- endif %}
-{%- if cookiecutter.use_celery == "y" %}
-    checks["celery"] = check_celery()
-{%- endif %}
-
+{% if cookiecutter.use_redis == "y" %}    checks["redis"] = check_redis()
+{% endif %}
+{% if cookiecutter.use_rabbitmq == "y" %}    checks["rabbitmq"] = check_rabbitmq()
+{% endif %}
+{% if cookiecutter.use_celery == "y" %}    checks["celery"] = check_celery()
+{% endif %}
     return {
         "status": _aggregate_status(checks),
         "checks": checks,

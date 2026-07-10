@@ -159,6 +159,7 @@
   /* -------------------------------------------------------------------------- */
   /*                                 🧪 test (pytest)                           */
   /* -------------------------------------------------------------------------- */
+{%- if cookiecutter.use_testing == "y" %}
   "python.testing.pytestEnabled": true,
   "python.testing.pytestPath": "${workspaceFolder}/venv/bin/pytest",
   "python.testing.unittestEnabled": false,
@@ -169,6 +170,10 @@
   "python.testing.env": {
     "DJANGO_SETTINGS_MODULE": "config.django.test"
   },
+{%- else %}
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": false,
+{%- endif %}
 
   /* -------------------------------------------------------------------------- */
   /*                                   🔧 git                                   */

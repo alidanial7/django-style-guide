@@ -18,6 +18,7 @@
   "use_rabbitmq": "n",
   "use_celery": "n",
   "use_code_style": "n",
+  "use_testing": "y",
   "precommit_base": "y",
   "precommit_pyupgrade": "y",
   "precommit_ruff": "y",
@@ -55,7 +56,7 @@
     },
     "use_jwt": {
       "prompt": "Include JWT authentication (y/n)",
-      "help": "Adds users + authentication apps."
+      "help": "Adds users app with JWT auth, register, and profile endpoints."
     },
     "use_sentry": {
       "prompt": "Include Sentry integration (y/n)",
@@ -84,6 +85,10 @@
     "use_code_style": {
       "prompt": "Include code style tooling (y/n)",
       "help": "Ruff + pre-commit git hooks."
+    },
+    "use_testing": {
+      "prompt": "Include testing setup (y/n)",
+      "help": "pytest, pytest-django, factories, and default API/service tests."
     },
     "precommit_base": {
       "prompt": "Pre-commit: file hygiene hooks (y/n)",

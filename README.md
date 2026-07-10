@@ -9,7 +9,7 @@ Production deployment uses **Docker Compose on your own server** — not Heroku 
 - Modular `config/settings/` layout (thin `config/django/base.py` aggregator)
 - Django REST Framework + drf-spectacular (OpenAPI)
 - Docker Compose for local infrastructure and production deployment
-- Optional JWT auth, Celery, Redis, RabbitMQ, Sentry, pgAdmin, VS Code, and Ruff/pre-commit
+- Optional JWT auth, Celery, Redis, RabbitMQ, Sentry, pgAdmin, VS Code, Ruff/pre-commit, and pytest
 - `python manage.py devserver` — migrate, create superuser, runserver, and optional Celery worker
 - `scripts/update_translations.sh` — i18n workflow with `makemessages`
 - `start-dev-services.sh` — one command to start dev Docker services
@@ -65,7 +65,7 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
 | `project_slug` | auto | Python package name (derived from project name) |
 | `license` | MIT | MIT, BEER, or None |
 | `postgres_user` / `postgres_password` | user / password | Local Postgres credentials |
-| `use_jwt` | y | JWT auth with users + authentication apps |
+| `use_jwt` | y | JWT auth with users app (auth + profile + register) |
 | `use_sentry` | n | Sentry SDK (activates only when `SENTRY_DSN` is set) |
 | `use_vscode` | n | VS Code settings and extension recommendations |
 | `use_pgadmin` | n | pgAdmin in dev Docker Compose (`:5050`) |
@@ -73,6 +73,7 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
 | `use_rabbitmq` | n | RabbitMQ message broker in Docker Compose |
 | `use_celery` | n | Celery worker + beat (**requires RabbitMQ**) |
 | `use_code_style` | n | Ruff + pre-commit hooks (replaces flake8-only setup) |
+| `use_testing` | y | pytest, factories, and default tests |
 | `precommit_base` | y | File hygiene hooks (only when `use_code_style=y`) |
 | `precommit_pyupgrade` | y | pyupgrade syntax modernizer |
 | `precommit_ruff` | y | Ruff lint + format |
@@ -111,7 +112,7 @@ my_project/
 │   ├── core/
 │   ├── common/
 │   ├── commands/            # devserver management command
-│   └── users/               # when use_jwt=y
+│   └── users/               # when use_jwt=y (models/, manager/, selector/, services/, apis/, urls/)
 ├── docker/                  # Dockerfiles and entrypoints
 ├── docker-compose.yml       # production stack
 ├── docker-compose.dev.yml   # local infrastructure

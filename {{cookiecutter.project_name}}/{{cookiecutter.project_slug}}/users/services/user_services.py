@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from .models import BaseUser, Profile
+from {{cookiecutter.project_slug}}.users.models import BaseUser, Profile
 
 
 def create_user(*, email: str, password: str) -> BaseUser:
