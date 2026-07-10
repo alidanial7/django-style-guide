@@ -113,7 +113,9 @@ Created automatically by `devserver` if it does not exist:
 - Email: `admin@example.com`
 - Password: `admin`
 
-A `Profile` (extended user data) is created automatically for every new user.
+A `Profile` (extended user data: `bio`, `avatar`) is created automatically for every new user.
+If no avatar is uploaded, the API returns the default static image at `/static/users/default_avatar.png`.
+Update profile with `PATCH /api/users/profile/` (`multipart/form-data` for avatar uploads).
 {%- else %}
 - Username: `admin`
 - Password: `admin`

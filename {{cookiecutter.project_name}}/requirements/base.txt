@@ -2,6 +2,7 @@ Django==5.2.16
 django-environ==0.14.0
 psycopg2-binary==2.9.12
 djangorestframework==3.16.1
+Pillow==11.3.0
 
 {%- if cookiecutter.use_celery == "y" %}
 celery==5.5.3
