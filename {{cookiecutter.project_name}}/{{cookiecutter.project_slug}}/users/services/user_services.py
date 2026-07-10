@@ -1,10 +1,16 @@
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
+from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
+from {{cookiecutter.project_slug}}.common.services import model_save
 from {{cookiecutter.project_slug}}.users.models import BaseUser, Profile
 
 
 def create_user(*, email: str, password: str) -> BaseUser:
-    return BaseUser.objects.create_user(email=email, password=password)
+    try:
+        return BaseUser.objects.create_user(email=email, password=password)
+    except IntegrityError as error:
+        map_integrity_error(error, model=BaseUser)
+        raise  # map_integrity_error never returns; keep type-checkers happy
 
 
 @transaction.atomic
@@ -27,7 +33,7 @@ def register(
         update_fields.append("avatar")
 
     if update_fields:
-        profile.save(update_fields=update_fields)
+        model_save(instance=profile, update_fields=update_fields)
 
     return user
 
@@ -44,6 +50,6 @@ def profile_update(*, profile: Profile, bio: str | None = None, avatar=None) -> 
         update_fields.append("avatar")
 
     if update_fields:
-        profile.save(update_fields=update_fields)
+        model_save(instance=profile, update_fields=update_fields)
 
     return profile

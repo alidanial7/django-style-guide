@@ -159,12 +159,12 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 │   ├── celery.py         # Celery app factory
 │   └── tasks.py
 ├── {{cookiecutter.project_slug}}/
-│   ├── api/              # DRF urls, handlers, pagination
+│   ├── api/              # DRF urls, thin legacy exception aliases
 │   ├── core/
-│   ├── common/
+│   ├── common/           # platform: validators/, errors/, db/integrity/, http/, services
 │   ├── commands/         # management commands (devserver)
 {%- if cookiecutter.use_jwt == "y" %}
-│   └── users/            # models/, manager/, selector/, services/, apis/, urls/
+│   └── users/            # models/, validators/, errors/, services/, apis/, …
 {%- endif %}
 ├── docker/               # Dockerfiles and entrypoints
 ├── docker-compose.yml    # production
@@ -172,6 +172,7 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 ├── start-dev-services.sh
 ├── scripts/
 │   └── update_translations.sh
+├── VALIDATION.md         # short validation layer cheat sheet
 └── locale/               # created by makemessages
 ```
 
@@ -197,6 +198,224 @@ Uses `config.django.test` (SQLite, eager Celery{%- if cookiecutter.use_celery ==
 {%- else %}
 Testing tooling was not included at project generation. Add pytest later if needed.
 {%- endif %}
+
+## Validation & errors
+
+This project separates **platform** concerns (`common`) from **domain** concerns (each app, e.g. `users`).  
+A short cheat sheet lives in [VALIDATION.md](VALIDATION.md). The sections below explain how to define and use each layer.
+
+### Layer map
+
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| Pure checks | `common/validators/` or `<app>/validators/` | `is_*` → `bool` only (no messages, no exceptions) |
+| Platform codes | `common/errors/codes.py` → `ErrorCode` | Shared machine codes (`required`, `unique`, `not_null`, …) |
+| Domain codes | `<app>/errors/codes.py` → e.g. `UserErrorCode` | App-specific codes (password, …). Codes only — never validators |
+| Raising validators | `<app>/validators/` | `@deconstructible` classes that raise Django `ValidationError` with `code=` |
+| Serializers | `<app>/apis/...` | Input shape + cross-field `validate()` only |
+| Services / writes | `<app>/services/` + `common/services.py` | Business rules + persistence; always map integrity errors |
+| Integrity mapping | `common/db/integrity/` | `IntegrityError` → field-keyed Django `ValidationError` / controlled `APIException` |
+| API envelope | `common/http/exception_handler.py` | Single DRF `EXCEPTION_HANDLER` response shape |
+
+**Do not** put domain password rules in `common`, raising validators in `errors/`, or business/permission rules in serializers/views.
+
+### API error envelope
+
+All handled API errors look like:
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "result": [],
+  "messages": {
+    "email": ["email already exists."],
+    "confirm_password": ["confirm password is not equal to password"]
+  }
+}
+```
+
+Wired in `config/settings/drf.py` to `common.http.exception_handler.api_exception_handler`.  
+`api/exception_handlers.py` is a thin legacy alias only — do not add a second implementation.
+
+### 1. Platform error codes (`common`)
+
+Use for integrity mapping and shared input problems:
+
+```python
+# common/errors/codes.py
+class ErrorCode(StrEnum):
+    INVALID_FORMAT = "invalid_format"
+    REQUIRED = "required"
+    NOT_NULL = "not_null"              # DB NOT NULL / pgcode 23502
+    UNIQUE = "unique"                  # unique / pgcode 23505
+    INVALID_REFERENCE = "invalid_reference"  # FK / pgcode 23503
+    UNKNOWN_INTEGRITY = "integrity_error"
+```
+
+`REQUIRED` = missing API/serializer input. `NOT_NULL` = database null violation. Keep them distinct.
+
+### 2. Domain error codes (per app)
+
+{%- if cookiecutter.use_jwt == "y" %}
+Password and other identity codes live under `users`, not `common`:
+
+```python
+# users/errors/codes.py
+class UserErrorCode(StrEnum):
+    PASSWORD_MISSING_NUMBER = "password_must_include_number"
+    PASSWORD_MISSING_LETTER = "password_must_include_letter"
+    PASSWORD_MISSING_SPECIAL = "password_must_include_special_char"
+    PASSWORD_MISMATCH = "password_mismatch"
+    PASSWORD_TOO_SHORT = "password_too_short"
+```
+
+Add new apps the same way: `<app>/errors/codes.py` with an app-prefixed enum name (e.g. `OrdersErrorCode`). Never reuse the platform name `ErrorCode` for domain codes.
+{%- else %}
+For each domain app, add `<app>/errors/codes.py` with an app-prefixed enum (e.g. `OrdersErrorCode`). Put only stable string codes there — never validator classes.
+{%- endif %}
+
+### 3. Pure validators (`is_*`)
+
+**Generic (any app):** add helpers under `common/validators/` (see the commented `is_slug` example in `common/validators/string.py`).
+
+```python
+def is_slug(value: str) -> bool:
+    return isinstance(value, str) and _SLUG_RE.fullmatch(value) is not None
+```
+
+{%- if cookiecutter.use_jwt == "y" %}
+**Domain (users passwords):** pure checks live at the top of `users/validators/password.py` next to the raising validators:
+
+```python
+def is_password_with_number(value: str) -> bool:
+    ...
+```
+
+Naming separates concerns inside one file: `is_*` (bool) vs `*Validator` (raises).
+{%- else %}
+**Domain:** put domain-specific `is_*` functions in that app’s `validators/` module (not in `common`).
+{%- endif %}
+
+Rules for every pure check: return `bool` only; no `ValidationError`, no `gettext`, no user-facing messages.
+
+### 4. Raising field validators (`*Validator`)
+
+Use Django’s `ValidationError` (not DRF’s) so the same class works on models and serializers:
+
+```python
+from django.core.exceptions import ValidationError
+from django.utils.deconstruct import deconstructible
+from django.utils.translation import gettext_lazy as _
+
+@deconstructible
+class PasswordNumberValidator:
+    code = UserErrorCode.PASSWORD_MISSING_NUMBER
+    message = _("password must include number")
+
+    def __call__(self, value: str) -> None:
+        if not is_password_with_number(value):
+            raise ValidationError(self.message, code=self.code)
+```
+
+{%- if cookiecutter.use_jwt == "y" %}
+Export a list for DRF fields:
+
+```python
+PASSWORD_VALIDATORS = [
+    validate_password_number,
+    validate_password_letter,
+    validate_password_special_char,
+    validate_password_min_length,
+]
+```
+
+Attach on the serializer:
+
+```python
+password = serializers.CharField(validators=PASSWORD_VALIDATORS)
+```
+
+**Two password paths (do not confuse them):**
+
+| Path | Setting / list | Used for |
+|------|----------------|----------|
+| API input | `users.validators.PASSWORD_VALIDATORS` | Register / DRF fields |
+| Django auth | `AUTH_PASSWORD_VALIDATORS` in `config/settings/auth.py` | Admin / `set_password` / Django’s built-ins |
+
+Wire domain validators into `AUTH_PASSWORD_VALIDATORS` only if you intentionally want the same rules on that path.
+{%- endif %}
+
+### 5. Serializers (shape + object rules only)
+
+- Field validators: reuse domain `*Validator` lists.
+- Cross-field rules: `validate()` with **field-keyed** errors and `gettext_lazy` messages.
+- Platform vs domain codes as appropriate:
+
+```python
+# missing input → ErrorCode.REQUIRED (platform)
+# password mismatch → UserErrorCode.PASSWORD_MISMATCH (domain)
+raise serializers.ValidationError(
+    {"confirm_password": [_("confirm password is not equal to password")]},
+    code=UserErrorCode.PASSWORD_MISMATCH,
+)
+```
+
+Do not put uniqueness checks or permission logic in serializers — uniqueness is enforced by the DB and mapped via integrity (below).
+
+### 6. Services and integrity mapping
+
+Every persistence path must either:
+
+1. go through `common.services.model_create` / `model_save` / `model_update`, or  
+2. catch `IntegrityError` and call `map_integrity_error` (raise-only; never returns):
+
+```python
+from django.db import IntegrityError
+from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
+from {{cookiecutter.project_slug}}.common.services import model_create
+
+# Preferred for ordinary model writes:
+instance = model_create(model_class=MyModel, data={...})
+
+# Manager-based creates that bypass model_create:
+try:
+    return MyModel.objects.create(...)
+except IntegrityError as error:
+    map_integrity_error(error, model=MyModel)
+    raise
+```
+
+`common/db/integrity/` prefers Postgres `pgcode` (`23505` unique, `23502` not null, `23503` FK) with SQLite message fallback. Known columns become **field-keyed** errors in `messages`.
+
+DB constraints (unique / FK / NOT NULL) remain the final authority; validators are UX, not a substitute for constraints.
+
+### 7. How to add a new field rule (checklist)
+
+1. **Pure check** — generic → `common/validators/`; domain → `<app>/validators/` as `is_*`.
+2. **Code** — platform → `common.errors.codes.ErrorCode`; domain → `<app>/errors/codes.py`.
+3. **Raising validator** — `@deconstructible` in `<app>/validators/`, Django `ValidationError` + `code=`.
+4. **Wire it** — model field when the rule is universal; serializer field for API input; cross-field only in `validate()`.
+5. **Persist safely** — add a DB constraint for uniqueness/FK/null; ensure writes use `model_*` helpers or `map_integrity_error`.
+
+### Example layout
+
+```text
+common/
+  validators/string.py     # commented generic is_* example
+  errors/codes.py          # ErrorCode (platform only)
+  db/integrity/            # parse.py + map.py → map_integrity_error
+  http/exception_handler.py
+  services.py              # model_create / model_save wrap IntegrityError
+{%- if cookiecutter.use_jwt == "y" %}
+
+users/
+  errors/codes.py          # UserErrorCode only
+  validators/password.py   # is_password_* + Password*Validator + PASSWORD_VALIDATORS
+  services/                # create_user / register map integrity
+  apis/.../register/       # serializers use PASSWORD_VALIDATORS + UserErrorCode
+{%- endif %}
+```
 
 ## Code quality
 

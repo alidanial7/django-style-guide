@@ -1,3 +1,4 @@
-from .validate_password import letter_validator, number_validator, special_char_validator
+"""Shared user utilities.
 
-__all__ = ["letter_validator", "number_validator", "special_char_validator"]
+Domain validators live in ``users.validators``.
+"""

@@ -23,13 +23,13 @@ class UsersRegisterApi(APIView):
     def post(self, request):
         serializer = UsersRegisterInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            user = register(
-                email=serializer.validated_data.get("email"),
-                password=serializer.validated_data.get("password"),
-                bio=serializer.validated_data.get("bio"),
-                avatar=serializer.validated_data.get("avatar"),
-            )
-        except Exception as ex:
-            return Response({"detail": f"database error: {ex}"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(UsersRegisterOutputSerializer(user, context={"request": request}).data)
+        user = register(
+            email=serializer.validated_data.get("email"),
+            password=serializer.validated_data.get("password"),
+            bio=serializer.validated_data.get("bio"),
+            avatar=serializer.validated_data.get("avatar"),
+        )
+        return Response(
+            UsersRegisterOutputSerializer(user, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )

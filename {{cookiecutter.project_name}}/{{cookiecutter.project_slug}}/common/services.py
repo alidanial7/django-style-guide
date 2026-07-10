@@ -1,21 +1,40 @@
 from typing import Any
 
+from django.db import IntegrityError, transaction
+
+from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
 from {{cookiecutter.project_slug}}.common.types import DjangoModelType
+
+
+def model_create(*, model_class: type[DjangoModelType], data: dict[str, Any]) -> DjangoModelType:
+    try:
+        with transaction.atomic():
+            instance = model_class(**data)
+            instance.full_clean()
+            instance.save()
+    except IntegrityError as error:
+        map_integrity_error(error, model=model_class)
+        raise
+    return instance
+
+
+def model_save(*, instance: DjangoModelType, update_fields: list[str] | None = None) -> DjangoModelType:
+    try:
+        with transaction.atomic():
+            instance.full_clean()
+            if update_fields is None:
+                instance.save()
+            else:
+                instance.save(update_fields=update_fields)
+    except IntegrityError as error:
+        map_integrity_error(error, model=instance.__class__)
+        raise
+    return instance
 
 
 def model_update(*, instance: DjangoModelType, fields: list[str], data: dict[str, Any]) -> tuple[DjangoModelType, bool]:
     """
-    Generic update service meant to be reused in local update services
-
-    For example:
-
-    def user_update(*, user: User, data) -> User:
-        fields = ['first_name', 'last_name']
-        user, has_updated = model_update(instance=user, fields=fields, data=data)
-
-        // Do other actions with the user here
-
-        return user
+    Generic update service meant to be reused in local update services.
 
     Return value: Tuple with the following elements:
         1. The instance we updated
@@ -24,7 +43,6 @@ def model_update(*, instance: DjangoModelType, fields: list[str], data: dict[str
     has_updated = False
 
     for field in fields:
-        # Skip if a field is not present in the actual data
         if field not in data:
             continue
 
@@ -32,12 +50,7 @@ def model_update(*, instance: DjangoModelType, fields: list[str], data: dict[str
             has_updated = True
             setattr(instance, field, data[field])
 
-    # Perform an update only if any of the fields was actually changed
     if has_updated:
-        instance.full_clean()
-        # Update only the fields that are meant to be updated.
-        # Django docs reference:
-        # https://docs.djangoproject.com/en/dev/ref/models/instances/#specifying-which-fields-to-save
-        instance.save(update_fields=fields)
+        model_save(instance=instance, update_fields=fields)
 
     return instance, has_updated
