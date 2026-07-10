@@ -9,6 +9,10 @@
 #   users/validators   → password.py (is_* pures + *Validator; naming separates them)
 #   common/db/integrity → IntegrityError → field-keyed ValidationError / APIException
 #   common/http        → API envelope {success, status, result, messages}
+#     messages.<field> = [{message, code}, ...]  (fallback code: invalid)
+#
+# Messages: use gettext_lazy / _() with lowercase msgids; parameterized
+# ValidationError messages use params={...} (do not pre-format with %).
 #
 # Password validators:
 #   API / DRF input uses users.validators.PASSWORD_VALIDATORS.

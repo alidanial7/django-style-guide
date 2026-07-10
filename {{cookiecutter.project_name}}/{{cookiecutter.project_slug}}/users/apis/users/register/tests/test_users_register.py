@@ -1,14 +1,18 @@
 import pytest
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ErrorDetail, ValidationError
 from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 
+from {{cookiecutter.project_slug}}.common.errors.codes import ErrorCode
 from {{cookiecutter.project_slug}}.common.http.exception_handler import api_exception_handler
+from {{cookiecutter.project_slug}}.core.exceptions import ApplicationError
 from {{cookiecutter.project_slug}}.users.apis.users.register.users_register_serializers import (
     UsersRegisterInputSerializer,
 )
+from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 
 
 @pytest.mark.django_db
@@ -40,7 +44,10 @@ class TestUsersRegisterValidation:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["success"] is False
-        assert "confirm_password" in response.data["messages"]
+        assert response.data["result"] == []
+        item = response.data["messages"]["confirm_password"][0]
+        assert item["code"] == UserErrorCode.PASSWORD_MISMATCH
+        assert "confirm password" in item["message"]
 
     def test_register_duplicate_email(self, api_client, user):
         url = reverse("api:users:register")
@@ -54,7 +61,9 @@ class TestUsersRegisterValidation:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["success"] is False
-        assert "email" in response.data["messages"]
+        item = response.data["messages"]["email"][0]
+        assert item["code"] == ErrorCode.UNIQUE
+        assert "message" in item
 
 
 def test_register_serializer_object_rule():
@@ -74,7 +83,7 @@ def test_exception_handler_envelope_shape():
     request = factory.get("/")
 
     response = api_exception_handler(
-        ValidationError({"email": ["already exists."]}),
+        ValidationError({"email": [ErrorDetail("email already exists.", code="unique")]}),
         {"request": request, "view": APIView()},
     )
 
@@ -83,13 +92,13 @@ def test_exception_handler_envelope_shape():
         "success": False,
         "status": 400,
         "result": [],
-        "messages": {"email": ["already exists."]},
+        "messages": {
+            "email": [{"message": "email already exists.", "code": "unique"}],
+        },
     }
 
 
 def test_exception_handler_django_validation_error():
-    from django.core.exceptions import ValidationError as DjangoValidationError
-
     factory = APIRequestFactory()
     request = factory.get("/")
 
@@ -102,4 +111,50 @@ def test_exception_handler_django_validation_error():
     assert response.data["success"] is False
     assert response.data["status"] == 400
     assert response.data["result"] == []
-    assert "email" in response.data["messages"]
+    item = response.data["messages"]["email"][0]
+    assert "message" in item
+    assert "code" in item
+
+
+def test_exception_handler_application_error():
+    factory = APIRequestFactory()
+    request = factory.get("/")
+
+    response = api_exception_handler(
+        ApplicationError("something went wrong", extra={"order_id": "missing"}),
+        {"request": request, "view": APIView()},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.data["success"] is False
+    assert response.data["status"] == 400
+    assert response.data["result"] == []
+    assert response.data["messages"]["non_field_errors"] == [
+        {"message": "something went wrong", "code": ErrorCode.APPLICATION_ERROR},
+    ]
+    assert response.data["messages"]["order_id"] == [
+        {"message": "missing", "code": ErrorCode.INVALID},
+    ]
+
+
+def test_exception_handler_unexpected_server_error():
+    factory = APIRequestFactory()
+    request = factory.get("/")
+
+    response = api_exception_handler(
+        RuntimeError("secret internals"),
+        {"request": request, "view": APIView()},
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.data == {
+        "success": False,
+        "status": 500,
+        "result": [],
+        "messages": {
+            "non_field_errors": [
+                {"message": "a server error occurred.", "code": ErrorCode.SERVER_ERROR},
+            ]
+        },
+    }
+    assert "secret" not in str(response.data)

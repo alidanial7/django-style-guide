@@ -178,6 +178,92 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 
 Settings are composed in `config/django/base.py` from `config/settings/*.py` modules.
 
+## Creating a new domain app
+
+Do **not** use Django’s default `startapp` — it creates a flat layout that does not match this style guide.
+
+**Naming:** prefer a **plural** app label, same as `users` — e.g. `blogs`, `orders`, `products` (not `blog` / `order`).
+
+Use the custom management command instead:
+
+```bash
+python manage.py start_domain_app blogs
+# or register LOCAL_APPS automatically:
+python manage.py start_domain_app blogs --register
+```
+
+This scaffolds under `{{cookiecutter.project_slug}}/<name>/`:
+
+```text
+blogs/
+├── apps.py                 # BlogsConfig → {{cookiecutter.project_slug}}.blogs
+├── admin.py
+├── constants.py
+├── models/                 # one module per model; export from __init__.py
+├── manager/
+├── selector/               # read queries (+ tests/ when testing is on)
+├── services/               # writes + business rules (+ tests/)
+├── apis/                   # DRF APIs / serializers (+ tests/)
+├── urls/
+│   └── blogs.py            # urlpatterns for this app
+├── validators/             # domain is_* + *Validator (+ tests/)
+├── errors/
+│   └── codes.py            # BlogsErrorCode (codes only)
+├── signals/
+├── utils/
+├── migrations/
+└── tests/                  # only if project has pytest.ini
+    ├── test_app.py         # smoke: AppConfig importable
+    └── blogs_factories.py  # commented factory stub
+```
+
+{%- if cookiecutter.use_testing == "y" %}
+If the project was generated **with testing** (`pytest.ini` present), the command also adds base test stubs under `tests/`, `services/tests/`, `selector/tests/`, `apis/tests/`, and `validators/tests/`. They collect and pass out of the box; replace the placeholders as you implement features.
+
+```bash
+pytest {{cookiecutter.project_slug}}/blogs -q
+```
+
+Use `--no-tests` to skip scaffolding tests even when pytest is available.
+{%- else %}
+This project was generated **without testing**, so `start_domain_app` skips test stubs (no `pytest.ini`). If you add pytest later, re-run with `--force` after adding `pytest.ini`, or create tests manually.
+{%- endif %}
+
+### After scaffolding
+
+1. **Register the app** (skip if you used `--register`):
+
+```python
+# config/settings/apps.py
+LOCAL_APPS = [
+    ...
+    "{{cookiecutter.project_slug}}.blogs.apps.BlogsConfig",
+]
+```
+
+2. **Wire URLs**:
+
+```python
+# {{cookiecutter.project_slug}}/api/urls.py
+path("blogs/", include(("{{cookiecutter.project_slug}}.blogs.urls.blogs", "blogs"))),
+```
+
+3. Add models under `models/`, then:
+
+```bash
+python manage.py makemigrations blogs
+python manage.py migrate
+```
+
+4. Follow the [Validation & errors](#validation--errors) rules for codes, validators, serializers, and `map_integrity_error` on writes.
+
+| Flag | Meaning |
+|------|---------|
+| *(none)* | Create files; print next steps |
+| `--register` | Also append `AppConfig` to `LOCAL_APPS` |
+| `--force` | Overwrite existing scaffold files in that app directory |
+| `--no-tests` | Skip test stubs even if `pytest.ini` exists |
+
 ## Translations
 
 Update translation files:
@@ -221,7 +307,7 @@ A short cheat sheet lives in [VALIDATION.md](VALIDATION.md). The sections below 
 
 ### API error envelope
 
-All handled API errors look like:
+All handled API errors (validation, integrity, auth/DRF, `ApplicationError`, unexpected 500) use one shape:
 
 ```json
 {
@@ -229,11 +315,17 @@ All handled API errors look like:
   "status": 400,
   "result": [],
   "messages": {
-    "email": ["email already exists."],
-    "confirm_password": ["confirm password is not equal to password"]
+    "email": [
+      { "message": "email already exists.", "code": "unique" }
+    ],
+    "confirm_password": [
+      { "message": "confirm password is not equal to password", "code": "password_mismatch" }
+    ]
   }
 }
 ```
+
+Each field maps to a list of `{ "message", "code" }` objects. If a raiser omitted `code=`, the handler falls back to `"invalid"`. Unexpected server errors use `"server_error"` and never leak internals.
 
 Wired in `config/settings/drf.py` to `common.http.exception_handler.api_exception_handler`.  
 `api/exception_handlers.py` is a thin legacy alias only — do not add a second implementation.
@@ -246,11 +338,14 @@ Use for integrity mapping and shared input problems:
 # common/errors/codes.py
 class ErrorCode(StrEnum):
     INVALID_FORMAT = "invalid_format"
+    INVALID = "invalid"                # fallback when raiser omitted code=
     REQUIRED = "required"
     NOT_NULL = "not_null"              # DB NOT NULL / pgcode 23502
     UNIQUE = "unique"                  # unique / pgcode 23505
     INVALID_REFERENCE = "invalid_reference"  # FK / pgcode 23503
     UNKNOWN_INTEGRITY = "integrity_error"
+    APPLICATION_ERROR = "application_error"
+    SERVER_ERROR = "server_error"
 ```
 
 `REQUIRED` = missing API/serializer input. `NOT_NULL` = database null violation. Keep them distinct.
@@ -301,7 +396,8 @@ Rules for every pure check: return `bool` only; no `ValidationError`, no `gettex
 
 ### 4. Raising field validators (`*Validator`)
 
-Use Django’s `ValidationError` (not DRF’s) so the same class works on models and serializers:
+Use Django’s `ValidationError` (not DRF’s) so the same class works on models and serializers.  
+User-facing `_()` / `gettext_lazy` msgids stay **lowercase**. Parameterized messages use `params=` (do not pre-format with `%`):
 
 ```python
 from django.core.exceptions import ValidationError
@@ -316,6 +412,21 @@ class PasswordNumberValidator:
     def __call__(self, value: str) -> None:
         if not is_password_with_number(value):
             raise ValidationError(self.message, code=self.code)
+
+
+@deconstructible
+class PasswordMinLengthValidator:
+    code = UserErrorCode.PASSWORD_TOO_SHORT
+    message = _("password must be at least %(limit_value)d characters")
+    limit_value = 10
+
+    def __call__(self, value: str) -> None:
+        if not isinstance(value, str) or len(value) < self.limit_value:
+            raise ValidationError(
+                self.message,
+                code=self.code,
+                params={"limit_value": self.limit_value},
+            )
 ```
 
 {%- if cookiecutter.use_jwt == "y" %}
@@ -493,6 +604,8 @@ App: http://localhost:8000
 | Command | Description |
 |---------|-------------|
 | `./start-dev-services.sh` | Start dev Docker services |
+| `python manage.py start_domain_app <name>` | Scaffold a domain app (style-guide layout) |
+| `python manage.py start_domain_app <name> --register` | Scaffold + add to `LOCAL_APPS` |
 | `python manage.py devserver` | Migrate, superuser, runserver{%- if cookiecutter.use_celery == "y" %}, Celery{%- endif %} |
 | `python manage.py runserver` | Django dev server only |
 | `./scripts/update_translations.sh` | Update `.po` translation files |

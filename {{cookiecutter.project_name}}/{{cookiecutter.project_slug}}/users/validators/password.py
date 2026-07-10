@@ -67,8 +67,9 @@ class PasswordMinLengthValidator:
     def __call__(self, value: str) -> None:
         if not isinstance(value, str) or len(value) < self.limit_value:
             raise ValidationError(
-                self.message % {"limit_value": self.limit_value},
+                self.message,
                 code=self.code,
+                params={"limit_value": self.limit_value},
             )
 
 

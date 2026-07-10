@@ -31,14 +31,15 @@ def map_integrity_error(error: IntegrityError, *, model: type[Model]) -> None:
             raise ValidationError(
                 {
                     field: ValidationError(
-                        _("%(field)s already exists.") % {"field": _field_label(model, field)},
+                        _("%(field)s already exists."),
                         code=ErrorCode.UNIQUE,
+                        params={"field": _field_label(model, field)},
                     )
                     for field in parsed.columns
                 }
             )
         raise ValidationError(
-            _("A conflicting record already exists."),
+            _("a conflicting record already exists."),
             code=ErrorCode.UNIQUE,
         )
 
@@ -47,29 +48,29 @@ def map_integrity_error(error: IntegrityError, *, model: type[Model]) -> None:
             raise ValidationError(
                 {
                     field: ValidationError(
-                        _("This field cannot be null."),
+                        _("this field cannot be null."),
                         code=ErrorCode.NOT_NULL,
                     )
                     for field in parsed.columns
                 }
             )
-        raise ValidationError(_("A required database field is missing."), code=ErrorCode.NOT_NULL)
+        raise ValidationError(_("a required database field is missing."), code=ErrorCode.NOT_NULL)
 
     if parsed.error_type == IntegrityErrorType.FOREIGN_KEY:
         if parsed.columns:
             raise ValidationError(
                 {
                     field: ValidationError(
-                        _("Invalid reference."),
+                        _("invalid reference."),
                         code=ErrorCode.INVALID_REFERENCE,
                     )
                     for field in parsed.columns
                 }
             )
-        raise ValidationError(_("Invalid reference."), code=ErrorCode.INVALID_REFERENCE)
+        raise ValidationError(_("invalid reference."), code=ErrorCode.INVALID_REFERENCE)
 
     logger.exception("Unhandled integrity error for model %s", model.__name__, exc_info=error)
     raise APIException(
-        detail=_("Could not complete the request due to a data conflict."),
+        detail=_("could not complete the request due to a data conflict."),
         code=ErrorCode.UNKNOWN_INTEGRITY,
     )
