@@ -9,6 +9,7 @@
 
   "postgres_user": "user",
   "postgres_password": "password",
+  "postgres_version": "17.10",
 
   "use_jwt": "y",
   "use_sentry": "n",
@@ -17,7 +18,11 @@
   "use_redis": "n",
   "use_rabbitmq": "n",
   "use_celery": "n",
-  "use_code_style": "n",
+  "celery_broker": "redis",
+  "use_asgi": "n",
+  "use_websockets": "n",
+  "reverse_proxy": "none",
+  "use_code_style": "y",
   "use_testing": "y",
   "use_ci": "n",
   "ci_provider": "github",
@@ -56,9 +61,13 @@
       "prompt": "PostgreSQL password",
       "help": "Database password for local Docker Compose and .env defaults."
     },
+    "postgres_version": {
+      "prompt": "PostgreSQL version (e.g. 17.10, 16.8, 15.12)",
+      "help": "Docker image tag for postgres (postgres:<version>)."
+    },
     "use_jwt": {
-      "prompt": "Include JWT authentication (y/n)",
-      "help": "Adds users app with JWT auth, register, and profile endpoints."
+      "prompt": "Use JWT authentication (y/n; n = session auth)",
+      "help": "y → JWT (simplejwt). n → session-based auth. Users app is always included."
     },
     "use_sentry": {
       "prompt": "Include Sentry integration (y/n)",
@@ -74,15 +83,31 @@
     },
     "use_redis": {
       "prompt": "Include Redis (y/n)",
-      "help": "Adds Redis to dev Docker Compose and django-redis cache."
+      "help": "Adds Redis to Docker Compose and django-redis cache."
     },
     "use_rabbitmq": {
       "prompt": "Include RabbitMQ (y/n)",
-      "help": "Message broker. Required when Celery is enabled."
+      "help": "Message broker. Required when Celery uses the RabbitMQ broker."
     },
     "use_celery": {
       "prompt": "Include Celery (y/n)",
-      "help": "Celery worker + beat. Requires RabbitMQ."
+      "help": "Celery worker + beat. Choose broker with celery_broker."
+    },
+    "celery_broker": {
+      "prompt": "Celery broker (redis or rabbitmq)",
+      "help": "Only used when use_celery=y. redis requires use_redis=y; rabbitmq requires use_rabbitmq=y."
+    },
+    "use_asgi": {
+      "prompt": "Use ASGI server in production (y/n)",
+      "help": "y → Uvicorn instead of Gunicorn. Required for WebSockets."
+    },
+    "use_websockets": {
+      "prompt": "Include Django Channels / WebSockets (y/n)",
+      "help": "Requires use_asgi=y and Redis (channel layer)."
+    },
+    "reverse_proxy": {
+      "prompt": "Production reverse proxy (none, nginx, or traefik)",
+      "help": "none → expose app port only. nginx/traefik → TLS-ready proxy; Postgres stays internal."
     },
     "use_code_style": {
       "prompt": "Include code style tooling (y/n)",

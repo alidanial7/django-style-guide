@@ -1,0 +1,124 @@
+name: Template CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: template-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-and-test:
+    name: Generate (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: jwt-defaults
+            project_dir: JwtDefaults
+            extra: >-
+              project_name=JwtDefaults
+              use_jwt=y
+              use_redis=n
+              use_rabbitmq=n
+              use_celery=n
+              use_asgi=n
+              use_websockets=n
+              reverse_proxy=none
+              use_code_style=y
+              use_testing=y
+              use_ci=n
+          - name: session-redis-celery
+            project_dir: SessionCelery
+            extra: >-
+              project_name=SessionCelery
+              use_jwt=n
+              use_redis=y
+              use_rabbitmq=n
+              use_celery=y
+              celery_broker=redis
+              use_asgi=n
+              use_websockets=n
+              reverse_proxy=nginx
+              use_code_style=y
+              use_testing=y
+              use_ci=n
+          - name: asgi-websockets
+            project_dir: AsgiWs
+            extra: >-
+              project_name=AsgiWs
+              use_jwt=y
+              use_redis=y
+              use_rabbitmq=n
+              use_celery=n
+              use_asgi=y
+              use_websockets=y
+              reverse_proxy=traefik
+              use_code_style=y
+              use_testing=y
+              use_ci=n
+
+    services:
+      postgres:
+        image: postgres:17.10
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install cookiecutter
+        run: |
+          python -m pip install --upgrade pip
+          pip install "cookiecutter>=2.4"
+
+      - name: Generate project
+        env:
+          DSG_COOKIECUTTER_SKIP_PROMPT_UI: "1"
+        run: |
+          cookiecutter . --no-input \
+            ${{ matrix.extra }} \
+            postgres_user=user \
+            postgres_password=password \
+            postgres_version=17.10
+
+      - name: Install generated project deps
+        working-directory: ${{ matrix.project_dir }}
+        run: |
+          python -m pip install -r requirements_dev.txt
+
+      - name: Django check
+        working-directory: ${{ matrix.project_dir }}
+        env:
+          DJANGO_SETTINGS_MODULE: config.django.test
+          SECRET_KEY: ci-secret-key-not-for-production
+          DATABASE_URL: psql://user:password@127.0.0.1:5432/test_db
+        run: python manage.py check
+
+      - name: Pytest
+        working-directory: ${{ matrix.project_dir }}
+        env:
+          DJANGO_SETTINGS_MODULE: config.django.test
+          SECRET_KEY: ci-secret-key-not-for-production
+          DATABASE_URL: psql://user:password@127.0.0.1:5432/test_db
+        run: pytest -q --cov-fail-under=0

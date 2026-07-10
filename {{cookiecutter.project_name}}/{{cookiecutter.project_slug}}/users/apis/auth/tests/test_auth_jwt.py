@@ -10,6 +10,7 @@ from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 
 
 @pytest.mark.django_db
+{%- if cookiecutter.use_jwt == "y" %}
 class TestAuthJwt:
     def test_login_success(self, api_client, user):
         url = reverse("api:auth:login")
@@ -78,6 +79,37 @@ class TestAuthJwt:
             format="json",
         )
         assert reuse.status_code == status.HTTP_401_UNAUTHORIZED
+{%- else %}
+class TestAuthSession:
+    def test_login_success(self, api_client, user):
+        url = reverse("api:auth:login")
+        response = api_client.post(
+            url,
+            data={"email": user.email, "password": "Password1!x"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["success"] is True
+        assert response.data["result"]["email"] == user.email
+
+    def test_login_invalid_credentials(self, api_client, user):
+        url = reverse("api:auth:login")
+        response = api_client.post(
+            url,
+            data={"email": user.email, "password": "wrong-password"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["success"] is False
+
+    def test_logout(self, api_client, user):
+        api_client.force_login(user)
+        response = api_client.post(reverse("api:auth:logout"), format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["success"] is True
+{%- endif %}
 
 
 @pytest.mark.django_db

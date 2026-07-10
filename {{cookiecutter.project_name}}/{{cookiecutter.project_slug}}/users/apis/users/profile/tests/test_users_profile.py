@@ -8,7 +8,12 @@ class TestUsersProfileApi:
     def test_profile_requires_auth(self, api_client):
         url = reverse("api:users:profile")
         response = api_client.get(url)
+{%- if cookiecutter.use_jwt == "y" %}
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+{%- else %}
+        # SessionAuthentication returns 403 when unauthenticated.
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+{%- endif %}
 
     def test_get_profile(self, auth_client, user):
         url = reverse("api:users:profile")

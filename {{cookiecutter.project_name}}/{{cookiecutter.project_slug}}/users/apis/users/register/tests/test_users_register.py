@@ -32,7 +32,9 @@ class TestUsersRegisterValidation:
         assert response.data["success"] is True
         assert response.data["status"] == 201
         assert response.data["result"]["email"] == "new@example.com"
+{%- if cookiecutter.use_jwt == "y" %}
         assert "access" in response.data["result"]["token"]
+{%- endif %}
 
     def test_register_password_mismatch(self, api_client):
         url = reverse("api:users:register")

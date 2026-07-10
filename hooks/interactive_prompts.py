@@ -45,19 +45,23 @@ class _Colors:
 COLORS = _Colors()
 
 FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
-    ("use_jwt", "JWT authentication"),
+    ("use_jwt", "JWT authentication (off = session auth)"),
     ("use_sentry", "Sentry monitoring"),
     ("use_vscode", "VS Code configuration"),
     ("use_pgadmin", "pgAdmin (dev)"),
     ("use_redis", "Redis"),
     ("use_rabbitmq", "RabbitMQ"),
     ("use_celery", "Celery"),
+    ("use_asgi", "ASGI (Uvicorn)"),
+    ("use_websockets", "WebSockets (Django Channels)"),
     ("use_code_style", "Code style tooling"),
     ("use_testing", "Testing (pytest + default tests)"),
     ("use_ci", "CI pipeline"),
 )
 
-DEFAULT_FEATURES: frozenset[str] = frozenset({"use_jwt", "use_testing"})
+DEFAULT_FEATURES: frozenset[str] = frozenset(
+    {"use_jwt", "use_testing", "use_code_style"}
+)
 
 PRE_COMMIT_OPTIONS: tuple[tuple[str, str], ...] = (
     ("precommit_base", "File hygiene (whitespace, EOF, JSON/YAML, merge conflicts, …)"),
@@ -68,6 +72,13 @@ PRE_COMMIT_OPTIONS: tuple[tuple[str, str], ...] = (
 )
 
 DEFAULT_PRE_COMMIT: frozenset[str] = frozenset(key for key, _ in PRE_COMMIT_OPTIONS)
+
+POSTGRES_VERSIONS: tuple[tuple[str, str], ...] = (
+    ("17.10", "PostgreSQL 17.10"),
+    ("16.8", "PostgreSQL 16.8"),
+    ("15.12", "PostgreSQL 15.12"),
+    ("14.17", "PostgreSQL 14.17"),
+)
 
 
 def slugify(value: str) -> str:
@@ -315,6 +326,12 @@ def collect_answers() -> dict[str, str] | None:
     print_section("Database defaults")
     postgres_user = prompt_text("PostgreSQL user", "user")
     postgres_password = prompt_text("PostgreSQL password", "password")
+    postgres_version = prompt_radio(
+        "PostgreSQL version",
+        "Docker image tag for the Postgres service.",
+        POSTGRES_VERSIONS,
+        default_index=0,
+    )
 
     print_section("Features")
     selected_features = prompt_multiselect(
@@ -331,9 +348,62 @@ def collect_answers() -> dict[str, str] | None:
     use_redis = yn(selected_features, "use_redis")
     use_rabbitmq = yn(selected_features, "use_rabbitmq")
     use_celery = yn(selected_features, "use_celery")
+    use_asgi = yn(selected_features, "use_asgi")
+    use_websockets = yn(selected_features, "use_websockets")
     use_code_style = yn(selected_features, "use_code_style")
     use_testing = yn(selected_features, "use_testing")
     use_ci = yn(selected_features, "use_ci")
+
+    celery_broker = "redis"
+    if use_celery == "y":
+        print_section("Celery broker")
+        celery_broker = prompt_radio(
+            "Celery broker",
+            "Message broker for Celery worker and beat.",
+            (
+                ("redis", "Redis (also enables Redis if needed)"),
+                ("rabbitmq", "RabbitMQ (also enables RabbitMQ if needed)"),
+            ),
+            default_index=0,
+        )
+        if celery_broker == "redis" and use_redis != "y":
+            print(
+                f"  {COLORS.yellow}↳ Celery broker is Redis — Redis will be enabled.{COLORS.reset}"
+            )
+            use_redis = "y"
+            selected_features.add("use_redis")
+        if celery_broker == "rabbitmq" and use_rabbitmq != "y":
+            print(
+                f"  {COLORS.yellow}↳ Celery broker is RabbitMQ — RabbitMQ will be enabled.{COLORS.reset}"
+            )
+            use_rabbitmq = "y"
+            selected_features.add("use_rabbitmq")
+
+    if use_websockets == "y":
+        if use_asgi != "y":
+            print(
+                f"  {COLORS.yellow}↳ WebSockets require ASGI — ASGI will be enabled.{COLORS.reset}"
+            )
+            use_asgi = "y"
+            selected_features.add("use_asgi")
+        if use_redis != "y":
+            print(
+                f"  {COLORS.yellow}↳ WebSockets require Redis — Redis will be enabled.{COLORS.reset}"
+            )
+            use_redis = "y"
+            selected_features.add("use_redis")
+
+    print_section("Production reverse proxy")
+    reverse_proxy = prompt_radio(
+        "Reverse proxy",
+        "Optional TLS-ready front proxy for production Compose.",
+        (
+            ("none", "None — expose the app port directly"),
+            ("nginx", "Nginx"),
+            ("traefik", "Traefik"),
+        ),
+        default_index=0,
+    )
 
     ci_provider = "none"
     if use_ci == "y":
@@ -370,23 +440,21 @@ def collect_answers() -> dict[str, str] | None:
     precommit_pydoclint = yn(selected_precommit, "precommit_pydoclint")
     precommit_translation_lint = yn(selected_precommit, "precommit_translation_lint")
 
-    if use_celery == "y" and use_rabbitmq != "y":
-        print()
-        print(
-            f"  {COLORS.yellow}↳ Celery requires RabbitMQ — RabbitMQ will be enabled.{COLORS.reset}"
-        )
-        use_rabbitmq = "y"
-        selected_features.add("use_rabbitmq")
-
     print_section("Summary")
     c = COLORS
     print(
         f"  {c.bold}Project{c.reset}     {project_name} {c.dim}({project_slug}){c.reset}"
     )
     print(f"  {c.bold}License{c.reset}     {license_choice}")
+    print(f"  {c.bold}Postgres{c.reset}    {postgres_version}")
     print(
         f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}"
     )
+    if use_celery == "y":
+        print(f"  {c.bold}Celery{c.reset}      broker={celery_broker}")
+    print(f"  {c.bold}Proxy{c.reset}       {reverse_proxy}")
+    auth_mode = "JWT" if use_jwt == "y" else "session"
+    print(f"  {c.bold}Auth{c.reset}        {auth_mode}")
     if use_ci == "y":
         provider_label = "GitHub Actions" if ci_provider == "github" else "GitLab CI"
         print(f"  {c.bold}CI{c.reset}          {provider_label}")
@@ -409,6 +477,7 @@ def collect_answers() -> dict[str, str] | None:
         "license": license_choice,
         "postgres_user": postgres_user,
         "postgres_password": postgres_password,
+        "postgres_version": postgres_version,
         "use_jwt": use_jwt,
         "use_sentry": use_sentry,
         "use_vscode": use_vscode,
@@ -416,6 +485,10 @@ def collect_answers() -> dict[str, str] | None:
         "use_redis": use_redis,
         "use_rabbitmq": use_rabbitmq,
         "use_celery": use_celery,
+        "celery_broker": celery_broker if use_celery == "y" else "redis",
+        "use_asgi": use_asgi,
+        "use_websockets": use_websockets,
+        "reverse_proxy": reverse_proxy,
         "use_code_style": use_code_style,
         "use_testing": use_testing,
         "use_ci": use_ci,
@@ -431,7 +504,7 @@ def collect_answers() -> dict[str, str] | None:
 
 
 def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) -> None:
-    """Generate the project with cookiecutter, skipping this hook's UI."""
+    """Generate the project with cookiecutter, skipping this hook's UI tip."""
     os.environ["DSG_COOKIECUTTER_SKIP_PROMPT_UI"] = "1"
 
     from cookiecutter.main import cookiecutter

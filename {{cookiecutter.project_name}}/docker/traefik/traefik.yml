@@ -1,0 +1,7 @@
+# Minimal Traefik static config. Docker provider is configured via compose command.
+# For TLS, add a certificatesResolvers block and an HTTPS entrypoint.
+api:
+  dashboard: false
+
+log:
+  level: INFO

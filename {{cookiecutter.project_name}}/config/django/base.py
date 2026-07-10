@@ -23,6 +23,9 @@ from config.settings.sessions import *  # noqa
 from config.settings.static_media import *  # noqa
 from config.settings.swagger import *  # noqa
 from config.settings.templates import *  # noqa
+{%- if cookiecutter.use_websockets == "y" %}
+from config.settings.channels import *  # noqa
+{%- endif %}
 {%- if cookiecutter.use_sentry == "y" %}
 from config.settings.sentry import *  # noqa
 {%- endif %}

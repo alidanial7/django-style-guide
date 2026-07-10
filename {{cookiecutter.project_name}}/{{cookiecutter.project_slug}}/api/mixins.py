@@ -2,10 +2,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, IsAuthenticated
 {%- if cookiecutter.use_jwt == "y" %}
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+{%- else %}
+from rest_framework.authentication import SessionAuthentication
 {%- endif %}
 
 
@@ -35,10 +36,9 @@ class ApiAuthMixin:
     authentication_classes: Sequence[type[BaseAuthentication]] = [
         JWTAuthentication,
     ]
-    permission_classes: PermissionClassesType = (IsAuthenticated,)
 {%- else %}
-    """Opt-in auth mixin. Enable JWT (use_jwt=y) for JWTAuthentication + IsAuthenticated."""
-
-    authentication_classes: Sequence[type[BaseAuthentication]] = []
-    permission_classes: PermissionClassesType = ()
+    authentication_classes: Sequence[type[BaseAuthentication]] = [
+        SessionAuthentication,
+    ]
 {%- endif %}
+    permission_classes: PermissionClassesType = (IsAuthenticated,)

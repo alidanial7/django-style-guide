@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Local cookiecutter generation smoke tests
+_gen_*/
+
 # C extensions
 *.so
 

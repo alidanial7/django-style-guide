@@ -4,15 +4,20 @@ A [Cookiecutter](https://github.com/cookiecutter/cookiecutter) template for Djan
 
 Production deployment uses **Docker Compose on your own server** — not Heroku or other third-party PaaS.
 
+> **Repository:** [github.com/alidanial7/django-style-guide](https://github.com/alidanial7/django-style-guide)
+
 ## Features
 
 - Modular `config/settings/` layout (thin `config/django/base.py` aggregator)
-- Django REST Framework + drf-spectacular (OpenAPI)
+- Django REST Framework + drf-spectacular (OpenAPI; Swagger only when `DEBUG=True`)
 - Docker Compose for local infrastructure and production deployment
-- Optional JWT auth, Celery, Redis, RabbitMQ, Sentry, pgAdmin, VS Code, Ruff/pre-commit, pytest, and CI (GitHub Actions or GitLab CI)
-- `python manage.py devserver` — migrate, create superuser, runserver, and optional Celery worker
-- `scripts/update_translations.sh` — i18n workflow with `makemessages`
-- `start-dev-services.sh` — one command to start dev Docker services
+- Optional reverse proxy: **Nginx** or **Traefik**
+- Auth: **JWT** or **session** (users app always included)
+- Optional Celery with broker choice: **Redis** or **RabbitMQ**
+- Optional ASGI (Uvicorn) and Django Channels / WebSockets
+- Optional Sentry, Redis, RabbitMQ, pgAdmin, VS Code, Ruff/pre-commit, pytest, CI
+- `python manage.py start_domain_app` — HackSoft-style domain scaffolding
+- `python manage.py devserver` — migrate, create superuser, runserver, optional Celery
 
 ## Prerequisites
 
@@ -26,13 +31,15 @@ pip install "cookiecutter>=2.4"
 
 ## Generate a project
 
-### Interactive (recommended)
+### Interactive UI (recommended)
+
+Clone the repo and run:
 
 ```bash
-cookiecutter https://github.com/alidanial7/django_style_guide.git
+git clone https://github.com/alidanial7/django-style-guide.git
+cd django-style-guide
+./init.sh
 ```
-
-Requires [cookiecutter 2.4+](https://cookiecutter.readthedocs.io/) (for the `pre_prompt` hook).
 
 The interactive UI uses keyboard-driven prompts:
 
@@ -40,21 +47,27 @@ The interactive UI uses keyboard-driven prompts:
 - **Space** — toggle (features) or select (single-choice)
 - **Enter** — confirm
 
-Features are shown as a single checklist — select everything you want in one screen.
+### Standard cookiecutter prompts
 
-When **code style tooling** is enabled, a second checklist lets you pick which **pre-commit hook groups** to include (all selected by default; use Space to deselect any you do not want).
+```bash
+cookiecutter https://github.com/alidanial7/django-style-guide.git
+```
 
-You can also clone the repo and run `./init.sh`, which uses the same UI.
+Uses cookiecutter’s built-in prompts (same options). For the checklist UI, prefer `./init.sh`.
 
 ### Non-interactive
 
 ```bash
-cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
+cookiecutter https://github.com/alidanial7/django-style-guide.git --no-input \
   project_name="My Project" \
   use_jwt=y \
   use_redis=y \
-  use_rabbitmq=y \
   use_celery=y \
+  celery_broker=redis \
+  reverse_proxy=nginx \
+  postgres_version=17.10 \
+  use_asgi=n \
+  use_websockets=n \
   use_ci=y \
   ci_provider=github
 ```
@@ -64,73 +77,31 @@ cookiecutter https://github.com/alidanial7/django_style_guide.git --no-input \
 | Option | Default | Description |
 |--------|---------|-------------|
 | `project_name` | MyProject | Human-readable project name |
-| `project_slug` | auto | Python package name (derived from project name) |
+| `project_slug` | auto | Python package name |
 | `license` | MIT | MIT, BEER, or None |
 | `postgres_user` / `postgres_password` | user / password | Local Postgres credentials |
-| `use_jwt` | y | JWT auth with users app (auth + profile + register) |
-| `use_sentry` | n | Sentry SDK (activates only when `SENTRY_DSN` is set) |
-| `use_vscode` | n | VS Code settings and extension recommendations |
-| `use_pgadmin` | n | pgAdmin in dev Docker Compose (`:5050`) |
-| `use_redis` | n | Redis cache + dev Docker service |
-| `use_rabbitmq` | n | RabbitMQ message broker in Docker Compose |
-| `use_celery` | n | Celery worker + beat (**requires RabbitMQ**) |
-| `use_code_style` | n | Ruff + pre-commit hooks (replaces flake8-only setup) |
-| `use_testing` | y | pytest, factories, and default tests |
-| `use_ci` | n | CI pipeline config |
-| `ci_provider` | github | `github` (Actions) or `gitlab` (GitLab CI); only when `use_ci=y` |
-| `precommit_base` | y | File hygiene hooks (only when `use_code_style=y`) |
-| `precommit_pyupgrade` | y | pyupgrade syntax modernizer |
-| `precommit_ruff` | y | Ruff lint + format |
-| `precommit_pydoclint` | y | Google-style docstring lint |
-| `precommit_translation_lint` | y | Django gettext lowercase lint |
-
-When using the interactive UI with code style enabled, hook groups are selected via a multiselect (all on by default). With `--no-input`, all hook groups default to `y` if `use_code_style=y`.
-
-### Pre-commit hook groups (when `use_code_style=y`)
-
-| Group | Purpose |
-|-------|---------|
-| **File hygiene** | Whitespace, EOF, JSON/YAML/XML, merge conflicts, private keys, AST checks |
-| **pyupgrade** | Modern Python 3.12 syntax |
-| **Ruff** | Lint (`E`, `F`, `W`, `I`) and format |
-| **pydoclint** | Google-style docstrings |
-| **django-translation-lint** | Lowercase Django translation strings |
+| `postgres_version` | 17.10 | Docker Postgres image tag |
+| `use_jwt` | y | `y` → JWT; `n` → session auth (users app always kept) |
+| `use_sentry` | n | Sentry SDK (activates when `SENTRY_DSN` is set) |
+| `use_vscode` | n | VS Code settings |
+| `use_pgadmin` | n | pgAdmin in dev Compose (`:5050`) |
+| `use_redis` | n | Redis cache (+ required for Redis Celery / WebSockets) |
+| `use_rabbitmq` | n | RabbitMQ broker |
+| `use_celery` | n | Celery worker + beat |
+| `celery_broker` | redis | `redis` or `rabbitmq` (when Celery is on) |
+| `use_asgi` | n | Uvicorn instead of Gunicorn |
+| `use_websockets` | n | Django Channels (requires ASGI + Redis) |
+| `reverse_proxy` | none | `none`, `nginx`, or `traefik` |
+| `use_code_style` | y | Ruff + pre-commit |
+| `use_testing` | y | pytest + default tests |
+| `use_ci` | n | CI pipeline |
+| `ci_provider` | github | `github` or `gitlab` |
 
 ### Dependencies between options
 
-- **Celery → RabbitMQ**: if you enable Celery, RabbitMQ must be enabled too. Generation fails with a clear message otherwise.
-- **CI → provider**: if you enable CI, choose **GitHub Actions** or **GitLab CI**. Interactive mode asks after the features checklist; with `--no-input` set `use_ci=y` and `ci_provider=github` or `ci_provider=gitlab`.
-- **Redis**, **pgAdmin**, **Sentry**, **VS Code**, and **code style** are independent.
-
-## Project layout (generated)
-
-```
-my_project/
-├── config/                  # Django project config
-│   ├── django/              # base, local, production, test settings
-│   ├── settings/            # apps, auth, cache, celery, drf, i18n, ...
-│   ├── urls.py
-│   ├── celery.py
-│   └── tasks.py
-├── my_project/              # Application package (project_slug)
-│   ├── api/                 # DRF layer
-│   ├── core/
-│   ├── common/
-│   ├── commands/            # devserver management command
-│   └── users/               # when use_jwt=y (models/, manager/, selector/, services/, apis/, urls/)
-├── docker/                  # Dockerfiles and entrypoints
-├── docker-compose.yml       # production stack
-├── docker-compose.dev.yml   # local infrastructure
-├── start-dev-services.sh
-├── .github/workflows/       # when use_ci=y and ci_provider=github
-├── .gitlab-ci.yml           # when use_ci=y and ci_provider=gitlab
-├── scripts/
-│   └── update_translations.sh
-└── requirements/
-    ├── base.txt
-    ├── local.txt
-    └── production.txt
-```
+- **Celery → broker**: Redis broker requires `use_redis=y`; RabbitMQ broker requires `use_rabbitmq=y`.
+- **WebSockets → ASGI + Redis**.
+- **CI → provider**: `github` or `gitlab` when `use_ci=y`.
 
 ## After generation
 
@@ -143,17 +114,17 @@ cd my_project
 python3.12 -m venv venv && source venv/bin/activate
 pip install -r requirements_dev.txt
 cp .env.example .env
-./start-dev-services.sh    # in another terminal, or run with -d via compose
+./start-dev-services.sh
 python manage.py devserver
 ```
 
-- API docs: `http://localhost:8000/` (Swagger)
-- Admin: `http://localhost:8000/admin/`
-- API base: `http://localhost:8000/api/v1/`
+## Template CI
+
+This repository’s GitHub Actions workflow generates sample projects (JWT, session+Celery, ASGI+WebSockets) and runs their checks/tests.
 
 ## Contributing
 
-Issues and pull requests are welcome on [GitHub](https://github.com/alidanial7/django_style_guide).
+Issues and pull requests are welcome on [GitHub](https://github.com/alidanial7/django-style-guide).
 
 ## License
 

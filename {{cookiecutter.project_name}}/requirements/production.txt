@@ -1,6 +1,8 @@
 -r base.txt
 
+{%- if cookiecutter.use_asgi != "y" %}
 gunicorn==24.1.1
+{%- endif %}
 {%- if cookiecutter.use_sentry == "y" %}
 sentry-sdk==2.64.0
 {%- endif %}

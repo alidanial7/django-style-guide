@@ -1,7 +1,9 @@
 from drf_spectacular.utils import extend_schema_field
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+{%- if cookiecutter.use_jwt == "y" %}
 from rest_framework_simplejwt.tokens import RefreshToken
+{%- endif %}
 
 from {{cookiecutter.project_slug}}.common.errors.codes import ErrorCode
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
@@ -34,14 +36,22 @@ class UsersRegisterInputSerializer(serializers.Serializer):
             )
         return data
 
+
 class UsersRegisterOutputSerializer(serializers.ModelSerializer):
+{%- if cookiecutter.use_jwt == "y" %}
     token = serializers.SerializerMethodField("get_token")
+{%- endif %}
     avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = BaseUser
+{%- if cookiecutter.use_jwt == "y" %}
         fields = ("email", "avatar", "token", "created_at", "updated_at")
+{%- else %}
+        fields = ("email", "avatar", "created_at", "updated_at")
+{%- endif %}
 
+{%- if cookiecutter.use_jwt == "y" %}
     @extend_schema_field(
         serializers.DictField(
             child=serializers.CharField(),
@@ -55,6 +65,7 @@ class UsersRegisterOutputSerializer(serializers.ModelSerializer):
             "access": str(refresh.access_token),
         }
 
+{%- endif %}
     @extend_schema_field(serializers.URLField())
     def get_avatar(self, user: BaseUser) -> str:
         return get_avatar_url(profile=user.profile, request=self.context.get("request"))

@@ -2,7 +2,11 @@ from config.env import env
 
 # https://docs.celeryproject.org/en/stable/userguide/configuration.html
 
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="amqp://guest:guest@localhost//")
+{%- if cookiecutter.celery_broker == "redis" %}
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+{%- else %}
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="amqp://guest:guest@localhost:5672//")
+{%- endif %}
 CELERY_RESULT_BACKEND = "django-db"
 
 CELERY_TIMEZONE = "UTC"

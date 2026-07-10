@@ -29,8 +29,6 @@ def check_django() -> dict[str, Any]:
         "status": "ok",
         "latency_ms": _latency_ms(start),
         "version": django.get_version(),
-        "settings_module": settings.SETTINGS_MODULE,
-        "debug": settings.DEBUG,
     }
 
 
@@ -44,14 +42,11 @@ def check_database() -> dict[str, Any]:
         return {
             "status": "ok",
             "latency_ms": _latency_ms(start),
-            "engine": settings.DATABASES["default"]["ENGINE"],
-            "name": settings.DATABASES["default"].get("NAME"),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "status": "error",
             "latency_ms": _latency_ms(start),
-            "detail": str(exc),
         }
 
 
@@ -66,14 +61,11 @@ def check_redis() -> dict[str, Any]:
         return {
             "status": "ok",
             "latency_ms": _latency_ms(start),
-            "backend": settings.CACHES["default"]["BACKEND"],
-            "location": settings.CACHES["default"].get("LOCATION"),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "status": "error",
             "latency_ms": _latency_ms(start),
-            "detail": str(exc),
         }
 
 
@@ -98,15 +90,11 @@ def check_rabbitmq() -> dict[str, Any]:
         return {
             "status": "ok",
             "latency_ms": _latency_ms(start),
-            "host": host,
-            "port": port,
         }
-    except OSError as exc:
+    except OSError:
         return {
             "status": "error",
             "latency_ms": _latency_ms(start),
-            "detail": str(exc),
-            "broker_url": broker_url,
         }
 
 
@@ -117,7 +105,6 @@ def check_celery() -> dict[str, Any]:
         return {
             "status": "ok",
             "latency_ms": _latency_ms(start),
-            "detail": "tasks run eagerly in this environment (worker not required)",
         }
 
     try:
@@ -128,18 +115,15 @@ def check_celery() -> dict[str, Any]:
             return {
                 "status": "error",
                 "latency_ms": _latency_ms(start),
-                "detail": "no celery workers responded",
             }
         return {
             "status": "ok",
             "latency_ms": _latency_ms(start),
-            "workers": sorted(ping.keys()),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "status": "error",
             "latency_ms": _latency_ms(start),
-            "detail": str(exc),
         }
 
 

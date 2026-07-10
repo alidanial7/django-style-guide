@@ -1,16 +1,29 @@
 # {{cookiecutter.project_name}}
 
-Django REST API project generated from the [Django Style Guide](https://github.com/alidanial7/django_style_guide) cookiecutter.
+Django REST API project generated from the [Django Style Guide](https://github.com/alidanial7/django-style-guide) cookiecutter.
 
 Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide).
 
 ## Stack
 
 - Python 3.12 · Django 5.2 · Django REST Framework · drf-spectacular
-- PostgreSQL 17.10 · modular `config/settings/` layout
+- PostgreSQL {{cookiecutter.postgres_version}} · modular `config/settings/` layout
 - Production via Docker Compose (self-hosted, not Heroku)
+{%- if cookiecutter.reverse_proxy == "nginx" %}
+- Nginx reverse proxy (static + media + app)
+{%- elif cookiecutter.reverse_proxy == "traefik" %}
+- Traefik reverse proxy
+{%- endif %}
 {%- if cookiecutter.use_jwt == "y" %}
 - JWT authentication (`users` app)
+{%- else %}
+- Session authentication (`users` app)
+{%- endif %}
+{%- if cookiecutter.use_asgi == "y" %}
+- ASGI via Uvicorn
+{%- endif %}
+{%- if cookiecutter.use_websockets == "y" %}
+- Django Channels / WebSockets
 {%- endif %}
 {%- if cookiecutter.use_redis == "y" %}
 - Redis 7.4.9 caching
@@ -19,7 +32,7 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 - RabbitMQ message broker
 {%- endif %}
 {%- if cookiecutter.use_celery == "y" %}
-- Celery worker + beat
+- Celery worker + beat (broker: {{cookiecutter.celery_broker}})
 {%- endif %}
 {%- if cookiecutter.use_code_style == "y" %}
 - Ruff linting/formatting · pre-commit hooks
@@ -125,7 +138,7 @@ This starts:
 
 | Service | Address |
 |---------|---------|
-| PostgreSQL 17.10 | `localhost:5432` |
+| PostgreSQL {{cookiecutter.postgres_version}} | `localhost:5432` |
 {%- if cookiecutter.use_redis == "y" %}
 | Redis 7.4.9 | `localhost:6379` |
 {%- endif %}
@@ -157,17 +170,12 @@ python manage.py runserver
 
 Created automatically by `devserver` if it does not exist:
 
-{%- if cookiecutter.use_jwt == "y" %}
 - Email: `admin@example.com`
 - Password: `admin`
 
 A `Profile` (extended user data: `bio`, `avatar`) is created automatically for every new user.
 If no avatar is uploaded, the API returns the default static image at `/static/users/default_avatar.png`.
 Update profile with `PATCH /api/v1/users/profile/` (`multipart/form-data` for avatar uploads).
-{%- else %}
-- Username: `admin`
-- Password: `admin`
-{%- endif %}
 
 {%- if cookiecutter.use_jwt == "y" %}
 ## JWT authentication
@@ -198,18 +206,38 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 
 Password-reset emails use `EMAIL_*` / `DEFAULT_FROM_EMAIL` / `APP_DOMAIN` from `.env` (console backend by default).
 
+> **Not included by design:** email verification, social login, and 2FA. Add those in your product layer when you need them (e.g. confirm email before issuing tokens, or integrate allauth/social providers).
+
+{%- else %}
+## Session authentication
+
+Login at `POST /api/v1/auth/session/login/` with `email` and `password`. The server sets a session cookie.
+
+Logout at `POST /api/v1/auth/session/logout/` (authenticated). Browser / cookie clients must send a valid CSRF token on unsafe methods (`POST`/`PATCH`/`PUT`/`DELETE`).
+
+| Endpoint | Auth | Notes |
+|----------|------|-------|
+| `POST /api/v1/auth/session/login/` | public | throttled (`auth`) |
+| `POST /api/v1/auth/session/logout/` | session | |
+| `POST /api/v1/auth/password/change/` | session | current + new password |
+| `POST /api/v1/auth/password/reset/` | public | emails reset uid/token (console backend locally) |
+| `POST /api/v1/auth/password/reset/confirm/` | public | `{ uid, token, new_password, confirm_password }` |
+| `POST /api/v1/users/register/` | public | creates user and logs them in |
+
+> **Not included by design:** email verification, social login, and 2FA. Implement those in your app when required.
+
 {%- endif %}
 
 ## URLs
 
 | URL | Description |
 |-----|-------------|
-| http://localhost:8000/ | Swagger UI |
-| http://localhost:8000/redoc/ | ReDoc |
-| http://localhost:8000/schema/ | OpenAPI schema |
+| http://localhost:8000/ | Swagger UI (**DEBUG only**) |
+| http://localhost:8000/redoc/ | ReDoc (**DEBUG only**) |
+| http://localhost:8000/schema/ | OpenAPI schema (**DEBUG only**) |
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API routes (v1) |
-| http://localhost:8000/api/v1/health/ | Health check (Django, DB{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}{%- if cookiecutter.use_celery == "y" %}, Celery{%- endif %}) |
+| http://localhost:8000/api/v1/health/ | Health check (status + latency only; no secrets) |
 
 ## Project structure
 
@@ -346,7 +374,7 @@ Update translation files:
 pytest
 ```
 
-Uses `config.django.test` (SQLite, eager Celery{%- if cookiecutter.use_celery == "y" %}{%- else %}, no Celery{%- endif %}). Default tests cover health{%- if cookiecutter.use_jwt == "y" %}, auth, register, profile, user services, and selectors{%- endif %}.
+Uses `config.django.test` (Postgres when `DATABASE_URL` is set, otherwise SQLite; eager Celery{%- if cookiecutter.use_celery == "y" %}{%- else %}, no Celery{%- endif %}). Default tests cover health, auth, register, profile, user services, and selectors. CI runs against Postgres.
 {%- else %}
 Testing tooling was not included at project generation. Add pytest later if needed.
 {%- endif %}
@@ -357,14 +385,14 @@ Testing tooling was not included at project generation. Add pytest later if need
 {%- if cookiecutter.ci_provider == "github" %}
 GitHub Actions workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-Runs on pushes/PRs to `main`/`master`: lint, `manage.py check`,{%- if cookiecutter.use_testing == "y" %} and `pytest`{%- endif %}.
+Runs on pushes/PRs to `main`/`master`: lint, mypy, `manage.py check`,{%- if cookiecutter.use_testing == "y" %} and `pytest` (with coverage; Postgres service){%- endif %}.
 {%- elif cookiecutter.ci_provider == "gitlab" %}
 GitLab CI config: [`.gitlab-ci.yml`](.gitlab-ci.yml).
 
-Pipeline stage `check`: lint, `manage.py check`,{%- if cookiecutter.use_testing == "y" %} and `pytest`{%- endif %}.
+Pipeline stage `check`: lint, mypy, `manage.py check`,{%- if cookiecutter.use_testing == "y" %} and `pytest` (Postgres service){%- endif %}.
 {%- endif %}
 
-CI uses{%- if cookiecutter.use_testing == "y" %} `config.django.test` (SQLite){%- else %} `config.django.local` with a SQLite `DATABASE_URL`{%- endif %} — no Postgres service is required for the default pipeline.
+CI uses{%- if cookiecutter.use_testing == "y" %} `config.django.test` with a Postgres service{%- else %} `config.django.local` with a SQLite `DATABASE_URL`{%- endif %}.
 {%- endif %}
 
 ## Validation & errors
@@ -547,14 +575,14 @@ Attach on the serializer:
 password = serializers.CharField(validators=PASSWORD_VALIDATORS)
 ```
 
-**Two password paths (do not confuse them):**
+**Password policy (API + Django auth share the same domain rules):**
 
 | Path | Setting / list | Used for |
 |------|----------------|----------|
 | API input | `users.validators.PASSWORD_VALIDATORS` | Register / DRF fields |
-| Django auth | `AUTH_PASSWORD_VALIDATORS` in `config/settings/auth.py` | Admin / `set_password` / Django’s built-ins |
+| Django auth | `AUTH_PASSWORD_VALIDATORS` in `config/settings/auth.py` | Admin / `set_password` (includes `Password*DjangoValidator` adapters + Django built-ins) |
 
-Wire domain validators into `AUTH_PASSWORD_VALIDATORS` only if you intentionally want the same rules on that path.
+Wire domain validators into `AUTH_PASSWORD_VALIDATORS` via the `Password*DjangoValidator` adapters (already configured) so admin/`set_password` and API share the same rules.
 {%- endif %}
 
 ### 5. Serializers (shape + object rules only)
@@ -675,6 +703,8 @@ cp .env.example .env
 
 Set `DJANGO_SETTINGS_MODULE=config.django.production`, a strong `SECRET_KEY`, and `ALLOWED_HOSTS`.
 
+When serving HTTPS, also set `SESSION_COOKIE_SECURE=true`, `CSRF_COOKIE_SECURE=true`, `SECURE_SSL_REDIRECT=true`, `SECURE_HSTS_SECONDS=31536000`, and `CSRF_TRUSTED_ORIGINS`.
+
 {%- if cookiecutter.use_sentry == "y" %}
 Optionally set `SENTRY_DSN` to enable Sentry (only activates when the DSN is set).
 {%- endif %}
@@ -687,21 +717,38 @@ docker compose up --build -d
 
 This starts:
 
-- PostgreSQL 17.10
+- PostgreSQL {{cookiecutter.postgres_version}} (internal network only — not published)
+{%- if cookiecutter.use_redis == "y" %}
+- Redis
+{%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
 - RabbitMQ
 {%- endif %}
+{%- if cookiecutter.use_asgi == "y" %}
+- Django (Uvicorn on port 8000)
+{%- else %}
 - Django (gunicorn on port 8000)
+{%- endif %}
 {%- if cookiecutter.use_celery == "y" %}
 - Celery worker
 - Celery beat
 {%- endif %}
+{%- if cookiecutter.reverse_proxy == "nginx" %}
+- Nginx on port 80 (proxies app; serves `/static/` and `/media/`)
+{%- elif cookiecutter.reverse_proxy == "traefik" %}
+- Traefik on port 80 (proxies app; configure TLS for real domains)
+{%- endif %}
 
-App: http://localhost:8000
+{%- if cookiecutter.reverse_proxy == "none" %}
+App: http://localhost:8000  
+Uploaded media is served by Django from the `media-data` volume when no reverse proxy was selected. Prefer regenerating with `reverse_proxy=nginx` for production traffic.
+{%- elif cookiecutter.reverse_proxy == "nginx" %}
+App: http://localhost/  
+{%- else %}
+App: http://localhost/  
+{%- endif %}
 
 The production Compose file runs the image as built (no source bind-mount). Rebuild after code changes: `docker compose up --build -d`.
-
-Uploaded media is stored in the named volume `media-data` mounted at `/app/media`. Django serves `/media/` in production for this self-hosted setup; put a reverse proxy in front for higher traffic.
 
 ## Useful commands
 

@@ -2,6 +2,7 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
+from django.utils.translation import gettext as gettext_eager
 from django.utils.translation import gettext_lazy as _
 
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
@@ -84,3 +85,30 @@ PASSWORD_VALIDATORS = [
     validate_password_special_char,
     validate_password_min_length,
 ]
+
+
+# === Django AUTH_PASSWORD_VALIDATORS adapters (same rules as API) ===
+
+
+class PasswordNumberDjangoValidator:
+    def validate(self, password, user=None):
+        validate_password_number(password)
+
+    def get_help_text(self):
+        return gettext_eager("password must include number")
+
+
+class PasswordLetterDjangoValidator:
+    def validate(self, password, user=None):
+        validate_password_letter(password)
+
+    def get_help_text(self):
+        return gettext_eager("password must include letter")
+
+
+class PasswordSpecialCharDjangoValidator:
+    def validate(self, password, user=None):
+        validate_password_special_char(password)
+
+    def get_help_text(self):
+        return gettext_eager("password must include special char")

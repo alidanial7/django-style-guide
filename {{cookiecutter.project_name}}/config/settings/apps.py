@@ -2,9 +2,7 @@ LOCAL_APPS = [
     "{{cookiecutter.project_slug}}.core.apps.CoreConfig",
     "{{cookiecutter.project_slug}}.common.apps.CommonConfig",
     "{{cookiecutter.project_slug}}.commands.apps.CommandsConfig",
-{%- if cookiecutter.use_jwt == "y" %}
     "{{cookiecutter.project_slug}}.users.apps.UsersConfig",
-{%- endif %}
 ]
 
 THIRD_PARTY_APPS = [
@@ -16,6 +14,9 @@ THIRD_PARTY_APPS = [
 {%- endif %}
 {%- if cookiecutter.use_jwt == "y" %}
     "rest_framework_simplejwt.token_blacklist",
+{%- endif %}
+{%- if cookiecutter.use_websockets == "y" %}
+    "channels",
 {%- endif %}
     "corsheaders",
     "drf_spectacular",

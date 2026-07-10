@@ -1,5 +1,7 @@
 from .base import *  # noqa
 
+from config.env import env
+
 # Based on https://www.hacksoft.io/blog/optimize-django-build-to-run-faster-on-github-actions
 
 DEBUG = False
@@ -47,9 +49,23 @@ CACHES = {
     }
 }
 
-DATABASES = {
+STORAGES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "db.sqlite3",
-    }
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
 }
+
+# Prefer Postgres when DATABASE_URL is set (CI). Fall back to SQLite for quick local runs.
+_database_url = env.str("DATABASE_URL", default="")
+if _database_url:
+    DATABASES = {"default": env.db("DATABASE_URL")}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "db.sqlite3",
+        }
+    }

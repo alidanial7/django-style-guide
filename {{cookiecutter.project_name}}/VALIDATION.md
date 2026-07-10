@@ -18,9 +18,9 @@
 #
 # Password validators:
 #   API / DRF input uses users.validators.PASSWORD_VALIDATORS.
-#   Django AUTH_PASSWORD_VALIDATORS (settings) is the admin/auth-change-password path
-#   (Django's built-in validators). Do not confuse the two; wire domain validators into
-#   AUTH_PASSWORD_VALIDATORS only if you intentionally want the same rules on that path.
+#   Django AUTH_PASSWORD_VALIDATORS includes the same domain rules via
+#   Password*DjangoValidator adapters (plus Django built-ins). Keep both in sync
+#   when changing password policy.
 #
 # Write paths: common.services.model_create/model_save, or
 #   except IntegrityError: map_integrity_error(...)  (e.g. users.services.create_user)

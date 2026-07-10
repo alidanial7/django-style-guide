@@ -1,3 +1,6 @@
+{%- if cookiecutter.use_jwt != "y" %}
+from django.contrib.auth import login
+{%- endif %}
 from drf_spectacular.utils import extend_schema
 from rest_framework import parsers, status
 from rest_framework.throttling import ScopedRateThrottle
@@ -32,6 +35,9 @@ class UsersRegisterApi(APIView):
             bio=serializer.validated_data.get("bio"),
             avatar=serializer.validated_data.get("avatar"),
         )
+{%- if cookiecutter.use_jwt != "y" %}
+        login(request, user)
+{%- endif %}
         return api_response(
             data=UsersRegisterOutputSerializer(user, context={"request": request}).data,
             http_status=status.HTTP_201_CREATED,

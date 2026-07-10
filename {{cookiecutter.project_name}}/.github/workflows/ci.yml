@@ -15,6 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+{%- if cookiecutter.use_testing == "y" %}
+    services:
+      postgres:
+        image: postgres:{{cookiecutter.postgres_version}}
+        env:
+          POSTGRES_DB: {{cookiecutter.project_slug}}
+          POSTGRES_USER: {{cookiecutter.postgres_user}}
+          POSTGRES_PASSWORD: {{cookiecutter.postgres_password}}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U {{cookiecutter.postgres_user}} -d {{cookiecutter.project_slug}}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+{%- endif %}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,10 +62,23 @@ jobs:
         run: flake8 .
 {%- endif %}
 
+      - name: Mypy
+        env:
+{%- if cookiecutter.use_testing == "y" %}
+          DJANGO_SETTINGS_MODULE: config.django.test
+          DATABASE_URL: psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@127.0.0.1:5432/{{cookiecutter.project_slug}}
+{%- else %}
+          DJANGO_SETTINGS_MODULE: config.django.local
+          DATABASE_URL: sqlite:///ci.sqlite3
+{%- endif %}
+          SECRET_KEY: ci-secret-key-not-for-production
+        run: mypy {{cookiecutter.project_slug}}
+
       - name: Django system check
         env:
 {%- if cookiecutter.use_testing == "y" %}
           DJANGO_SETTINGS_MODULE: config.django.test
+          DATABASE_URL: psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@127.0.0.1:5432/{{cookiecutter.project_slug}}
 {%- else %}
           DJANGO_SETTINGS_MODULE: config.django.local
           DATABASE_URL: sqlite:///ci.sqlite3
@@ -60,6 +90,7 @@ jobs:
       - name: Pytest
         env:
           DJANGO_SETTINGS_MODULE: config.django.test
+          DATABASE_URL: psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@127.0.0.1:5432/{{cookiecutter.project_slug}}
           SECRET_KEY: ci-secret-key-not-for-production
         run: pytest -q
 {%- endif %}

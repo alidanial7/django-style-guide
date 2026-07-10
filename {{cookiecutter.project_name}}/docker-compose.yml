@@ -1,11 +1,7 @@
-version: "3.9"
-
 services:
   db:
-    image: postgres:17.10
+    image: postgres:{{cookiecutter.postgres_version}}
     container_name: {{cookiecutter.project_slug}}_postgres
-    ports:
-      - 5432:5432
     environment:
       - POSTGRES_DB={{cookiecutter.project_slug}}
       - POSTGRES_USER={{cookiecutter.postgres_user}}
@@ -17,7 +13,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
+{%- if cookiecutter.use_redis == "y" %}
+  redis:
+    image: redis:7.4.9
+    container_name: {{cookiecutter.project_slug}}_redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+{%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
   rabbitmq:
     image: "rabbitmq:alpine"
@@ -27,6 +38,7 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
+    restart: unless-stopped
 
 {%- endif %}
   django:
@@ -39,20 +51,45 @@ services:
       - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
-{%- if cookiecutter.use_celery == "y" %}
+{%- if cookiecutter.use_redis == "y" %}
+      - REDIS_LOCATION=redis://redis:6379
+{%- endif %}
+{%- if cookiecutter.use_celery == "y" and cookiecutter.celery_broker == "redis" %}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+{%- elif cookiecutter.use_celery == "y" %}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+{%- endif %}
+{%- if cookiecutter.use_rabbitmq == "y" %}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672//
 {%- endif %}
       - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - media-data:/app/media
+      - static-data:/app/staticfiles
+{%- if cookiecutter.reverse_proxy == "none" %}
     ports:
       - "8000:8000"
+{%- else %}
+    expose:
+      - "8000"
+{%- endif %}
     depends_on:
       db:
         condition: service_healthy
+{%- if cookiecutter.use_redis == "y" %}
+      redis:
+        condition: service_healthy
+{%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
       rabbitmq:
         condition: service_healthy
+{%- endif %}
+{%- if cookiecutter.reverse_proxy == "traefik" %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{cookiecutter.project_slug}}.rule=Host(`localhost`)"
+      - "traefik.http.routers.{{cookiecutter.project_slug}}.entrypoints=web"
+      - "traefik.http.services.{{cookiecutter.project_slug}}.loadbalancer.server.port=8000"
 {%- endif %}
     restart: on-failure
 
@@ -67,15 +104,27 @@ services:
       - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
+{%- if cookiecutter.celery_broker == "redis" %}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+{%- else %}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+{%- endif %}
+{%- if cookiecutter.use_redis == "y" %}
+      - REDIS_LOCATION=redis://redis:6379
+{%- endif %}
       - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - media-data:/app/media
     depends_on:
       db:
         condition: service_healthy
+{%- if cookiecutter.celery_broker == "redis" %}
+      redis:
+        condition: service_healthy
+{%- else %}
       rabbitmq:
         condition: service_healthy
+{%- endif %}
     restart: on-failure
 
   beats:
@@ -88,19 +137,70 @@ services:
       - .env
     environment:
       - DATABASE_URL=psql://{{cookiecutter.postgres_user}}:{{cookiecutter.postgres_password}}@db:5432/{{cookiecutter.project_slug}}
+{%- if cookiecutter.celery_broker == "redis" %}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+{%- else %}
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+{%- endif %}
+{%- if cookiecutter.use_redis == "y" %}
+      - REDIS_LOCATION=redis://redis:6379
+{%- endif %}
       - DJANGO_SETTINGS_MODULE=config.django.production
     volumes:
       - media-data:/app/media
     depends_on:
       db:
         condition: service_healthy
+{%- if cookiecutter.celery_broker == "redis" %}
+      redis:
+        condition: service_healthy
+{%- else %}
       rabbitmq:
         condition: service_healthy
+{%- endif %}
     restart: on-failure
+
+{%- endif %}
+{%- if cookiecutter.reverse_proxy == "nginx" %}
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: {{cookiecutter.project_slug}}_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - media-data:/app/media:ro
+      - static-data:/app/staticfiles:ro
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
+
+{%- elif cookiecutter.reverse_proxy == "traefik" %}
+  traefik:
+    image: traefik:v3.3
+    container_name: {{cookiecutter.project_slug}}_traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--api.dashboard=false"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    depends_on:
+      django:
+        condition: service_healthy
+    restart: unless-stopped
 
 {%- endif %}
 
 volumes:
   postgres-data:
   media-data:
+  static-data:
+{%- if cookiecutter.use_redis == "y" %}
+  redis-data:
+{%- endif %}

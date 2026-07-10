@@ -1,10 +1,10 @@
 from config.env import env
 
-SECRET_KEY = env(
-    "SECRET_KEY",
-    default="=ug_ucl@yi6^mrcjyz%(u0%&g2adt#bz3@yos%#@*t#t!ypx=a",
-)
+# Never ship a production secret as a code default. Local `.env` / `.env.example`
+# provide a disposable key for development only.
+SECRET_KEY = env("SECRET_KEY")
 
-DEBUG = env.bool("DEBUG", default=True)
+# Prefer False in shared settings; local.py turns DEBUG on explicitly.
+DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
