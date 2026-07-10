@@ -113,7 +113,7 @@ Created automatically by `devserver` if it does not exist:
 - Email: `admin@example.com`
 - Password: `admin`
 
-A `Profile` row is created automatically for every new user (including `createsuperuser` and registration).
+A `Profile` (extended user data) is created automatically for every new user.
 {%- else %}
 - Username: `admin`
 - Password: `admin`
@@ -144,6 +144,7 @@ After upgrading, run `python manage.py migrate` to create the token blacklist ta
 | http://localhost:8000/schema/ | OpenAPI schema |
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/ | API routes |
+| http://localhost:8000/api/health/ | Health check (Django, DB{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}{%- if cookiecutter.use_celery == "y" %}, Celery{%- endif %}) |
 
 ## Project structure
 

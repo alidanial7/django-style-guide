@@ -15,24 +15,26 @@ from .validators import letter_validator, number_validator, special_char_validat
 
 class ProfileApi(ApiAuthMixin, APIView):
     class OutPutSerializer(serializers.ModelSerializer):
+        email = serializers.EmailField(source="user.email", read_only=True)
+
         class Meta:
             model = Profile
-            fields = ("bio", "posts_count", "subscriber_count", "subscription_count")
+            fields = ("email", "bio")
 
     @extend_schema(
         tags=["users"],
-        summary="Current user profile",
+        summary="Current user",
         responses=OutPutSerializer,
     )
     def get(self, request):
-        query = get_profile(user=request.user)
-        return Response(self.OutPutSerializer(query, context={"request": request}).data)
+        profile = get_profile(user=request.user)
+        return Response(self.OutPutSerializer(profile).data)
 
 
 class RegisterApi(APIView):
     class InputRegisterSerializer(serializers.Serializer):
         email = serializers.EmailField(max_length=255)
-        bio = serializers.CharField(max_length=1000, required=False)
+        bio = serializers.CharField(max_length=1000, required=False, allow_blank=True, allow_null=True)
         password = serializers.CharField(
             validators=[number_validator, letter_validator, special_char_validator, MinLengthValidator(limit_value=10)]
         )

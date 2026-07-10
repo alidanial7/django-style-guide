@@ -54,11 +54,8 @@ class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(BaseUser, on_delete=models.CASCADE)
-    posts_count = models.PositiveIntegerField(default=0)
-    subscriber_count = models.PositiveIntegerField(default=0)
-    subscription_count = models.PositiveIntegerField(default=0)
+    user = models.OneToOneField(BaseUser, on_delete=models.CASCADE, related_name="profile")
     bio = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user} >> {self.bio}"
+        return f"{self.user.email}"

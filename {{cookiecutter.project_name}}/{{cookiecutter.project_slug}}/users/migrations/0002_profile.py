@@ -16,11 +16,8 @@ class Migration(migrations.Migration):
             name='Profile',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('posts_count', models.PositiveIntegerField(default=0)),
-                ('subscriber_count', models.PositiveIntegerField(default=0)),
-                ('subscription_count', models.PositiveIntegerField(default=0)),
                 ('bio', models.CharField(blank=True, max_length=1000, null=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),
             ],
         ),
     ]
