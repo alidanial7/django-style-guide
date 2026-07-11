@@ -93,7 +93,7 @@ cookiecutter https://github.com/alidanial7/django-style-guide.git --no-input \
 
 ## After generation
 
-See the generated project's `README.md` for setup steps.
+See the generated project's `README.md` for setup, and `docs/style-guide/` for architecture and coding conventions.
 
 Quick start:
 
