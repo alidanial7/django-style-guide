@@ -32,7 +32,8 @@ Inspired by the [HackSoft Django Styleguide](https://github.com/HackSoftware/Dja
 | [Services](services.md) | Writes, business rules, integrity |
 | [APIs & serializers](apis.md) | Views, input/output serializers, Swagger tags |
 | [URLs & routing](urls.md) | Versioned API, per-app `urls/` |
-| [Signals & constants](signals-and-constants.md) | Side effects, tags, app constants |
+| [Constants](constants.md) | Tags, static paths, app-level literals |
+| [Signals](signals.md) | Mechanical side effects, `AppConfig.ready()` |
 
 ### Cross-cutting
 
