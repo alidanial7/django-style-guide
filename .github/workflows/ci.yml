@@ -92,6 +92,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install "cookiecutter>=2.4"
 
+      - name: Validate choice context matrix
+        run: python hooks/test_choice_context.py
+
       - name: Generate project
         env:
           DSG_COOKIECUTTER_SKIP_PROMPT_UI: "1"
@@ -100,7 +103,9 @@ jobs:
             ${{ matrix.extra }} \
             postgres_user=user \
             postgres_password=password \
-            postgres_version=17.10
+            postgres_version=17.10 \
+            ci_provider=github \
+            celery_broker=redis
 
       - name: Install generated project deps
         working-directory: ${{ matrix.project_dir }}

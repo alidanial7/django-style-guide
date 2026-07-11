@@ -80,6 +80,33 @@ POSTGRES_VERSIONS: tuple[tuple[str, str], ...] = (
     ("14.17", "PostgreSQL 14.17"),
 )
 
+# Must stay in sync with list choices in cookiecutter.json.
+# Values returned by the UI / passed as extra_context must be members of these sets.
+CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
+    "license": ("MIT", "BEER", "None"),
+    "postgres_version": ("17.10", "16.8", "15.12", "14.17"),
+    "use_jwt": ("y", "n"),
+    "use_sentry": ("y", "n"),
+    "use_vscode": ("y", "n"),
+    "use_pgadmin": ("y", "n"),
+    "use_redis": ("y", "n"),
+    "use_rabbitmq": ("y", "n"),
+    "use_celery": ("y", "n"),
+    "celery_broker": ("redis", "rabbitmq"),
+    "use_asgi": ("y", "n"),
+    "use_websockets": ("y", "n"),
+    "reverse_proxy": ("none", "nginx", "traefik"),
+    "use_code_style": ("y", "n"),
+    "use_testing": ("y", "n"),
+    "use_ci": ("y", "n"),
+    "ci_provider": ("github", "gitlab"),
+    "precommit_base": ("y", "n"),
+    "precommit_pyupgrade": ("y", "n"),
+    "precommit_ruff": ("y", "n"),
+    "precommit_pydoclint": ("y", "n"),
+    "precommit_translation_lint": ("y", "n"),
+}
+
 
 def slugify(value: str) -> str:
     slug = value.lower()
@@ -405,7 +432,7 @@ def collect_answers() -> dict[str, str] | None:
         default_index=0,
     )
 
-    ci_provider = "none"
+    ci_provider = "github"
     if use_ci == "y":
         print_section("CI provider")
         ci_provider = prompt_radio(
@@ -485,14 +512,16 @@ def collect_answers() -> dict[str, str] | None:
         "use_redis": use_redis,
         "use_rabbitmq": use_rabbitmq,
         "use_celery": use_celery,
-        "celery_broker": celery_broker if use_celery == "y" else "redis",
+        # Always a valid choice — ignored by templates when Celery is off.
+        "celery_broker": celery_broker,
         "use_asgi": use_asgi,
         "use_websockets": use_websockets,
         "reverse_proxy": reverse_proxy,
         "use_code_style": use_code_style,
         "use_testing": use_testing,
         "use_ci": use_ci,
-        "ci_provider": ci_provider if use_ci == "y" else "none",
+        # Always a valid choice — ignored by post_gen when CI is off.
+        "ci_provider": ci_provider,
         "precommit_base": precommit_base if use_code_style == "y" else "n",
         "precommit_pyupgrade": precommit_pyupgrade if use_code_style == "y" else "n",
         "precommit_ruff": precommit_ruff if use_code_style == "y" else "n",
@@ -503,11 +532,35 @@ def collect_answers() -> dict[str, str] | None:
     }
 
 
+def validate_choice_answers(answers: dict[str, str]) -> dict[str, str]:
+    """Ensure every choice field is a value cookiecutter will accept.
+
+    Cookiecutter raises ``ValueError`` when ``extra_context`` supplies a value
+    that is not in the list defined in ``cookiecutter.json`` (e.g. ``ci_provider=none``).
+    """
+    validated = dict(answers)
+    errors: list[str] = []
+    for key, options in CHOICE_OPTIONS.items():
+        value = validated.get(key)
+        if value is None:
+            validated[key] = options[0]
+            continue
+        if value not in options:
+            errors.append(f"{key}={value!r} not in {list(options)}")
+    if errors:
+        raise ValueError(
+            "Invalid cookiecutter choice value(s):\n  - " + "\n  - ".join(errors)
+        )
+    return validated
+
+
 def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) -> None:
     """Generate the project with cookiecutter, skipping this hook's UI tip."""
     os.environ["DSG_COOKIECUTTER_SKIP_PROMPT_UI"] = "1"
 
     from cookiecutter.main import cookiecutter
+
+    answers = validate_choice_answers(answers)
 
     c = COLORS
     print()
