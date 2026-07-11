@@ -320,7 +320,7 @@ Never put raising validators in `errors/`.
 Assume `blogs` is scaffolded and registered.
 
 **1. Model** — `blogs/models/post.py` + export in `models/__init__.py`  
-**2. Selector** — `list_published_posts()` in `selector/blogs_selectors.py`  
+**2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `apis/posts/posts_filters.py` only if the list accepts filters)  
 **3. API** — `PostsListApi` in `apis/posts/posts_apis.py` returning `api_response`  
 **4. URL** — `path("posts/", PostsListApi.as_view(), name="posts-list")`  
 **5. Include** already under `/api/v1/blogs/`  

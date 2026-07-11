@@ -45,7 +45,7 @@ Copy `.env.example` → `.env` for local values.
 | `auth.py` | `AUTH_USER_MODEL`, `AUTH_PASSWORD_VALIDATORS`, optional `LOGIN_URL` |
 | `database.py` | Database from `DATABASE_URL` (non-test) |
 | `cache.py` | `CACHES` (LocMem / Redis depending on generation) |
-| `drf.py` | REST framework, exception handler, throttle rates, filter backends, default auth |
+| `drf.py` | REST framework, exception handler, throttle rates, default auth/permissions (no auto filter backends — see pagination docs) |
 | `swagger.py` | `SPECTACULAR_SETTINGS` |
 | `logging.py` | Logging dictConfig + log env vars — see [Logging](logging.md) |
 | `i18n.py` | `LANGUAGE_CODE`, `TIME_ZONE`, `LOCALE_PATHS` — see [Translations](translations.md) |

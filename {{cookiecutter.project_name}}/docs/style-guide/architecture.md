@@ -282,6 +282,25 @@ flowchart TD
 
 ---
 
+## 📜 Layer contracts (non‑negotiable)
+
+These are the style rules that make the codebase look like a large Django service — not product features.
+
+| Layer | May | Must not |
+|-------|-----|----------|
+| `apis/` | Auth/throttle, Input/Output serializers, call selector/service, `api_response` / pagination helpers, `@extend_schema` | ORM queries, business rules, uniqueness checks, building error envelopes by hand |
+| `selector/` | Read ORM, `select_related` / `prefetch`, filters as kwargs, derived values | `.create()` / `.update()` / `.delete()`, calling write services, touching `Request` except optional `request` for absolute URLs |
+| `services/` | Writes, rules, `transaction.atomic`, `model_*` + integrity mapping, calling selectors for reads needed by a write | HTTP status codes, serializers, pagination, “list screens” querysets for unrelated UIs |
+| `models/` | Fields, constraints, managers, `__str__` | HTTP, workflows, calling external APIs |
+| `serializers` | Shape + field/cross-field validation | Creating rows, permission decisions, raw ORM uniqueness as the only guard |
+| `common/` | Envelope, integrity helpers, `BaseModel`, shared validators | Domain-specific business rules for one app |
+
+**List endpoints:** selector base QS → optional explicit **`FilterSet`** (only if the endpoint accepts filters) → pagination helper. Default is **no filters**. Never `Model.objects.filter(...)` inside `APIView.get` for the list shape.
+
+**Keyword-only APIs:** `def register(*, email: str, …)` and `def list_posts(*, author_id: int | None = None)` — no positional bags.
+
+---
+
 ## ✅ Do / ❌ Don’t (quick checklist)
 
 ### ✅ Do
@@ -293,6 +312,7 @@ flowchart TD
 - Map every write path through `model_create` / `model_save` / `model_update` **or** explicit `map_integrity_error`
 - Add domain apps with `start_domain_app`
 - Set `AllowAny` only on intentionally public endpoints (default is authenticated)
+- Apply list filters with django-filter `FilterSet` when the endpoint accepts filters; otherwise skip FilterSet entirely
 
 ### ❌ Don’t
 
@@ -302,6 +322,7 @@ flowchart TD
 - Mix read + write in one function (“god” service that also builds querysets for unrelated screens)
 - Copy-paste integrity / exception handling into each app
 - Assume a new `APIView` is public without `AllowAny`
+- Rely on `DEFAULT_FILTER_BACKENDS` / `filter_backends = [...]` on plain `APIView` (they do not auto-run)
 
 ---
 

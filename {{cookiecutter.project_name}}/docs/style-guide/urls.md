@@ -195,7 +195,8 @@ When the app grows, split like `users` (`urls/posts.py`, `urls/public.py`, …) 
 |------|--------|
 | Current public prefix | `/api/v1/` |
 | Breaking changes | Add `/api/v2/` (new include module), **keep v1 working** until clients migrate |
-| Non-breaking additions | New paths under v1 are fine |
+| Non-breaking additions | New paths / optional fields under v1 are fine |
+| Removals / renames / type changes | Breaking → new version, or a documented deprecation window |
 | Admin / schema | Stay outside `/api/v1/` (admin is `/admin/`; schema is DEBUG-only at `/schema/`) |
 
 ```python
@@ -205,6 +206,17 @@ urlpatterns = [
     path("api/v2/", include(("…api.urls_v2", "api_v2"))),
 ]
 ```
+
+### What counts as breaking?
+
+| Breaking (needs v2 or long deprecation) | Non-breaking |
+|-----------------------------------------|--------------|
+| Remove a field or path | Add optional field / new path |
+| Change field type or meaning | Add enum value clients can ignore |
+| Tighten validation so previously valid bodies fail | Loosen validation |
+| Change auth requirement from public → authenticated without notice | Document new optional headers |
+
+**Deprecation habit:** mark the old path in OpenAPI `deprecated=True`, keep it working for an agreed window, then remove only after clients migrate. Do not silently change v1 contracts.
 
 Clients should treat the version segment as part of the contract, not as optional.
 

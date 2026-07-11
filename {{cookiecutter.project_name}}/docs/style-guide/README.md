@@ -15,6 +15,7 @@ Agents: start at [`AGENTS.md`](../../AGENTS.md) then this index.
 5. **One API envelope** for success and error (`success`, `status`, `result`, `messages`).
 6. **Platform vs domain** — shared infrastructure in `common/`; app-specific codes and validators in the app.
 7. **Deny by default** — APIs are `IsAuthenticated` unless a view sets `AllowAny`.
+8. **Lists** — selector + pagination by default; filters only via explicit django-filter `FilterSet` when you add them.
 
 ## Index
 
@@ -22,7 +23,7 @@ Agents: start at [`AGENTS.md`](../../AGENTS.md) then this index.
 
 | Doc | Topic |
 |-----|--------|
-| [Architecture](architecture.md) | Layers, request flow, what lives where |
+| [Architecture](architecture.md) | Layers, request flow, **layer contracts**, what lives where |
 | [Project structure](project-structure.md) | Top-level folders, `config/`, package layout |
 | [Domain apps](domain-apps.md) | `start_domain_app`, naming, scaffolding checklist |
 | [Enterprise extensions](enterprise-extensions.md) | Soft delete, RBAC, multi-tenant, … (not shipped) |
@@ -49,7 +50,7 @@ Agents: start at [`AGENTS.md`](../../AGENTS.md) then this index.
 | [Permissions](permissions.md) | Deny-by-default, `AllowAny`, `ApiAuthMixin` |
 | [Security](security.md) | Secrets, DEBUG, CSRF, production hardening |
 | [Swagger / OpenAPI](swagger.md) | drf-spectacular, envelope in schema |
-| [Pagination & filtering](pagination-and-filtering.md) | Limit/offset, cursor, filters on APIView |
+| [Pagination & filtering](pagination-and-filtering.md) | Limit/offset, cursor, django-filter (explicit) |
 | [Throttling](throttling.md) | Scoped rates for auth/register/reset |
 | [Logging](logging.md) | Handlers, request ID, conventions |
 | [Migrations](migrations.md) | Expand/contract, zero-downtime habits |

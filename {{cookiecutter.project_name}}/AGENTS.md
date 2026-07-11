@@ -12,17 +12,21 @@ Instructions for coding agents working in this generated project.
 
 | Rule | Detail |
 |------|--------|
-| Layers | APIs glue only; **selectors** read; **services** write |
+| Layers | APIs glue only; **selectors** read; **services** write — see [Architecture → Layer contracts](docs/style-guide/architecture.md) |
 | Responses | Always `api_response` / pagination helpers — envelope `{success,status,result,messages}` |
 | Permissions | Default is **IsAuthenticated**; public views must set `AllowAny` |
 | Validation | `is_*` + `*Validator` + domain `*ErrorCode`; uniqueness via DB + `map_integrity_error` |
+| Lists | Selector (`list_<entities>`) → pagination; **no filters by default** |
+| Filters | When needed: always django-filter `<Entity>Filter` on selector QS — even for 1–2 fields; never silent `filter_backends` on `APIView` |
+| Selectors | `get_*` / `list_<entities>`; one optimized list selector (with related); second selector only for a **different job** (`list_post_ids`, …) |
+| Keyword-only | Services/selectors use `def foo(*, …)` |
 | New apps | `python manage.py start_domain_app <plural>` — never Django `startapp` |
 | Strings | Lowercase gettext msgids for user-facing text |
 | Secrets | Never commit `.env` secrets or log tokens/passwords |
 
 ## OpenAPI
 
-Document success payloads with `envelope_serializer(...)` from `common.http.schema` so Swagger matches the runtime envelope.
+Document success payloads with `envelope_serializer(...)` from `common.http.schema` so Swagger matches the runtime envelope. Document FilterSet query params when the list accepts filters.
 
 ## Out of scope unless asked
 
@@ -31,7 +35,9 @@ Soft delete, multi-tenancy, full RBAC, outbox, idempotency keys — see [`docs/s
 ## Quick links
 
 - [Architecture](docs/style-guide/architecture.md)
+- [APIs](docs/style-guide/apis.md)
+- [Selectors](docs/style-guide/selectors.md)
+- [Pagination & filtering](docs/style-guide/pagination-and-filtering.md)
 - [Security](docs/style-guide/security.md)
 - [Validation & errors](docs/style-guide/validation-and-errors.md)
-- [APIs](docs/style-guide/apis.md)
 - [Domain apps](docs/style-guide/domain-apps.md)

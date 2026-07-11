@@ -157,6 +157,7 @@ class UsersRegisterApi(APIView):
 | `@extend_schema(...)` on each handler | Undocumented endpoints in Swagger |
 | `ApiAuthMixin` when login is required | Ad‑hoc auth checks buried in `get/post` |
 | `permission_classes = [AllowAny]` on public routes | Assuming new views are public (default is authenticated) |
+| Explicit `<Entity>Filter` when the list accepts filters | Raw query params / silent `filter_backends` on `APIView` |
 
 ---
 
@@ -164,8 +165,9 @@ class UsersRegisterApi(APIView):
 
 | Type | Direction | Role |
 |------|-----------|------|
-| `*InputSerializer` | Request → Python | Validate shape; run field/cross-field rules |
+| `*InputSerializer` | Request body → Python | Validate shape; run field/cross-field rules |
 | `*OutputSerializer` | Domain → JSON | Expose only what clients may see |
+| `<Entity>Filter` (django-filter) | Query string → filtered QS | List filters — see [Pagination & filtering](pagination-and-filtering.md) |
 
 Do **not** reuse one `ModelSerializer` for both directions unless the shapes are truly identical and tiny (rare). Register input has `password` / `confirm_password`; output must never echo passwords.
 
@@ -208,6 +210,17 @@ class UsersRegisterInputSerializer(serializers.Serializer):
 | Create the user | ❌ [Services](services.md) |
 
 Use **field-keyed** errors and platform vs domain codes correctly (`ErrorCode.REQUIRED` vs `UserErrorCode.PASSWORD_MISMATCH`).
+
+### List filters (django-filter)
+
+Default list endpoints apply **no** filters. When the client may filter, add `<Entity>Filter` and apply it in the view:
+
+```python
+qs = list_posts()
+qs = PostFilter(request.query_params, queryset=qs).qs
+```
+
+Do not use a parallel `*QuerySerializer` style for the same list query params. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](pagination-and-filtering.md).
 
 ### Output serializer rules
 
@@ -299,6 +312,7 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 | Permission logic in `validate()` | Permission classes / mixin |
 | Missing `@extend_schema` | Document every public handler |
 | `views.py` at app root | `apis/<feature>/` |
+| List filters only inside `get` with raw query params | `FilterSet` on selector QS |
 
 ---
 

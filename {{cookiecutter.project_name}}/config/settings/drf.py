@@ -1,7 +1,8 @@
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "{{cookiecutter.project_slug}}.common.http.exception_handler.api_exception_handler",
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    # No DEFAULT_FILTER_BACKENDS: plain APIView does not auto-run filter backends.
+    # Lists are unfiltered by default; when needed apply django-filter FilterSet in the view.
     # Deny by default — public endpoints must set permission_classes = [AllowAny].
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 {%- if cookiecutter.use_jwt == "y" %}
