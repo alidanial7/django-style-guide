@@ -1,4 +1,4 @@
-# Pre-commit hooks — see docs/style-guide/code-quality.md for what each group does.
+# Pre-commit hooks — see docs/style-guide/platform/code-quality.md for what each group does.
 # Selected at project generation when code style tooling is enabled.
 exclude: '^docs/|/migrations/|locale/|devcontainer.json$|^\.vscode/settings\.json$'
 

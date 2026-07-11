@@ -76,7 +76,7 @@ raise ValidationError(self.message, code=self.code, params={"limit_value": self.
 _("password must be at least 10 characters")
 ```
 
-Same pattern for integrity messages using `%(field)s` — see [Validation & errors](validation-and-errors.md).
+Same pattern for integrity messages using `%(field)s` — see [Validation & errors](../http/validation-and-errors.md).
 
 ### What to translate
 
@@ -169,7 +169,7 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 
 | Doc | Why |
 |-----|-----|
-| [Validation & errors](validation-and-errors.md) | Where most API messages live |
+| [Validation & errors](../http/validation-and-errors.md) | Where most API messages live |
 | [Code quality](code-quality.md) | Translation lint hook |
 | [Settings](settings.md) | `i18n.py` |
 | [Commands](commands.md) | Script entrypoints |

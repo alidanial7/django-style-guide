@@ -276,5 +276,5 @@ def ready(self):
 | [Constants](constants.md) | Shared literals (separate concern — do not mix into signal modules) |
 | [Services](services.md) | Where real workflows belong |
 | [Models](models.md) | What emits `post_save` |
-| [Architecture](architecture.md) | Layer decision tree |
-| [Domain apps](domain-apps.md) | Empty `signals/` package in scaffold |
+| [Architecture](../structure/architecture.md) | Layer decision tree |
+| [Domain apps](../structure/domain-apps.md) | Empty `signals/` package in scaffold |

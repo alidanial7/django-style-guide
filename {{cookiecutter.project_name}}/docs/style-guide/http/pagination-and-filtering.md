@@ -284,7 +284,7 @@ Only params present in the query string are applied; omitted filters do nothing.
 | Filter by related field (`author__email`, `tags__slug`) | `field_name="author__email"` on the FilterSet — **works without prefetch** |
 | Avoid N+1 when serializer reads related objects | `select_related` / `prefetch_related` on the **selector** base QS |
 
-Filtering uses SQL joins/lookups. Prefetch is for **reading** related data in the response, not for making filters work. See [Selectors](selectors.md).
+Filtering uses SQL joins/lookups. Prefetch is for **reading** related data in the response, not for making filters work. See [Selectors](../layers/selectors.md).
 
 ### Ordering / search
 
@@ -333,6 +333,6 @@ Document filter params in `@extend_schema` — see [Swagger](swagger.md).
 | Doc | Why |
 |-----|-----|
 | [API envelope](api-envelope.md) | Outer JSON shape |
-| [Selectors](selectors.md) | Where querysets come from |
-| [APIs](apis.md) | View patterns |
+| [Selectors](../layers/selectors.md) | Where querysets come from |
+| [APIs](../layers/apis.md) | View patterns |
 | [Swagger](swagger.md) | Documenting query params |

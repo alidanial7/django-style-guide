@@ -57,8 +57,8 @@ flowchart LR
 
 | Doc | Why |
 |-----|-----|
-| [Permissions](permissions.md) / [Security](security.md) | Authz mindset |
-| [Services](services.md) | Writes |
+| [Permissions](../http/permissions.md) / [Security](../http/security.md) | Authz mindset |
+| [Services](../layers/services.md) | Writes |
 | [Docker & production](docker-and-production.md) | ASGI deployment |
 
 {%- else %}

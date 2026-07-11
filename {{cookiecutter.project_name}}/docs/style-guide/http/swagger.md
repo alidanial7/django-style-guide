@@ -85,7 +85,7 @@ def post(self, request):
 
 | Argument | Purpose |
 |----------|---------|
-| `tags` | Sidebar groups in Swagger — from [constants](constants.md) |
+| `tags` | Sidebar groups in Swagger — from [constants](../layers/constants.md) |
 | `summary` | Short human title |
 | `request` | Body / input serializer |
 | `responses` | Success body serializer (add status map when you need 201 vs 200 explicitly) |
@@ -211,9 +211,9 @@ python manage.py spectacular --validate --fail-on-warn  # if available in your s
 
 | Doc | Why |
 |-----|-----|
-| [APIs](apis.md) | Where `@extend_schema` is applied |
-| [Constants](constants.md) | Tag lists |
+| [APIs](../layers/apis.md) | Where `@extend_schema` is applied |
+| [Constants](../layers/constants.md) | Tag lists |
 | [Authentication](authentication.md) | Login/register to obtain credentials |
 | [Permissions](permissions.md) | Protected routes |
 | [API envelope](api-envelope.md) | Real JSON contract |
-| [URLs](urls.md) | Where schema routes are mounted |
+| [URLs](../layers/urls.md) | Where schema routes are mounted |

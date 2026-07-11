@@ -73,7 +73,7 @@ flowchart TB
 | Parameterized messages use `params=` | `params={"limit_value": 10}` |
 | Don’t bake values into the msgid | ❌ `_("password must be at least 10 characters")` as the only form when limit may change |
 
-Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see [Translations](translations.md) / [Code quality](code-quality.md).
+Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see [Translations](../platform/translations.md) / [Code quality](../platform/code-quality.md).
 
 ---
 
@@ -232,7 +232,7 @@ raise serializers.ValidationError(
 )
 ```
 
-Full patterns: [APIs](apis.md).
+Full patterns: [APIs](../layers/apis.md).
 
 ---
 
@@ -278,7 +278,7 @@ flowchart TD
 
 SQLite (tests) uses message parsing fallback. **DB constraints remain the source of truth**; validators are UX.
 
-Service-level domain errors (wrong current password, bad reset token) raise field-keyed Django `ValidationError` with `UserErrorCode` — see [Services](services.md).
+Service-level domain errors (wrong current password, bad reset token) raise field-keyed Django `ValidationError` with `UserErrorCode` — see [Services](../layers/services.md).
 
 ---
 
@@ -331,7 +331,7 @@ users/
 | Doc | Why |
 |-----|-----|
 | [API envelope](api-envelope.md) | How codes appear in JSON |
-| [Services](services.md) | Where integrity mapping is called |
-| [APIs](apis.md) | Serializer usage |
-| [Models](models.md) | Constraints |
-| [Translations](translations.md) | Lowercase msgids |
+| [Services](../layers/services.md) | Where integrity mapping is called |
+| [APIs](../layers/apis.md) | Serializer usage |
+| [Models](../layers/models.md) | Constraints |
+| [Translations](../platform/translations.md) | Lowercase msgids |

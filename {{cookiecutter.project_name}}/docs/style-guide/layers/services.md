@@ -170,7 +170,7 @@ def register(*, email: str, password: str, bio: str | None = None, avatar=None) 
 
 ## 🚨 Raising domain errors from services
 
-Raise Django’s `ValidationError` (not DRF’s) with **field keys** and **codes**. The [API exception handler](api-envelope.md) normalizes them into `messages`.
+Raise Django’s `ValidationError` (not DRF’s) with **field keys** and **codes**. The [API exception handler](../http/api-envelope.md) normalizes them into `messages`.
 
 ```python
 from django.core.exceptions import ValidationError
@@ -315,7 +315,7 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 |-----|-----|
 | [Selectors](selectors.md) | Reads used before/after writes |
 | [Models](models.md) | Constraints the service relies on |
-| [Validation & errors](validation-and-errors.md) | Codes + integrity details |
-| [API envelope](api-envelope.md) | How service errors become JSON |
+| [Validation & errors](../http/validation-and-errors.md) | Codes + integrity details |
+| [API envelope](../http/api-envelope.md) | How service errors become JSON |
 | [APIs](apis.md) | Thin callers |
 | [Signals](signals.md) | Mechanical creates vs service updates |

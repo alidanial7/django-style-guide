@@ -136,7 +136,7 @@ flowchart TD
 | “User may publish only if …” | Service | state machine in `services/` |
 
 **Validators improve API messages; they are not a substitute for constraints.**  
-Two concurrent requests can both pass a serializer “email unique” check and then one hits the DB — integrity mapping turns that into `messages.email` with code `unique`. See [Validation & errors](validation-and-errors.md).
+Two concurrent requests can both pass a serializer “email unique” check and then one hits the DB — integrity mapping turns that into `messages.email` with code `unique`. See [Validation & errors](../http/validation-and-errors.md).
 
 ### Example: `CheckConstraint` (`common.models.RandomModel`)
 
@@ -284,6 +284,6 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 |-----|-----|
 | [Selectors](selectors.md) | How to read models |
 | [Services](services.md) | How to write models safely |
-| [Validation & errors](validation-and-errors.md) | Constraints ↔ API messages |
+| [Validation & errors](../http/validation-and-errors.md) | Constraints ↔ API messages |
 | [Signals](signals.md) | Related-row invariants |
-| [Domain apps](domain-apps.md) | Where `models/` sits in the scaffold |
+| [Domain apps](../structure/domain-apps.md) | Where `models/` sits in the scaffold |

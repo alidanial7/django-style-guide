@@ -26,12 +26,12 @@
 | Need | Where |
 |------|-------|
 | Layered domain apps | [Architecture](architecture.md), [Domain apps](domain-apps.md) |
-| Safe writes + integrity | [Services](services.md), [Validation](validation-and-errors.md) |
-| Deny-by-default API security | [Security](security.md), [Permissions](permissions.md) |
-| Stable list pagination | [Pagination](pagination-and-filtering.md) (`LimitOffset` + `Cursor`) |
-| Zero-downtime schema habits | [Migrations](migrations.md) |
-| Async jobs (optional) | [Celery](celery.md) when generated with Celery |
-| Realtime (optional) | [WebSockets](websockets.md) when generated with Channels |
+| Safe writes + integrity | [Services](../layers/services.md), [Validation](../http/validation-and-errors.md) |
+| Deny-by-default API security | [Security](../http/security.md), [Permissions](../http/permissions.md) |
+| Stable list pagination | [Pagination](../http/pagination-and-filtering.md) (`LimitOffset` + `Cursor`) |
+| Zero-downtime schema habits | [Migrations](../platform/migrations.md) |
+| Async jobs (optional) | [Celery](../platform/celery.md) when generated with Celery |
+| Realtime (optional) | [WebSockets](../platform/websockets.md) when generated with Channels |
 
 ---
 

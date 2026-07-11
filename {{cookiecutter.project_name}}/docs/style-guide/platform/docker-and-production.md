@@ -145,7 +145,7 @@ Before exposing the stack:
 
 Never commit a filled `.env`. Use secrets management / host env in real deployments.
 
-Swagger / schema routes are **DEBUG-only** — they stay off under production settings. See [Swagger](swagger.md).
+Swagger / schema routes are **DEBUG-only** — they stay off under production settings. See [Swagger](../http/swagger.md).
 
 ---
 
@@ -189,7 +189,7 @@ CI was not enabled at generation (`use_ci=n`). Add GitHub Actions or GitLab CI l
 |-----|--------|
 | Health checks | Compose waits on Postgres{%- if cookiecutter.use_redis == "y" %} / Redis{% endif %} health before starting Django |
 | Logs | JSON files under `logs/` when `LOG_TO_FILE=true`; prefer shipping container stdout to your log stack — see [Logging](logging.md) |
-| Throttles | Use Redis-backed cache in multi-worker prod — see [Throttling](throttling.md) |
+| Throttles | Use Redis-backed cache in multi-worker prod — see [Throttling](../http/throttling.md) |
 | Migrations | Run via entrypoint or explicit `manage.py migrate` in the django service |
 | Static/media | Prefer reverse proxy serving volumes in production |
 
@@ -225,5 +225,5 @@ CI was not enabled at generation (`use_ci=n`). Add GitHub Actions or GitLab CI l
 | [Commands](commands.md) | `make`, `devserver`, scripts |
 | [Settings](settings.md) | `production` vs `local` |
 | [Logging](logging.md) | File / console logs |
-| [Throttling](throttling.md) | Redis for shared limits |
-| [Project structure](project-structure.md) | Where `docker/` lives |
+| [Throttling](../http/throttling.md) | Redis for shared limits |
+| [Project structure](../structure/project-structure.md) | Where `docker/` lives |

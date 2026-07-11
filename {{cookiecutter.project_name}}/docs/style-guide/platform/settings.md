@@ -59,7 +59,7 @@ Copy `.env.example` → `.env` for local values.
 | `core.py` | `ROOT_URLCONF`, `WSGI/ASGI_APPLICATION`, `DEFAULT_AUTO_FIELD` |
 | `extra.py` | Small project extras (`APP_DOMAIN`, …) |
 {%- if cookiecutter.use_jwt == "y" %}
-| `jwt.py` | `SIMPLE_JWT` + lifetime env vars — see [Authentication](authentication.md) |
+| `jwt.py` | `SIMPLE_JWT` + lifetime env vars — see [Authentication](../http/authentication.md) |
 {%- endif %}
 {%- if cookiecutter.use_celery == "y" %}
 | `celery.py` | Celery broker / result backend |
@@ -127,9 +127,9 @@ flowchart TD
 
 | Concern | Put in |
 |---------|--------|
-| OpenAPI tag `"users"` | [Constants](constants.md) |
-| `password_mismatch` code | [Validation & errors](validation-and-errors.md) |
-| Business “can publish?” rule | [Services](services.md) |
+| OpenAPI tag `"users"` | [Constants](../layers/constants.md) |
+| `password_mismatch` code | [Validation & errors](../http/validation-and-errors.md) |
+| Business “can publish?” rule | [Services](../layers/services.md) |
 
 ---
 
@@ -147,7 +147,7 @@ LOCAL_APPS = [
 ]
 ```
 
-Prefer full `AppConfig` paths. `start_domain_app --register` appends for you — see [Domain apps](domain-apps.md).
+Prefer full `AppConfig` paths. `start_domain_app --register` appends for you — see [Domain apps](../structure/domain-apps.md).
 
 ---
 
@@ -177,8 +177,8 @@ Use `env("NAME", default=...)`, `env.bool`, `env.int`, `env.db("DATABASE_URL")` 
 
 | Doc | Why |
 |-----|-----|
-| [Project structure](project-structure.md) | Where `config/` sits |
+| [Project structure](../structure/project-structure.md) | Where `config/` sits |
 | [Logging](logging.md) | Logging slice details |
-| [Authentication](authentication.md) | JWT/session settings |
+| [Authentication](../http/authentication.md) | JWT/session settings |
 | [Docker & production](docker-and-production.md) | Production env expectations |
 | [Testing](testing.md) | `config.django.test` |

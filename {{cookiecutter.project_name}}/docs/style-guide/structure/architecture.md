@@ -277,8 +277,8 @@ flowchart TD
 | “List published posts for homepage” | `selector/` |
 | “Publish post + notify + validate state machine” | `services/` |
 | Shared date range constraint example | `common.models` / DB constraints |
-| OpenAPI tag name `"users"` | `<app>/constants.py` — see [Constants](constants.md) |
-| Create related row when user is created | `signals/` — see [Signals](signals.md) |
+| OpenAPI tag name `"users"` | `<app>/constants.py` — see [Constants](../layers/constants.md) |
+| Create related row when user is created | `signals/` — see [Signals](../layers/signals.md) |
 
 ---
 
@@ -332,10 +332,10 @@ These are the style rules that make the codebase look like a large Django servic
 |-----------|-----|
 | [Project structure](project-structure.md) | Where folders live on disk |
 | [Domain apps](domain-apps.md) | How to scaffold `blogs`, `orders`, … |
-| [Services](services.md) | Write-path details |
-| [Selectors](selectors.md) | Read-path details |
-| [APIs](apis.md) | View + serializer conventions |
-| [Security](security.md) | Deny-by-default and hardening |
-| [Validation & errors](validation-and-errors.md) | Codes, validators, integrity |
-| [API envelope](api-envelope.md) | Exact JSON shapes |
+| [Services](../layers/services.md) | Write-path details |
+| [Selectors](../layers/selectors.md) | Read-path details |
+| [APIs](../layers/apis.md) | View + serializer conventions |
+| [Security](../http/security.md) | Deny-by-default and hardening |
+| [Validation & errors](../http/validation-and-errors.md) | Codes, validators, integrity |
+| [API envelope](../http/api-envelope.md) | Exact JSON shapes |
 | [Enterprise extensions](enterprise-extensions.md) | Patterns not shipped by default |

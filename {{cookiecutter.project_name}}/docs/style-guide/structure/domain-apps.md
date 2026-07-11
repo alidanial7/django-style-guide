@@ -158,7 +158,7 @@ blogs/
 | `constants.py` | Shared literals | Env settings / error codes |
 | `utils/` | Tiny pure helpers | Hidden second service layer |
 
-Deep dives: [Models](models.md), [Selectors](selectors.md), [Services](services.md), [APIs](apis.md), [Validation](validation-and-errors.md), [Constants](constants.md), [Signals](signals.md).
+Deep dives: [Models](../layers/models.md), [Selectors](../layers/selectors.md), [Services](../layers/services.md), [APIs](../layers/apis.md), [Validation](../http/validation-and-errors.md), [Constants](../layers/constants.md), [Signals](../layers/signals.md).
 
 ---
 
@@ -200,7 +200,7 @@ urlpatterns = [
 ]
 ```
 
-Public base path becomes: `/api/v1/blogs/…` — details in [URLs](urls.md).
+Public base path becomes: `/api/v1/blogs/…` — details in [URLs](../layers/urls.md).
 
 ### 3. Add models and migrate
 
@@ -221,9 +221,9 @@ python manage.py migrate
 
 ### 5. Validation & integrity on every write
 
-Follow [Validation & errors](validation-and-errors.md): domain codes, `is_*` / `*Validator`, and `model_create` / `map_integrity_error` on persistence.
+Follow [Validation & errors](../http/validation-and-errors.md): domain codes, `is_*` / `*Validator`, and `model_create` / `map_integrity_error` on persistence.
 
-Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`; authenticated ones use `ApiAuthMixin` — see [Permissions](permissions.md) / [Security](security.md).
+Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`; authenticated ones use `ApiAuthMixin` — see [Permissions](../http/permissions.md) / [Security](../http/security.md).
 
 ---
 
@@ -350,6 +350,6 @@ Write path (`POST` create) adds `services/` + validators + integrity mapping bef
 |-----|-----|
 | [Project structure](project-structure.md) | Where the package sits in the repo |
 | [Architecture](architecture.md) | Layer decision tree |
-| [URLs](urls.md) | How includes and versioning work |
-| [APIs](apis.md) | View/serializer rules |
+| [URLs](../layers/urls.md) | How includes and versioning work |
+| [APIs](../layers/apis.md) | View/serializer rules |
 | Living example | The real `{{cookiecutter.project_slug}}/users/` tree in this repo |

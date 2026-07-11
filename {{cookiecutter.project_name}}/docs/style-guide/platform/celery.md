@@ -70,9 +70,9 @@ Tests use eager mode (`CELERY_TASK_ALWAYS_EAGER`) in `config.django.test`.
 
 | Doc | Why |
 |-----|-----|
-| [Services](services.md) | Business writes |
+| [Services](../layers/services.md) | Business writes |
 | [Logging](logging.md) | How to log inside tasks |
-| [Enterprise extensions](enterprise-extensions.md) | Outbox pattern if you need reliable publish |
+| [Enterprise extensions](../structure/enterprise-extensions.md) | Outbox pattern if you need reliable publish |
 | [Docker & production](docker-and-production.md) | Worker containers |
 
 {%- else %}

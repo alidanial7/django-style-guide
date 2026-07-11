@@ -110,7 +110,7 @@ def list_post_ids(*, status: str = "published") -> QuerySet[int]:
 | List API vs “only primary keys for Celery” | `list_posts` + `list_post_ids` |
 | List API vs sitemap URLs | `list_posts` + `list_posts_for_sitemap` |
 
-`select_related` / `prefetch` are for **output performance**, not for FilterSet FK filters. Related query filters use `field_name="author__email"` on the FilterSet — see [Pagination & filtering](pagination-and-filtering.md).
+`select_related` / `prefetch` are for **output performance**, not for FilterSet FK filters. Related query filters use `field_name="author__email"` on the FilterSet — see [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ---
 
@@ -278,7 +278,7 @@ qs = PostFilter(request.query_params, queryset=qs).qs
 return get_paginated_response_context(...)
 ```
 
-Full FilterSet examples (FK, dates, naming): [Pagination & filtering](pagination-and-filtering.md).
+Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ---
 
@@ -315,5 +315,5 @@ Full FilterSet examples (FK, dates, naming): [Pagination & filtering](pagination
 | [Services](services.md) | Writes and when to call selectors |
 | [Models](models.md) | What you are querying |
 | [APIs](apis.md) | Where selectors are called |
-| [Pagination & filtering](pagination-and-filtering.md) | List endpoints |
+| [Pagination & filtering](../http/pagination-and-filtering.md) | List endpoints |
 | [Constants](constants.md) | Static paths used in derived values |

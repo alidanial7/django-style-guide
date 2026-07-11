@@ -2,7 +2,7 @@
 
 > HTTP layer of a domain app: **thin views**, **input/output serializers**, OpenAPI metadata, parsers, and throttling hooks.
 >
-> Business rules and ORM writes do **not** live here — call [selectors](selectors.md) / [services](services.md) and return the [API envelope](api-envelope.md).
+> Business rules and ORM writes do **not** live here — call [selectors](selectors.md) / [services](services.md) and return the [API envelope](../http/api-envelope.md).
 
 ---
 
@@ -20,8 +20,8 @@ flowchart LR
 
 | Step | Responsibility |
 |------|----------------|
-| Auth / permissions | `ApiAuthMixin` or explicit permission classes — see [Permissions](permissions.md) |
-| Throttle | `ScopedRateThrottle` on public abuse-prone routes — see [Throttling](throttling.md) |
+| Auth / permissions | `ApiAuthMixin` or explicit permission classes — see [Permissions](../http/permissions.md) |
+| Throttle | `ScopedRateThrottle` on public abuse-prone routes — see [Throttling](../http/throttling.md) |
 | Input | Shape + field validators + cross-field `validate()` |
 | Call | Selector (read) and/or service (write) |
 | Output | Serialize public fields only |
@@ -167,7 +167,7 @@ class UsersRegisterApi(APIView):
 |------|-----------|------|
 | `*InputSerializer` | Request body → Python | Validate shape; run field/cross-field rules |
 | `*OutputSerializer` | Domain → JSON | Expose only what clients may see |
-| `<Entity>Filter` (django-filter) | Query string → filtered QS | List filters — see [Pagination & filtering](pagination-and-filtering.md) |
+| `<Entity>Filter` (django-filter) | Query string → filtered QS | List filters — see [Pagination & filtering](../http/pagination-and-filtering.md) |
 
 Do **not** reuse one `ModelSerializer` for both directions unless the shapes are truly identical and tiny (rare). Register input has `password` / `confirm_password`; output must never echo passwords.
 
@@ -205,8 +205,8 @@ class UsersRegisterInputSerializer(serializers.Serializer):
 | Field types / max_length | ✅ |
 | Domain `PASSWORD_VALIDATORS` | ✅ |
 | Cross-field confirm password | ✅ `validate()` |
-| Uniqueness of email | ❌ DB + [integrity](validation-and-errors.md) |
-| “Is the user allowed to do this?” | ❌ [Permissions](permissions.md) |
+| Uniqueness of email | ❌ DB + [integrity](../http/validation-and-errors.md) |
+| “Is the user allowed to do this?” | ❌ [Permissions](../http/permissions.md) |
 | Create the user | ❌ [Services](services.md) |
 
 Use **field-keyed** errors and platform vs domain codes correctly (`ErrorCode.REQUIRED` vs `UserErrorCode.PASSWORD_MISMATCH`).
@@ -220,7 +220,7 @@ qs = list_posts()
 qs = PostFilter(request.query_params, queryset=qs).qs
 ```
 
-Do not use a parallel `*QuerySerializer` style for the same list query params. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](pagination-and-filtering.md).
+Do not use a parallel `*QuerySerializer` style for the same list query params. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ### Output serializer rules
 
@@ -264,7 +264,7 @@ from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS, AUTH_TAGS
 | `request` | Input serializer / body |
 | `responses` | Output serializer / status map |
 
-Full schema settings: [Swagger](swagger.md).
+Full schema settings: [Swagger](../http/swagger.md).
 
 ---
 
@@ -333,9 +333,9 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 
 | Doc | Why |
 |-----|-----|
-| [API envelope](api-envelope.md) | Exact JSON contract |
-| [Validation & errors](validation-and-errors.md) | Codes & validators used by serializers |
-| [Permissions](permissions.md) | `ApiAuthMixin` |
-| [Swagger](swagger.md) | Schema / UI |
-| [Pagination & filtering](pagination-and-filtering.md) | List endpoints |
-| [Throttling](throttling.md) | Auth/register rates |
+| [API envelope](../http/api-envelope.md) | Exact JSON contract |
+| [Validation & errors](../http/validation-and-errors.md) | Codes & validators used by serializers |
+| [Permissions](../http/permissions.md) | `ApiAuthMixin` |
+| [Swagger](../http/swagger.md) | Schema / UI |
+| [Pagination & filtering](../http/pagination-and-filtering.md) | List endpoints |
+| [Throttling](../http/throttling.md) | Auth/register rates |

@@ -113,7 +113,7 @@ class PostDetailApi(ApiAuthMixin, APIView):
 
 With plain `APIView`, call `check_object_permissions` after loading the object. Filter lists in **selectors** so foreign rows never leave the DB.
 
-Full RBAC / multi-tenant policies: [Enterprise extensions](enterprise-extensions.md).
+Full RBAC / multi-tenant policies: [Enterprise extensions](../structure/enterprise-extensions.md).
 
 ---
 
@@ -143,5 +143,5 @@ Browser session clients must send CSRF on `POST`/`PATCH`/`PUT`/`DELETE`.
 |-----|-----|
 | [Security](security.md) | Baseline |
 | [Authentication](authentication.md) | Issuing credentials |
-| [APIs](apis.md) | Where to attach mixin / AllowAny |
+| [APIs](../layers/apis.md) | Where to attach mixin / AllowAny |
 | [Throttling](throttling.md) | Public abuse control |

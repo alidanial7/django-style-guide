@@ -282,7 +282,7 @@ Produced by `api.pagination.LimitOffsetPagination.get_paginated_response` → `a
 | Doc | Why |
 |-----|-----|
 | [Validation & errors](validation-and-errors.md) | Where codes and validators are defined |
-| [APIs](apis.md) | How views call `api_response` |
-| [Services](services.md) | Raising `ValidationError` from writes |
+| [APIs](../layers/apis.md) | How views call `api_response` |
+| [Services](../layers/services.md) | Raising `ValidationError` from writes |
 | [Pagination & filtering](pagination-and-filtering.md) | List `result` shape |
-| [Logging](logging.md) | Unexpected errors are logged in the handler |
+| [Logging](../platform/logging.md) | Unexpected errors are logged in the handler |

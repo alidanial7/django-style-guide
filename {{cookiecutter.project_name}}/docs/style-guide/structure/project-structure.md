@@ -37,7 +37,7 @@ flowchart LR
 | `config/` | *How is Django configured and mounted?* |
 | `{{cookiecutter.project_slug}}/` | *Where is product + platform code?* |
 | `docker*` / `start-dev-services.sh` | *How do we run infra and production?* |
-| `docs/style-guide/` | *How must new code be written?* |
+| `docs/style-guide/` | *How must new code be written?* (`structure/`, `layers/`, `http/`, `platform/`) |
 
 ---
 
@@ -147,13 +147,13 @@ Set via `DJANGO_SETTINGS_MODULE` (see `.env.example`).
 | `security.py` / `cors.py` / `sessions.py` | Cookies, HTTPS flags, CORS |
 | `celery.py` / `channels.py` / `sentry.py` | Optional stacks |
 
-**Rule:** new deploy-time knobs go in a settings slice + `.env.example`, not in domain `constants.py`. See [Constants](constants.md) vs [Settings](settings.md).
+**Rule:** new deploy-time knobs go in a settings slice + `.env.example`, not in domain `constants.py`. See [Constants](../layers/constants.md) vs [Settings](../platform/settings.md).
 
 ### Other important `config/` modules
 
 | File | Role |
 |------|------|
-| `urls.py` | Mounts admin, `/api/v1/`, DEBUG-only schema UI — see [URLs](urls.md) |
+| `urls.py` | Mounts admin, `/api/v1/`, DEBUG-only schema UI — see [URLs](../layers/urls.md) |
 | `request_id.py` | Middleware that sets `X-Request-ID` and attaches it to logs |
 | `celery.py` | Celery application object (imported early when Celery is enabled) |
 
@@ -206,7 +206,7 @@ Pick a **plural domain** name instead (`blogs`, `orders`, …) — see [Domain a
 | `scripts/` | Non-Django shell helpers (translations, …) |
 | `logs/` | File logs when `LOG_TO_FILE=true` |
 
-Details: [Docker & production](docker-and-production.md), [Commands](commands.md), [Logging](logging.md).
+Details: [Docker & production](../platform/docker-and-production.md), [Commands](../platform/commands.md), [Logging](../platform/logging.md).
 
 ---
 
@@ -242,5 +242,5 @@ Keep long conventions out of the root README — link here instead.
 |-----|-----|
 | [Architecture](architecture.md) | Layer responsibilities |
 | [Domain apps](domain-apps.md) | Per-app folder layout + scaffold |
-| [URLs](urls.md) | How HTTP paths are wired |
-| [Settings](settings.md) | Settings slices in depth |
+| [URLs](../layers/urls.md) | How HTTP paths are wired |
+| [Settings](../platform/settings.md) | Settings slices in depth |

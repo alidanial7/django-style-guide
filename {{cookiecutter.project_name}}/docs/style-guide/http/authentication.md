@@ -223,7 +223,7 @@ Throttles: scope `password_reset` (see [Throttling](throttling.md)).
 | Piece | Detail |
 |-------|--------|
 | User model | `users.BaseUser` — email as `USERNAME_FIELD`, no username |
-| Profile | `bio`, `avatar`; created by [signal](signals.md) on user create |
+| Profile | `bio`, `avatar`; created by [signal](../layers/signals.md) on user create |
 | Default avatar | Static `users/default_avatar.png` via selector |
 | Update | `PATCH /api/v1/users/profile/` — multipart for avatar |
 
@@ -285,7 +285,7 @@ Do not pretend they exist in clients or docs for a fresh project.
 |-----|-----|
 | [Permissions](permissions.md) | `ApiAuthMixin` and custom gates |
 | [Validation & errors](validation-and-errors.md) | Password codes / validators |
-| [APIs](apis.md) | View patterns |
+| [APIs](../layers/apis.md) | View patterns |
 | [Throttling](throttling.md) | `auth` / `register` / `password_reset` |
 | [Swagger](swagger.md) | Trying endpoints in DEBUG |
-| [URLs](urls.md) | Path map |
+| [URLs](../layers/urls.md) | Path map |

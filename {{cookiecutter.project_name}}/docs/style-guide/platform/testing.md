@@ -16,8 +16,8 @@
 |-----------|--------|
 | Mirror layers | Service tests don’t need HTTP; API tests don’t re-test every validator path in isolation |
 | Use factories | Prefer `BaseUserFactory` over hand-built model graphs |
-| Assert the envelope | API tests check `success`, `status`, `result`, `messages` — see [API envelope](api-envelope.md) |
-| Prefer `reverse()` | Stable names from [URLs](urls.md) |
+| Assert the envelope | API tests check `success`, `status`, `result`, `messages` — see [API envelope](../http/api-envelope.md) |
+| Prefer `reverse()` | Stable names from [URLs](../layers/urls.md) |
 | DB access | Mark with `@pytest.mark.django_db` (or fixtures that pull `db`) |
 
 ```mermaid
@@ -136,7 +136,7 @@ class BaseUserFactory(factory.django.DjangoModelFactory):
 | Sequence emails | Unique constraint friendly |
 | `start_domain_app` stubs | Commented factory template under `tests/<app>_factories.py` |
 
-Profile rows appear via the [user signal](signals.md) when the user is created.
+Profile rows appear via the [user signal](../layers/signals.md) when the user is created.
 
 ---
 
@@ -240,8 +240,8 @@ def test_password_requires_number():
 | Doc | Why |
 |-----|-----|
 | [Settings](settings.md) | `config.django.test` |
-| [Domain apps](domain-apps.md) | Scaffolded test stubs |
-| [API envelope](api-envelope.md) | Assert shapes |
-| [Services](services.md) / [APIs](apis.md) | What to cover |
+| [Domain apps](../structure/domain-apps.md) | Scaffolded test stubs |
+| [API envelope](../http/api-envelope.md) | Assert shapes |
+| [Services](../layers/services.md) / [APIs](../layers/apis.md) | What to cover |
 | [Docker & production](docker-and-production.md) | CI/Compose runtime |
 | [Commands](commands.md) | `make test` and related entrypoints |

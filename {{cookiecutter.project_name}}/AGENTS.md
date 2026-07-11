@@ -12,7 +12,7 @@ Instructions for coding agents working in this generated project.
 
 | Rule | Detail |
 |------|--------|
-| Layers | APIs glue only; **selectors** read; **services** write — see [Architecture → Layer contracts](docs/style-guide/architecture.md) |
+| Layers | APIs glue only; **selectors** read; **services** write — see [Architecture → Layer contracts](docs/style-guide/structure/architecture.md) |
 | Responses | Always `api_response` / pagination helpers — envelope `{success,status,result,messages}` |
 | Permissions | Default is **IsAuthenticated**; public views must set `AllowAny` |
 | Validation | `is_*` + `*Validator` + domain `*ErrorCode`; uniqueness via DB + `map_integrity_error` |
@@ -30,14 +30,14 @@ Document success payloads with `envelope_serializer(...)` from `common.http.sche
 
 ## Out of scope unless asked
 
-Soft delete, multi-tenancy, full RBAC, outbox, idempotency keys — see [`docs/style-guide/enterprise-extensions.md`](docs/style-guide/enterprise-extensions.md).
+Soft delete, multi-tenancy, full RBAC, outbox, idempotency keys — see [`docs/style-guide/structure/enterprise-extensions.md`](docs/style-guide/structure/enterprise-extensions.md).
 
 ## Quick links
 
-- [Architecture](docs/style-guide/architecture.md)
-- [APIs](docs/style-guide/apis.md)
-- [Selectors](docs/style-guide/selectors.md)
-- [Pagination & filtering](docs/style-guide/pagination-and-filtering.md)
-- [Security](docs/style-guide/security.md)
-- [Validation & errors](docs/style-guide/validation-and-errors.md)
-- [Domain apps](docs/style-guide/domain-apps.md)
+- [Architecture](docs/style-guide/structure/architecture.md)
+- [APIs](docs/style-guide/layers/apis.md)
+- [Selectors](docs/style-guide/layers/selectors.md)
+- [Pagination & filtering](docs/style-guide/http/pagination-and-filtering.md)
+- [Security](docs/style-guide/http/security.md)
+- [Validation & errors](docs/style-guide/http/validation-and-errors.md)
+- [Domain apps](docs/style-guide/structure/domain-apps.md)

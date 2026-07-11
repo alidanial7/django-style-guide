@@ -232,10 +232,10 @@ flowchart LR
 
 | Need | Doc |
 |------|-----|
-| Error machine codes | [Validation & errors](validation-and-errors.md) |
-| Env / deploy config | [Settings](settings.md) |
+| Error machine codes | [Validation & errors](../http/validation-and-errors.md) |
+| Env / deploy config | [Settings](../platform/settings.md) |
 | Signal side effects | [Signals](signals.md) |
-| Swagger tag usage on views | [APIs](apis.md), [Swagger](swagger.md) |
+| Swagger tag usage on views | [APIs](apis.md), [Swagger](../http/swagger.md) |
 
 ---
 

@@ -138,7 +138,7 @@ except Exception:
 
 Validation errors that become 400s for the client usually **do not** need `logger.exception`. Log at `info`/`warning` if product/security cares (e.g. repeated failed logins), otherwise let the API envelope speak.
 
-Unexpected failures in the exception handler already call `logger.exception("Unhandled API exception", ...)` — see [API envelope](api-envelope.md).
+Unexpected failures in the exception handler already call `logger.exception("Unhandled API exception", ...)` — see [API envelope](../http/api-envelope.md).
 
 ---
 
@@ -186,7 +186,7 @@ Unexpected failures in the exception handler already call `logger.exception("Unh
 
 | Doc | Why |
 |-----|-----|
-| [API envelope](api-envelope.md) | Unhandled errors are logged there |
+| [API envelope](../http/api-envelope.md) | Unhandled errors are logged there |
 | [Settings](settings.md) | Where logging slice lives |
 | [Docker & production](docker-and-production.md) | How logs behave in containers |
 | [Code quality](code-quality.md) | Hooks that may ban debug leftovers |
