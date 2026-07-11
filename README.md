@@ -18,6 +18,7 @@ Production deployment uses **Docker Compose on your own server** — not Heroku 
 - Optional Sentry, Redis, RabbitMQ, pgAdmin, VS Code, Ruff/pre-commit, pytest, CI
 - `python manage.py start_domain_app` — HackSoft-style domain scaffolding
 - `python manage.py devserver` — migrate, create superuser, runserver, optional Celery
+- Generated [`docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/README.md) — architecture, layers, validation, auth, Swagger, and coding conventions
 
 ## Prerequisites
 
@@ -93,7 +94,12 @@ cookiecutter https://github.com/alidanial7/django-style-guide.git --no-input \
 
 ## After generation
 
-See the generated project's `README.md` for setup, and `docs/style-guide/` for architecture and coding conventions.
+See the generated project's `README.md` for setup.
+
+Coding conventions and architecture live in the generated project's style guide:
+
+- [`docs/style-guide/README.md`]({{cookiecutter.project_name}}/docs/style-guide/README.md) — index
+- Template source in this repo: [`{{cookiecutter.project_name}}/docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/)
 
 Quick start:
 
