@@ -75,6 +75,7 @@ from rest_framework.views import APIView
 
 from {{cookiecutter.project_slug}}.api.mixins import ApiAuthMixin
 from {{cookiecutter.project_slug}}.common.http import api_response
+from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
 from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS
 from {{cookiecutter.project_slug}}.users.selector.users_selectors import get_profile
 from {{cookiecutter.project_slug}}.users.services.user_services import profile_update
@@ -86,7 +87,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
     @extend_schema(
         tags=USERS_TAGS,
         summary="Current user",
-        responses=UsersProfileOutputSerializer,
+        responses=envelope_serializer("UsersProfileEnvelope", UsersProfileOutputSerializer),
     )
     def get(self, request):
         profile = get_profile(user=request.user)
@@ -98,7 +99,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
         tags=USERS_TAGS,
         summary="Update current user profile",
         request=UsersProfileUpdateInputSerializer,
-        responses=UsersProfileOutputSerializer,
+        responses=envelope_serializer("UsersProfileUpdateEnvelope", UsersProfileOutputSerializer),
     )
     def patch(self, request):
         serializer = UsersProfileUpdateInputSerializer(data=request.data, partial=True)
@@ -119,6 +120,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
 
 ```python
 class UsersRegisterApi(APIView):
+    permission_classes = [AllowAny]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "register"
@@ -127,7 +129,7 @@ class UsersRegisterApi(APIView):
         tags=USERS_TAGS,
         summary="Register a new user",
         request=UsersRegisterInputSerializer,
-        responses=UsersRegisterOutputSerializer,
+        responses={201: envelope_serializer("UsersRegisterEnvelope", UsersRegisterOutputSerializer)},
     )
     def post(self, request):
         serializer = UsersRegisterInputSerializer(data=request.data)
@@ -150,9 +152,11 @@ class UsersRegisterApi(APIView):
 |-------|---------|
 | `serializer.is_valid(raise_exception=True)` | Manually building error dicts in the view |
 | `return api_response(...)` | `return Response(serializer.data)` |
+| `envelope_serializer(...)` in `@extend_schema(responses=...)` | Documenting only the inner serializer as the HTTP body |
 | Call services/selectors | `Model.objects.create(...)` in the view |
 | `@extend_schema(...)` on each handler | Undocumented endpoints in Swagger |
 | `ApiAuthMixin` when login is required | Ad‑hoc auth checks buried in `get/post` |
+| `permission_classes = [AllowAny]` on public routes | Assuming new views are public (default is authenticated) |
 
 ---
 

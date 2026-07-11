@@ -62,7 +62,7 @@ Response is wrapped in the [API envelope](api-envelope.md); `result` contains `a
 Authorization: Bearer <access>
 ```
 
-Views wrap SimpleJWT and re-envelope:
+Views wrap SimpleJWT and re-envelope. Login uses `AuthJwtTokenObtainSerializer` (field name follows `USERNAME_FIELD` = `email`) and documents the success envelope via `envelope_serializer`.
 
 ```python
 # users/apis/auth/auth_jwt_apis.py

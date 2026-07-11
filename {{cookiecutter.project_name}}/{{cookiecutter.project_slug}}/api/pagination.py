@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from rest_framework.pagination import CursorPagination as _CursorPagination
 from rest_framework.pagination import LimitOffsetPagination as _LimitOffsetPagination
 
 from {{cookiecutter.project_slug}}.common.http import api_response
@@ -60,6 +61,31 @@ class LimitOffsetPagination(_LimitOffsetPagination):
                     ("limit", self.limit),
                     ("offset", self.offset),
                     ("count", self.count),
+                    ("next", self.get_next_link()),
+                    ("previous", self.get_previous_link()),
+                    ("results", data),
+                ]
+            )
+        )
+
+
+class CursorPagination(_CursorPagination):
+    """
+    Stable pagination for large / frequently changing lists.
+
+    Prefer this over limit/offset when rows are inserted/deleted while clients page
+    (feeds, event logs, high-churn tables). Clients follow `next` / `previous` cursors.
+    """
+
+    page_size = 10
+    max_page_size = 50
+    page_size_query_param = "page_size"
+    ordering = "-created_at"
+
+    def get_paginated_response(self, data):
+        return api_response(
+            data=OrderedDict(
+                [
                     ("next", self.get_next_link()),
                     ("previous", self.get_previous_link()),
                     ("results", data),

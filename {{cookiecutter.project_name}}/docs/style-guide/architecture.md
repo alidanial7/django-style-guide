@@ -289,8 +289,10 @@ flowchart TD
 - Keep views under ~20–40 lines of real logic (parse → call → respond)
 - Use keyword-only args in services/selectors: `def register(*, email: str, ...)`
 - Return `api_response` (or pagination helpers that wrap it)
+- Document OpenAPI success bodies with `envelope_serializer(...)`
 - Map every write path through `model_create` / `model_save` / `model_update` **or** explicit `map_integrity_error`
 - Add domain apps with `start_domain_app`
+- Set `AllowAny` only on intentionally public endpoints (default is authenticated)
 
 ### ❌ Don’t
 
@@ -299,6 +301,7 @@ flowchart TD
 - Return raw `Response({"email": ...})` without the envelope
 - Mix read + write in one function (“god” service that also builds querysets for unrelated screens)
 - Copy-paste integrity / exception handling into each app
+- Assume a new `APIView` is public without `AllowAny`
 
 ---
 
@@ -311,5 +314,7 @@ flowchart TD
 | [Services](services.md) | Write-path details |
 | [Selectors](selectors.md) | Read-path details |
 | [APIs](apis.md) | View + serializer conventions |
+| [Security](security.md) | Deny-by-default and hardening |
 | [Validation & errors](validation-and-errors.md) | Codes, validators, integrity |
 | [API envelope](api-envelope.md) | Exact JSON shapes |
+| [Enterprise extensions](enterprise-extensions.md) | Patterns not shipped by default |

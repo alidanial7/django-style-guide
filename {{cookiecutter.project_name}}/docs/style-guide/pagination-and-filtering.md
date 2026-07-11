@@ -82,6 +82,38 @@ class PostListApi(ApiAuthMixin, APIView):
 
 ---
 
+## 📍 `CursorPagination` (large / high-churn lists)
+
+```python
+from {{cookiecutter.project_slug}}.api.pagination import CursorPagination, get_paginated_response_context
+
+class PostFeedApi(ApiAuthMixin, APIView):
+    class Pagination(CursorPagination):
+        page_size = 20
+        ordering = "-created_at"
+
+    def get(self, request):
+        qs = list_published_posts()
+        return get_paginated_response_context(
+            pagination_class=self.Pagination,
+            serializer_class=PostOutputSerializer,
+            queryset=qs,
+            request=request,
+            view=self,
+        )
+```
+
+| Prefer limit/offset when | Prefer cursor when |
+|--------------------------|--------------------|
+| Admin tables, small catalogs, need total `count` | Feeds, event streams, rows inserted while paging |
+| Clients build page numbers from `offset` | Clients only follow `next` / `previous` |
+
+Cursor `result` shape (inside the envelope): `{ "next", "previous", "results" }` — no global `count`.
+
+Default ordering uses `-created_at` (works with `BaseModel`). Override `ordering` for your model.
+
+---
+
 ## 🛠️ Helper functions
 
 | Helper | Serializer context | When to use |
@@ -139,7 +171,7 @@ class PostsListApi(ApiAuthMixin, APIView):
 "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
 ```
 
-That helps **generic views / viewsets** that declare `filterset_class`. With plain `APIView` (this template’s default style), you still own the wiring — prefer one of these patterns:
+**Important:** `DEFAULT_FILTER_BACKENDS` applies automatically to generic views/viewsets that participate in the DRF filter pipeline. This template’s default style is plain **`APIView`**, which does **not** auto-run those backends. You must filter explicitly:
 
 ### Pattern A — selector kwargs (preferred for clarity)
 

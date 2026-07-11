@@ -46,29 +46,9 @@ flowchart LR
 
 ### Spectacular
 
-```python
-# config/settings/swagger.py
-SPECTACULAR_SETTINGS = {
-    "TITLE": "{{cookiecutter.project_name}} API",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
-    "SWAGGER_UI_SETTINGS": {
-        "deepLinking": True,
-        "persistAuthorization": True,
-    },
-{%- if cookiecutter.use_jwt == "y" %}
-    "APPEND_COMPONENTS": {
-        "securitySchemes": {
-            "BearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT",
-            }
-        }
-    },
-{%- endif %}
-}
-```
+`config/settings/swagger.py` sets title/version, Swagger UI options, shared **`ApiErrorEnvelope`** / **`ApiMessageItem`** components, and (when JWT) `BearerAuth`.
+
+Prefer documenting **success** responses with `envelope_serializer(...)` so the schema matches runtime JSON — see [API envelope](api-envelope.md).
 
 | Setting | Meaning |
 |---------|---------|
@@ -76,6 +56,7 @@ SPECTACULAR_SETTINGS = {
 | `SERVE_INCLUDE_SCHEMA` | `False` — schema endpoint does not embed itself recursively |
 | `deepLinking` | UI URLs can deep-link to operations |
 | `persistAuthorization` | Keeps Authorize values across page reloads in the UI |
+| `ApiErrorEnvelope` component | Shared error shape for clients |
 {%- if cookiecutter.use_jwt == "y" %}
 | `BearerAuth` security scheme | Enables the Authorize button for JWT |
 {%- endif %}
@@ -164,24 +145,23 @@ If Authorize/CSRF friction blocks you, use `curl`/httpie with session + CSRF hea
 
 ---
 
-## 📦 Envelope vs OpenAPI schema (important)
+## 📦 Envelope vs OpenAPI schema
 
-```text
-OpenAPI documents  ≈  serializer field shapes (request / result payload ideas)
-Runtime JSON       =  { success, status, result, messages }
-                         └── result holds the serializer payload on success
+Runtime JSON always uses the envelope. Spectacular alone would only show the inner serializer — **wrap success responses**:
+
+```python
+from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
+
+@extend_schema(
+    responses=envelope_serializer("UsersProfileEnvelope", UsersProfileOutputSerializer),
+)
+def get(self, request):
+    ...
 ```
 
-| Layer | What Spectacular sees | What the client receives |
-|-------|----------------------|---------------------------|
-| Success | Output serializer fields | Those fields **inside** `result` |
-| Error | Often incomplete unless you add examples | Always `messages` map — see [API envelope](api-envelope.md) |
+Shared error component: `ApiErrorEnvelope` in `SPECTACULAR_SETTINGS["APPEND_COMPONENTS"]`.
 
-**Implications for humans and agents:**
-
-1. Teach clients the envelope first; treat serializer schemas as the shape of `result` (success) or of request bodies.  
-2. Prefer asserting `success` / `messages.*.code` in API tests, not only status codes.  
-3. Optionally later: add spectacular `OpenApiResponse` / examples that show the full envelope — not required by the template today.
+Clients must still treat [API envelope](api-envelope.md) as the transport contract (`messages.*.code`, etc.).
 
 ---
 

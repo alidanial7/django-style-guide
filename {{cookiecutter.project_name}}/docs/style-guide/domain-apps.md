@@ -223,6 +223,8 @@ python manage.py migrate
 
 Follow [Validation & errors](validation-and-errors.md): domain codes, `is_*` / `*Validator`, and `model_create` / `map_integrity_error` on persistence.
 
+Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`; authenticated ones use `ApiAuthMixin` — see [Permissions](permissions.md) / [Security](security.md).
+
 ---
 
 ## 🗂️ Feature grouping under `apis/`

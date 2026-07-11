@@ -19,6 +19,7 @@ Production deployment uses **Docker Compose on your own server** — not Heroku 
 - `python manage.py start_domain_app` — HackSoft-style domain scaffolding
 - `python manage.py devserver` — migrate, create superuser, runserver, optional Celery
 - Generated [`docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/README.md) — architecture, layers, validation, auth, Swagger, and coding conventions
+- Generated [`AGENTS.md`]({{cookiecutter.project_name}}/AGENTS.md) — short rules for coding agents
 
 ## Prerequisites
 

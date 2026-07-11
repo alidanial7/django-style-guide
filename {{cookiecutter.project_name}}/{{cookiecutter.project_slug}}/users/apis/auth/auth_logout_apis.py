@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema
+from rest_framework.permissions import AllowAny
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
@@ -9,6 +10,7 @@ from {{cookiecutter.project_slug}}.users.services.user_services import logout
 
 
 class AuthLogoutApi(APIView):
+    permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "auth"
 

@@ -3,10 +3,12 @@ from django.contrib.auth import login
 {% endif -%}
 from drf_spectacular.utils import extend_schema
 from rest_framework import parsers, status
+from rest_framework.permissions import AllowAny
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from {{cookiecutter.project_slug}}.common.http import api_response
+from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
 from {{cookiecutter.project_slug}}.users.apis.users.register.users_register_serializers import (
     UsersRegisterInputSerializer,
     UsersRegisterOutputSerializer,
@@ -16,6 +18,7 @@ from {{cookiecutter.project_slug}}.users.services.user_services import register
 
 
 class UsersRegisterApi(APIView):
+    permission_classes = [AllowAny]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "register"
@@ -24,7 +27,7 @@ class UsersRegisterApi(APIView):
         tags=USERS_TAGS,
         summary="Register a new user",
         request=UsersRegisterInputSerializer,
-        responses=UsersRegisterOutputSerializer,
+        responses={201: envelope_serializer("UsersRegisterEnvelope", UsersRegisterOutputSerializer)},
     )
     def post(self, request):
         serializer = UsersRegisterInputSerializer(data=request.data)

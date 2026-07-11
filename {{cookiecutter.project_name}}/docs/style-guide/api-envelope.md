@@ -43,6 +43,24 @@ flowchart TB
 
 ---
 
+## 📘 Documenting the envelope in OpenAPI
+
+Use `envelope_serializer` from `common.http.schema` in `@extend_schema(responses=...)`:
+
+```python
+from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
+
+@extend_schema(
+    responses={201: envelope_serializer("UsersRegisterEnvelope", UsersRegisterOutputSerializer)},
+)
+def post(self, request):
+    ...
+```
+
+Error shape is also registered as component `ApiErrorEnvelope` in `config/settings/swagger.py`.
+
+---
+
 ## ✅ Success — `api_response`
 
 ```python

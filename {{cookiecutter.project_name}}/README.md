@@ -8,10 +8,13 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 
 Conventions, architecture, and how to write code live under **[`docs/style-guide/`](docs/style-guide/README.md)** (source of truth for humans and agents).
 
+Coding agents: start with **[`AGENTS.md`](AGENTS.md)**.
+
 | Start here | Topic |
 |------------|--------|
 | [Style guide index](docs/style-guide/README.md) | Full table of contents |
 | [Architecture](docs/style-guide/architecture.md) | Layers & request flow |
+| [Security](docs/style-guide/security.md) | Deny-by-default, secrets, DEBUG |
 | [Domain apps](docs/style-guide/domain-apps.md) | `start_domain_app` |
 | [Validation & errors](docs/style-guide/validation-and-errors.md) | Codes, validators, integrity |
 | [Commands](docs/style-guide/commands.md) | `make`, management commands, scripts |

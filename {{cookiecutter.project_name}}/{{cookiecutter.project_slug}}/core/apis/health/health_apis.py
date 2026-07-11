@@ -1,8 +1,10 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from {{cookiecutter.project_slug}}.common.http import api_response
+from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
 from {{cookiecutter.project_slug}}.core.services.health_checks import run_health_checks
 
 
@@ -13,6 +15,8 @@ class ComponentHealthSerializer(serializers.Serializer):
 
 
 class HealthApi(APIView):
+    permission_classes = [AllowAny]
+
     class OutputSerializer(serializers.Serializer):
         status = serializers.ChoiceField(choices=["ok", "error"])
         checks = serializers.DictField(child=ComponentHealthSerializer())
@@ -26,9 +30,10 @@ class HealthApi(APIView):
             "{% if cookiecutter.use_rabbitmq == 'y' %}, RabbitMQ{% endif %}"
             "{% if cookiecutter.use_celery == 'y' %}, and Celery{% endif %}"
             " status without leaking hostnames, credentials, or DEBUG flags. "
-            "Returns HTTP 503 when any enabled dependency is unavailable."
+            "Returns HTTP 503 when any enabled dependency is unavailable. "
+            "Public by design for probes — do not add secrets to the payload."
         ),
-        responses=OutputSerializer,
+        responses=envelope_serializer("HealthEnvelope", OutputSerializer),
     )
     def get(self, request):
         payload = run_health_checks()

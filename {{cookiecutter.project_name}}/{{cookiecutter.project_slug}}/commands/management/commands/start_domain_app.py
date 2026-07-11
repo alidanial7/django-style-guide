@@ -81,6 +81,7 @@ app_name = "__APP_NAME__"
 
 urlpatterns = [
     # path("", SomeApi.as_view(), name="list"),
+    # Public endpoints must set permission_classes = [AllowAny] (deny-by-default).
 ]
 """,
     "validators/__init__.py": '''"""Domain validators for __APP_NAME__ (is_* pures + *Validator raisers)."""

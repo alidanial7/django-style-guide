@@ -243,5 +243,5 @@ def test_password_requires_number():
 | [Domain apps](domain-apps.md) | Scaffolded test stubs |
 | [API envelope](api-envelope.md) | Assert shapes |
 | [Services](services.md) / [APIs](apis.md) | What to cover |
-| [Docker & production](docker-and-production.md) | How CI/Compose relate to runtime (when that doc exists) |
+| [Docker & production](docker-and-production.md) | CI/Compose runtime |
 | [Commands](commands.md) | `make test` and related entrypoints |

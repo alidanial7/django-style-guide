@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 
 from {{cookiecutter.project_slug}}.api.mixins import ApiAuthMixin
 from {{cookiecutter.project_slug}}.common.http import api_response
+from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
 from {{cookiecutter.project_slug}}.users.apis.users.profile.users_profile_serializers import (
     UsersProfileOutputSerializer,
     UsersProfileUpdateInputSerializer,
@@ -19,7 +20,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
     @extend_schema(
         tags=USERS_TAGS,
         summary="Current user",
-        responses=UsersProfileOutputSerializer,
+        responses=envelope_serializer("UsersProfileEnvelope", UsersProfileOutputSerializer),
     )
     def get(self, request):
         profile = get_profile(user=request.user)
@@ -29,7 +30,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
         tags=USERS_TAGS,
         summary="Update current user profile",
         request=UsersProfileUpdateInputSerializer,
-        responses=UsersProfileOutputSerializer,
+        responses=envelope_serializer("UsersProfileUpdateEnvelope", UsersProfileOutputSerializer),
     )
     def patch(self, request):
         serializer = UsersProfileUpdateInputSerializer(data=request.data, partial=True)
