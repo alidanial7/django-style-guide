@@ -1,46 +1,111 @@
-# Validation & errors
+# 🛡️ Validation & errors
 
-`common` = platform only. Each domain app (e.g. `users`) owns its identity/business codes and validators.
+> End-to-end rules for **machine codes**, **pure `is_*` checks**, **raising validators**, **serializer/service errors**, and **DB integrity mapping**.
+>
+> `common` = platform only. Each domain app owns its own codes and validators (`users`, `blogs`, …).
 
-## Boundaries
+This doc replaces the old root `VALIDATION.md` cheat sheet with the full reference.
+
+---
+
+## 🎯 Mental model
+
+```mermaid
+flowchart TB
+    subgraph Pure["Pure checks"]
+        IS["is_* → bool"]
+    end
+    subgraph Codes["Machine codes"]
+        PE[ErrorCode — common]
+        DE[UserErrorCode — app]
+    end
+    subgraph Raise["Raising layer"]
+        VAL["*Validator"]
+        SER[serializer.validate]
+        SVC[service ValidationError]
+    end
+    subgraph Persist["Persistence"]
+        DB[(constraints)]
+        MAP[map_integrity_error]
+    end
+    subgraph HTTP["HTTP"]
+        ENV[api_exception_handler]
+    end
+
+    IS --> VAL
+    PE --> MAP
+    DE --> VAL
+    DE --> SER
+    DE --> SVC
+    VAL --> SER
+    SER --> ENV
+    SVC --> ENV
+    DB --> MAP --> ENV
+```
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| Pure checks | `common/validators/` or `<app>/validators/` | `is_*` → `bool` only (no messages, no exceptions) |
-| Platform codes | `common/errors/codes.py` → `ErrorCode` | Shared machine codes (`required`, `unique`, `not_null`, …) |
-| Domain codes | `<app>/errors/codes.py` → e.g. `UserErrorCode` | App-specific codes. Codes only — never validators |
-| Raising validators | `<app>/validators/` | `@deconstructible` classes that raise Django `ValidationError` with `code=` |
-| Serializers | `<app>/apis/...` | Input shape + cross-field `validate()` only |
-| Services / writes | `<app>/services/` + `common/services.py` | Business rules + persistence; always map integrity errors |
-| Integrity mapping | `common/db/integrity/` | `IntegrityError` → field-keyed Django `ValidationError` / controlled `APIException` |
-| API envelope | `common/http/` | See [API response envelope](api-envelope.md) |
+| Pure checks | `common/validators/` or `<app>/validators/` | `is_*` → `bool` only |
+| Platform codes | `common/errors/codes.py` → `ErrorCode` | Shared codes (`required`, `unique`, …) |
+| Domain codes | `<app>/errors/codes.py` → e.g. `UserErrorCode` | App codes only — **never raise here** |
+| Raising validators | `<app>/validators/` | `@deconstructible` + Django `ValidationError` + `code=` |
+| Serializers | `<app>/apis/...` | Input shape + cross-field `validate()` |
+| Services | `<app>/services/` + `common/services.py` | Business rules + integrity-safe writes |
+| Integrity | `common/db/integrity/` | `IntegrityError` → field-keyed errors |
+| Envelope | `common/http/` | See [API envelope](api-envelope.md) |
 
-**Do not** put domain password rules in `common`, raising validators in `errors/`, or business/permission rules in serializers/views.
+### ❌ Hard boundaries
 
-## Messages
+| Don’t | Do |
+|-------|-----|
+| Domain password rules in `common` | `<app>/validators/` |
+| Raising validators inside `errors/` | `errors/` = `StrEnum` codes only |
+| Uniqueness / permissions in serializers | DB + integrity; permission classes |
+| Pre-format gettext with `%` | Use `params={...}` on `ValidationError` |
 
-- Use `gettext_lazy` / `_()` with **lowercase** msgids.
-- Parameterized `ValidationError` messages use `params={...}` — do not pre-format with `%`.
+---
 
-## 1. Platform error codes (`common`)
+## 💬 Message conventions
+
+| Rule | Example |
+|------|---------|
+| `gettext_lazy` / `_()` msgids are **lowercase** | `_("password must include number")` |
+| Parameterized messages use `params=` | `params={"limit_value": 10}` |
+| Don’t bake values into the msgid | ❌ `_("password must be at least 10 characters")` as the only form when limit may change |
+
+Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see [Translations](translations.md) / [Code quality](code-quality.md).
+
+---
+
+## 1️⃣ Platform error codes (`common`)
 
 ```python
 # common/errors/codes.py
 class ErrorCode(StrEnum):
     INVALID_FORMAT = "invalid_format"
-    INVALID = "invalid"                # fallback when raiser omitted code=
-    REQUIRED = "required"
-    NOT_NULL = "not_null"              # DB NOT NULL / pgcode 23502
-    UNIQUE = "unique"                  # unique / pgcode 23505
+    INVALID = "invalid"                 # fallback when raiser omitted code=
+    REQUIRED = "required"               # missing API / serializer input
+    NOT_NULL = "not_null"               # DB NOT NULL / pgcode 23502
+    UNIQUE = "unique"                   # unique / pgcode 23505
     INVALID_REFERENCE = "invalid_reference"  # FK / pgcode 23503
     UNKNOWN_INTEGRITY = "integrity_error"
     APPLICATION_ERROR = "application_error"
     SERVER_ERROR = "server_error"
 ```
 
-`REQUIRED` = missing API/serializer input. `NOT_NULL` = database null violation. Keep them distinct.
+| Code | Meaning | Typical source |
+|------|---------|----------------|
+| `required` | Client omitted input | Serializer |
+| `not_null` | DB rejected NULL | Integrity map |
+| `unique` | Unique violation | Integrity map |
+| `invalid` | Fallback | Handler when `code=` missing |
+| `server_error` | Unexpected exception | Handler 500 path |
 
-## 2. Domain error codes (per app)
+**Keep `REQUIRED` and `NOT_NULL` distinct** — one is HTTP/input, the other is database.
+
+---
+
+## 2️⃣ Domain error codes (per app)
 
 ```python
 # users/errors/codes.py
@@ -55,37 +120,50 @@ class UserErrorCode(StrEnum):
     INVALID_TOKEN = "invalid_token"
 ```
 
-Add new apps the same way: `<app>/errors/codes.py` with an app-prefixed enum (`OrdersErrorCode`). Never reuse the platform name `ErrorCode` for domain codes.
+| Rule | Detail |
+|------|--------|
+| Enum name | App-prefixed: `BlogsErrorCode`, `OrdersErrorCode` |
+| Never name it `ErrorCode` | That name is reserved for platform |
+| Values | Stable snake_case strings for clients |
+| Package | Codes only — no validator classes |
 
-## 3. Pure validators (`is_*`)
+`start_domain_app` scaffolds an empty enum in `errors/codes.py`.
 
-**Generic (any app):** helpers under `common/validators/` (see the commented `is_slug` example in `common/validators/string.py`).
+---
+
+## 3️⃣ Pure validators (`is_*`)
+
+Pure functions are reusable in validators, tests, and (rarely) services — **no exceptions, no gettext**.
+
+### Generic (any app) — `common/validators/`
 
 ```python
+# common/validators/string.py
+def is_non_empty(value: str) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
 def is_slug(value: str) -> bool:
     return isinstance(value, str) and _SLUG_RE.fullmatch(value) is not None
 ```
 
-**Domain:** pure checks live next to raising validators (e.g. top of `users/validators/password.py`):
+### Domain — next to raisers in `<app>/validators/`
 
 ```python
+# users/validators/password.py
 def is_password_with_number(value: str) -> bool:
-    ...
+    return isinstance(value, str) and _HAS_NUMBER_RE.search(value) is not None
 ```
 
-Naming separates concerns: `is_*` (bool) vs `*Validator` (raises).
+Naming separates concerns in one file: `is_*` (bool) vs `*Validator` (raises).
 
-Rules: return `bool` only; no `ValidationError`, no `gettext`, no user-facing messages.
+---
 
-## 4. Raising field validators (`*Validator`)
+## 4️⃣ Raising field validators (`*Validator`)
 
-Use Django’s `ValidationError` (not DRF’s) so the same class works on models and serializers:
+Use **Django’s** `ValidationError` (not DRF’s) so the same class works on model fields and serializer fields.
 
 ```python
-from django.core.exceptions import ValidationError
-from django.utils.deconstruct import deconstructible
-from django.utils.translation import gettext_lazy as _
-
 @deconstructible
 class PasswordNumberValidator:
     code = UserErrorCode.PASSWORD_MISSING_NUMBER
@@ -111,9 +189,12 @@ class PasswordMinLengthValidator:
             )
 ```
 
-Export a list for DRF fields:
+### Export instances for DRF
 
 ```python
+validate_password_number = PasswordNumberValidator()
+# ...
+
 PASSWORD_VALIDATORS = [
     validate_password_number,
     validate_password_letter,
@@ -121,33 +202,50 @@ PASSWORD_VALIDATORS = [
     validate_password_min_length,
 ]
 
+# serializer
 password = serializers.CharField(validators=PASSWORD_VALIDATORS)
 ```
 
-### Password policy (API + Django auth)
+`@deconstructible` matters if you attach validators on **model fields** (migrations must serialize them).
 
-| Path | Setting / list | Used for |
+### Password policy: API + Django auth stay in sync
+
+| Path | List / setting | Used for |
 |------|----------------|----------|
-| API input | `users.validators.PASSWORD_VALIDATORS` | Register / DRF fields |
-| Django auth | `AUTH_PASSWORD_VALIDATORS` in `config/settings/auth.py` | Admin / `set_password` (`Password*DjangoValidator` adapters + Django built-ins) |
+| API / DRF | `users.validators.PASSWORD_VALIDATORS` | Register and password fields |
+| Django auth | `AUTH_PASSWORD_VALIDATORS` in `config/settings/auth.py` | Admin / `set_password` |
 
-Keep both in sync when changing password policy.
+Domain rules are wired into Django via `Password*DjangoValidator` adapters in the same `password.py` module (same underlying `validate_password_*` callables). **Change policy once; keep both lists aligned.**
 
-## 5. Serializers (shape + object rules only)
+---
 
-- Field validators: reuse domain `*Validator` lists.
-- Cross-field rules: `validate()` with field-keyed errors.
-- Uniqueness stays in the DB — see integrity below.
+## 5️⃣ Serializers (shape + object rules only)
 
-## 6. Services and integrity mapping
+- Attach domain `*Validator` lists on fields  
+- Cross-field rules in `validate()` with field-keyed errors  
+- Platform vs domain codes as appropriate  
 
-Every persistence path must either:
+```python
+raise serializers.ValidationError(
+    {"confirm_password": [_("confirm password is not equal to password")]},
+    code=UserErrorCode.PASSWORD_MISMATCH,
+)
+```
 
-1. go through `common.services.model_create` / `model_save` / `model_update`, or
-2. catch `IntegrityError` and call `map_integrity_error` (raise-only):
+Full patterns: [APIs](apis.md).
+
+---
+
+## 6️⃣ Services + integrity mapping
+
+Every write path must:
+
+1. use `model_create` / `model_save` / `model_update`, **or**  
+2. `except IntegrityError: map_integrity_error(...); raise`
 
 ```python
 from django.db import IntegrityError
+
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
 from {{cookiecutter.project_slug}}.common.services import model_create
 
@@ -160,33 +258,80 @@ except IntegrityError as error:
     raise
 ```
 
-`common/db/integrity/` prefers Postgres `pgcode` (`23505` unique, `23502` not null, `23503` FK) with SQLite message fallback. Known columns become **field-keyed** errors in `messages`.
+### What `map_integrity_error` does
 
-## 7. Checklist: add a new field rule
+```mermaid
+flowchart TD
+    IE[IntegrityError] --> P[parse_integrity_error]
+    P -->|23505 unique| U[ValidationError code=unique field-keyed]
+    P -->|23502 not null| N[ValidationError code=not_null]
+    P -->|23503 FK| F[ValidationError code=invalid_reference]
+    P -->|unknown| A[APIException code=integrity_error + log]
+```
 
-1. **Pure check** — generic → `common/validators/`; domain → `<app>/validators/` as `is_*`.
-2. **Code** — platform → `ErrorCode`; domain → `<app>/errors/codes.py`.
-3. **Raising validator** — `@deconstructible` in `<app>/validators/`, Django `ValidationError` + `code=`.
-4. **Wire it** — model field when universal; serializer field for API input; cross-field only in `validate()`.
-5. **Persist safely** — DB constraint for uniqueness/FK/null; writes via `model_*` or `map_integrity_error`.
+| Postgres `pgcode` | `ErrorCode` | Client `messages` |
+|-------------------|-------------|-------------------|
+| `23505` | `unique` | `messages.<column>` when column known |
+| `23502` | `not_null` | per-column or generic |
+| `23503` | `invalid_reference` | per-column or generic |
+| other | `integrity_error` | controlled APIException (logged) |
 
-## Example layout
+SQLite (tests) uses message parsing fallback. **DB constraints remain the source of truth**; validators are UX.
+
+Service-level domain errors (wrong current password, bad reset token) raise field-keyed Django `ValidationError` with `UserErrorCode` — see [Services](services.md).
+
+---
+
+## 7️⃣ `ApplicationError` (rare)
+
+```python
+# core/exceptions.py
+class ApplicationError(Exception):
+    def __init__(self, message, extra=None):
+        self.message = message
+        self.extra = extra or {}
+```
+
+Use for controlled **non-field** application failures. The handler maps to `ErrorCode.APPLICATION_ERROR` on `non_field_errors` and merges `extra`. Prefer field-keyed `ValidationError` whenever a field is known.
+
+---
+
+## ✅ Checklist: add a new field rule
+
+1. **Pure check** — generic → `common/validators/` as `is_*`; domain → `<app>/validators/`  
+2. **Code** — platform → `ErrorCode`; domain → `<app>/errors/codes.py`  
+3. **Raising validator** — `@deconstructible`, Django `ValidationError` + `code=` + lowercase `_()`  
+4. **Wire it** — model field if universal; serializer field for API; cross-field only in `validate()`  
+5. **Persist safely** — DB constraint for unique/FK/null; writes via `model_*` or `map_integrity_error`  
+6. **Tests** — validator unit tests + API/service case for the failure message/code  
+
+---
+
+## 📁 Example layout
 
 ```text
 common/
-  validators/string.py     # commented generic is_* example
-  errors/codes.py          # ErrorCode (platform only)
-  db/integrity/            # parse.py + map.py → map_integrity_error
+  validators/string.py      # is_non_empty, is_slug
+  errors/codes.py           # ErrorCode
+  db/integrity/             # parse.py + map.py
   http/exception_handler.py
-  services.py              # model_create / model_save wrap IntegrityError
+  services.py               # model_* wrap IntegrityError
 
 users/
-  errors/codes.py          # UserErrorCode only
-  validators/password.py   # is_password_* + Password*Validator + PASSWORD_VALIDATORS
-  services/                # create_user / register map integrity
-  apis/.../register/       # serializers use PASSWORD_VALIDATORS + UserErrorCode
+  errors/codes.py           # UserErrorCode
+  validators/password.py    # is_password_* + *Validator + PASSWORD_VALIDATORS + Django adapters
+  services/                 # create_user / register / change_password
+  apis/.../register/        # PASSWORD_VALIDATORS + UserErrorCode in serializer
 ```
 
-## `ApplicationError`
+---
 
-`core.exceptions.ApplicationError` is for controlled non-field application failures. The exception handler maps it to `ErrorCode.APPLICATION_ERROR` with optional `extra` field messages. Prefer domain `ValidationError` for field-level problems.
+## 🔗 Related docs
+
+| Doc | Why |
+|-----|-----|
+| [API envelope](api-envelope.md) | How codes appear in JSON |
+| [Services](services.md) | Where integrity mapping is called |
+| [APIs](apis.md) | Serializer usage |
+| [Models](models.md) | Constraints |
+| [Translations](translations.md) | Lowercase msgids |
