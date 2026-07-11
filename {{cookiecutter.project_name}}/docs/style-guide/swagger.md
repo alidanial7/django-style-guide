@@ -1,37 +1,97 @@
-# Swagger / OpenAPI
+# 📘 Swagger / OpenAPI
 
-This project uses [drf-spectacular](https://drf-spectacular.readthedocs.io/) for schema generation.
+> Interactive API docs and machine-readable schema via [drf-spectacular](https://drf-spectacular.readthedocs.io/).
+>
+> Available **only when `DEBUG=True`** — never expose the full schema UI in production with this template’s default wiring.
 
-## Where it is available
+---
 
-Swagger UI, ReDoc, and the raw schema are mounted in `config/urls.py` **only when `DEBUG=True`**:
+## 🎯 What you get in development
 
-| URL | Description |
-|-----|-------------|
-| http://localhost:8000/ | Swagger UI |
-| http://localhost:8000/redoc/ | ReDoc |
-| http://localhost:8000/schema/ | OpenAPI schema |
+Mounted in `config/urls.py` when `DEBUG` is on:
 
-They are **not** exposed in production settings.
+| URL | What it is |
+|-----|------------|
+| http://localhost:8000/ | **Swagger UI** — try requests in the browser |
+| http://localhost:8000/redoc/ | **ReDoc** — readable reference |
+| http://localhost:8000/schema/ | Raw OpenAPI schema (JSON/YAML depending on client) |
 
-## Settings
+```mermaid
+flowchart LR
+    DEBUG{DEBUG=True?}
+    DEBUG -->|yes| UI[Swagger / ReDoc / schema]
+    DEBUG -->|no| API["/api/v1/ + admin only"]
+    UI --> SPEC[drf-spectacular AutoSchema]
+    SPEC --> VIEWS["@extend_schema on APIViews"]
+```
 
-`config/settings/swagger.py` → `SPECTACULAR_SETTINGS`:
+### Why DEBUG-only?
 
-- `TITLE`, `VERSION`
-- `SERVE_INCLUDE_SCHEMA`: `False`
-- Swagger UI: `deepLinking`, `persistAuthorization`
-{%- if cookiecutter.use_jwt == "y" %}
-- `APPEND_COMPONENTS.securitySchemes.BearerAuth` (HTTP bearer JWT) for Authorize in Swagger UI
-{%- endif %}
+| Risk if public in production | Mitigation |
+|------------------------------|------------|
+| Full endpoint inventory for attackers | Keep schema views behind `DEBUG` |
+| Accidental auth experimentation against prod | No UI mounted |
+| Stale docs confusing external partners | Prefer a deliberate public docs portal if you need one later |
 
-DRF uses `"DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"` (`config/settings/drf.py`).
+---
 
-## Annotating endpoints
+## ⚙️ Settings
 
-Use `@extend_schema` on each HTTP method:
+### DRF
 
 ```python
+# config/settings/drf.py
+"DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+```
+
+### Spectacular
+
+```python
+# config/settings/swagger.py
+SPECTACULAR_SETTINGS = {
+    "TITLE": "{{cookiecutter.project_name}} API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+    },
+{%- if cookiecutter.use_jwt == "y" %}
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+{%- endif %}
+}
+```
+
+| Setting | Meaning |
+|---------|---------|
+| `TITLE` / `VERSION` | Shown in Swagger header |
+| `SERVE_INCLUDE_SCHEMA` | `False` — schema endpoint does not embed itself recursively |
+| `deepLinking` | UI URLs can deep-link to operations |
+| `persistAuthorization` | Keeps Authorize values across page reloads in the UI |
+{%- if cookiecutter.use_jwt == "y" %}
+| `BearerAuth` security scheme | Enables the Authorize button for JWT |
+{%- endif %}
+
+---
+
+## ✍️ Annotating endpoints (required practice)
+
+Every public handler should declare schema metadata with `@extend_schema`:
+
+```python
+from drf_spectacular.utils import extend_schema
+
+from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS
+
+
 @extend_schema(
     tags=USERS_TAGS,
     summary="Register a new user",
@@ -42,14 +102,138 @@ def post(self, request):
     ...
 ```
 
-For `SerializerMethodField`, add `@extend_schema_field(...)` so the schema type is correct.
+| Argument | Purpose |
+|----------|---------|
+| `tags` | Sidebar groups in Swagger — from [constants](constants.md) |
+| `summary` | Short human title |
+| `request` | Body / input serializer |
+| `responses` | Success body serializer (add status map when you need 201 vs 200 explicitly) |
+| `description` | Longer prose when needed (see `HealthApi`) |
 
-## Tags
+### Method fields
 
-Define tags in the app `constants.py` and reuse them — keeps the Swagger sidebar stable.
+```python
+from drf_spectacular.utils import extend_schema_field
 
-System endpoints (health) use tags like `["system"]` inline or via core constants.
+@extend_schema_field(serializers.URLField())
+def get_avatar(self, profile: Profile) -> str:
+    ...
+```
 
-## Envelope vs schema
+Without `@extend_schema_field`, Spectacular often types method fields as generic/string and the docs lie.
 
-Spectacular documents serializer shapes. The runtime success/error **envelope** (`success` / `status` / `result` / `messages`) wraps those payloads. When documenting errors for clients, point them at [API response envelope](api-envelope.md); optionally add spectacular response examples later if the team wants them in the schema.
+### Tags
+
+```python
+# users/constants.py
+USERS_TAGS = ["users"]
+AUTH_TAGS = ["auth"]
+```
+
+```python
+@extend_schema(tags=AUTH_TAGS, summary="JWT login")
+```
+
+Health uses `tags=["system"]`. Keep tag strings **lowercase and stable** — clients and codegen depend on them.
+
+---
+
+{%- if cookiecutter.use_jwt == "y" %}
+## 🔓 Trying JWT in Swagger UI
+
+1. Open http://localhost:8000/  
+2. Call **register** or **JWT login**  
+3. Copy the `access` token from `result` (envelope)  
+4. Click **Authorize**  
+5. Enter `Bearer <access>` or just `<access>` depending on UI prompts (scheme is HTTP bearer)  
+6. Call protected routes like **profile**  
+
+Because responses use the [API envelope](api-envelope.md), the token lives under `result.access` (login) or `result.token.access` (register) — not at the JSON root like raw SimpleJWT examples in upstream docs.
+
+`persistAuthorization: True` keeps the token in the UI while you click around locally.
+{%- else %}
+## 🔓 Trying session auth in Swagger UI
+
+1. Open http://localhost:8000/  
+2. Call **session login** (or register) so the browser stores the session cookie  
+3. For unsafe methods, ensure CSRF is satisfied (Swagger/browser cookie flows can be fiddly — many teams use the UI mainly for GET, and use httpie/Postman for session CSRF POSTs)  
+4. Call protected routes like **profile**  
+
+If Authorize/CSRF friction blocks you, use `curl`/httpie with session + CSRF headers against the same DEBUG server — the schema is still the contract.
+{%- endif %}
+
+---
+
+## 📦 Envelope vs OpenAPI schema (important)
+
+```text
+OpenAPI documents  ≈  serializer field shapes (request / result payload ideas)
+Runtime JSON       =  { success, status, result, messages }
+                         └── result holds the serializer payload on success
+```
+
+| Layer | What Spectacular sees | What the client receives |
+|-------|----------------------|---------------------------|
+| Success | Output serializer fields | Those fields **inside** `result` |
+| Error | Often incomplete unless you add examples | Always `messages` map — see [API envelope](api-envelope.md) |
+
+**Implications for humans and agents:**
+
+1. Teach clients the envelope first; treat serializer schemas as the shape of `result` (success) or of request bodies.  
+2. Prefer asserting `success` / `messages.*.code` in API tests, not only status codes.  
+3. Optionally later: add spectacular `OpenApiResponse` / examples that show the full envelope — not required by the template today.
+
+---
+
+## 🧪 Keeping the schema honest
+
+| Practice | Why |
+|----------|-----|
+| `@extend_schema` on every handler | Avoids “mystery” operations |
+| Input/Output serializer split | Request body ≠ response body |
+| `@extend_schema_field` on `SerializerMethodField` | Correct types for avatar URLs, tokens, … |
+| Stable tags from `constants.py` | No duplicate “Users” / “users” groups |
+| Run UI after adding an endpoint | Catch missing auth/body docs early |
+
+```bash
+# smoke: schema must generate without errors
+python manage.py spectacular --validate --fail-on-warn  # if available in your spectacular version
+# or simply open /schema/ under DEBUG
+```
+
+---
+
+## ❌ Anti-patterns
+
+| Anti-pattern | Fix |
+|--------------|-----|
+| Mounting Swagger in production `urls.py` unconditionally | Keep the `if settings.DEBUG` guard |
+| Hard-coding `tags=["Users"]` in one view and `["users"]` in another | Shared `USERS_TAGS` |
+| Documenting only success serializers and ignoring envelope in client SDKs | Document envelope as the transport contract |
+| Skipping `@extend_schema` because “the code is obvious” | Schema is for clients and agents, not just authors |
+| Putting secrets in schema descriptions | Never |
+
+---
+
+## ✅ Checklist: new endpoint visible in Swagger
+
+1. Implement view + serializers  
+2. Add `@extend_schema(tags=…, summary=…, request=…, responses=…)`  
+3. Annotate method fields  
+4. Wire URL  
+5. Restart / refresh Swagger UI under DEBUG  
+6. Confirm tag group and try-it-out path  
+7. Point API consumers at [API envelope](api-envelope.md) for error shape  
+
+---
+
+## 🔗 Related docs
+
+| Doc | Why |
+|-----|-----|
+| [APIs](apis.md) | Where `@extend_schema` is applied |
+| [Constants](constants.md) | Tag lists |
+| [Authentication](authentication.md) | Login/register to obtain credentials |
+| [Permissions](permissions.md) | Protected routes |
+| [API envelope](api-envelope.md) | Real JSON contract |
+| [URLs](urls.md) | Where schema routes are mounted |
