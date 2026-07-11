@@ -82,8 +82,7 @@ def change_password(*, user: BaseUser, current_password: str, new_password: str)
     user.set_password(new_password)
     user.save(update_fields=["password"])
 
-
-{%- if cookiecutter.use_jwt == "y" %}
+{% if cookiecutter.use_jwt == "y" %}
 def logout(*, refresh_token: str) -> None:
     try:
         token = RefreshToken(refresh_token)
@@ -98,8 +97,7 @@ def logout(*, refresh_token: str) -> None:
             }
         ) from error
 
-
-{%- endif %}
+{% endif %}
 def request_password_reset(*, email: str) -> None:
     """Always succeeds. Sends a reset email only when the account exists."""
     try:

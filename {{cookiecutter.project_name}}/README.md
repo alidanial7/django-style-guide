@@ -105,7 +105,7 @@ Configured in `config/settings/logging.py` (see also [LOGGING.md](LOGGING.md)).
 | `error_file` | `logs/error/error.log` | `ERROR`+ (JSON lines) |
 | `sql_console` | stdout | only if `LOG_SQL=true` |
 
-`django.request` errors go to **console + app_file + error_file** (when files are on).  
+`django.request` errors go to **console + app_file + error_file** (when files are on).
 `logs/.gitkeep` keeps the folder in git; real log files under `logs/**` are ignored. Dirs for `app/` and `error/` are created at startup when `LOG_TO_FILE=true`.
 
 **Request ID** — `config.request_id.RequestIdMiddleware` sets `X-Request-ID` on every response (reuses inbound header or generates uuid4). JSON file logs include `"request_id"` when a request context is active.
@@ -263,7 +263,6 @@ Logout at `POST /api/v1/auth/session/logout/` (authenticated). Browser / cookie 
 ├── start-dev-services.sh
 ├── scripts/
 │   └── update_translations.sh
-├── VALIDATION.md         # short validation layer cheat sheet
 ├── LOGGING.md            # logging conventions cheat sheet
 └── locale/               # created by makemessages
 ```
@@ -395,8 +394,8 @@ CI uses{%- if cookiecutter.use_testing == "y" %} `config.django.test` with a Pos
 
 ## Validation & errors
 
-This project separates **platform** concerns (`common`) from **domain** concerns (each app, e.g. `users`).  
-A short cheat sheet lives in [VALIDATION.md](VALIDATION.md). The sections below explain how to define and use each layer.
+This project separates **platform** concerns (`common`) from **domain** concerns (each app, e.g. `users`).
+The sections below explain how to define and use each layer.
 
 ### Layer map
 
@@ -448,7 +447,7 @@ Success and error responses share one outer shape. Use `api_response(...)` from 
 
 Each error field maps to a list of `{ "message", "code" }` objects. If a raiser omitted `code=`, the handler falls back to `"invalid"`. Unexpected server errors use `"server_error"` and never leak internals.
 
-Wired in `config/settings/drf.py` to `common.http.exception_handler.api_exception_handler`.  
+Wired in `config/settings/drf.py` to `common.http.exception_handler.api_exception_handler`.
 `api/exception_handlers.py` is a thin legacy alias only — do not add a second implementation.
 
 Auth/register endpoints are rate-limited via DRF `ScopedRateThrottle` (`auth`, `register`, `password_reset` rates in `config/settings/drf.py`). Prefer Redis (`use_redis=y`) in multi-worker production so throttle counters are shared.
@@ -514,7 +513,7 @@ Rules for every pure check: return `bool` only; no `ValidationError`, no `gettex
 
 ### 4. Raising field validators (`*Validator`)
 
-Use Django’s `ValidationError` (not DRF’s) so the same class works on models and serializers.  
+Use Django’s `ValidationError` (not DRF’s) so the same class works on models and serializers.
 User-facing `_()` / `gettext_lazy` msgids stay **lowercase**. Parameterized messages use `params=` (do not pre-format with `%`):
 
 ```python
@@ -594,7 +593,7 @@ Do not put uniqueness checks or permission logic in serializers — uniqueness i
 
 Every persistence path must either:
 
-1. go through `common.services.model_create` / `model_save` / `model_update`, or  
+1. go through `common.services.model_create` / `model_save` / `model_update`, or
 2. catch `IntegrityError` and call `map_integrity_error` (raise-only; never returns):
 
 ```python
@@ -726,12 +725,12 @@ This starts:
 {%- endif %}
 
 {%- if cookiecutter.reverse_proxy == "none" %}
-App: http://localhost:8000  
+App: http://localhost:8000
 Uploaded media is served by Django from the `media-data` volume when no reverse proxy was selected. Prefer regenerating with `reverse_proxy=nginx` for production traffic.
 {%- elif cookiecutter.reverse_proxy == "nginx" %}
-App: http://localhost/  
+App: http://localhost/
 {%- else %}
-App: http://localhost/  
+App: http://localhost/
 {%- endif %}
 
 The production Compose file runs the image as built (no source bind-mount). Rebuild after code changes: `docker compose up --build -d`.

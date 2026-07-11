@@ -47,9 +47,7 @@ class AuthPasswordResetRequestApi(APIView):
         serializer = AuthPasswordResetRequestInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_password_reset(email=serializer.validated_data["email"])
-        return api_response(
-            data={"detail": "if an account exists for this email, a reset message was sent."}
-        )
+        return api_response(data={"detail": "if an account exists for this email, a reset message was sent."})
 
 
 class AuthPasswordResetConfirmApi(APIView):

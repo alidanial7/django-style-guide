@@ -1,6 +1,5 @@
 from django.urls import path
-
-{%- if cookiecutter.use_jwt == "y" %}
+{% if cookiecutter.use_jwt == "y" %}
 from {{cookiecutter.project_slug}}.users.apis.auth.auth_jwt_apis import (
     AuthJwtLoginApi,
     AuthJwtRefreshApi,
@@ -8,16 +7,23 @@ from {{cookiecutter.project_slug}}.users.apis.auth.auth_jwt_apis import (
 )
 from {{cookiecutter.project_slug}}.users.apis.auth.auth_logout_apis import AuthLogoutApi
 {%- else %}
-from {{cookiecutter.project_slug}}.users.apis.auth.auth_session_apis import (
-    AuthSessionLoginApi,
-    AuthSessionLogoutApi,
-)
-{%- endif %}
 from {{cookiecutter.project_slug}}.users.apis.auth.auth_password_apis import (
     AuthPasswordChangeApi,
     AuthPasswordResetConfirmApi,
     AuthPasswordResetRequestApi,
 )
+from {{cookiecutter.project_slug}}.users.apis.auth.auth_session_apis import (
+    AuthSessionLoginApi,
+    AuthSessionLogoutApi,
+)
+{%- endif %}
+{%- if cookiecutter.use_jwt == "y" %}
+from {{cookiecutter.project_slug}}.users.apis.auth.auth_password_apis import (
+    AuthPasswordChangeApi,
+    AuthPasswordResetConfirmApi,
+    AuthPasswordResetRequestApi,
+)
+{%- endif %}
 
 app_name = "auth"
 

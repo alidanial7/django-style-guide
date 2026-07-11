@@ -1,12 +1,10 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from rest_framework.authentication import BaseAuthentication
+from rest_framework.authentication import BaseAuthentication{% if cookiecutter.use_jwt != "y" %}, SessionAuthentication{% endif %}
 from rest_framework.permissions import BasePermission, IsAuthenticated
 {%- if cookiecutter.use_jwt == "y" %}
 from rest_framework_simplejwt.authentication import JWTAuthentication
-{%- else %}
-from rest_framework.authentication import SessionAuthentication
 {%- endif %}
 
 

@@ -26,6 +26,7 @@ _RESERVED = frozenset(
     }
 )
 
+
 # Placeholders use __NAME__ so Cookiecutter/Jinja does not rewrite this file.
 def _to_pascal(name: str) -> str:
     return "".join(part.capitalize() for part in name.split("_") if part)
@@ -104,7 +105,7 @@ class __ERROR_CODE_CLASS__(StrEnum):
 # Created only when pytest.ini exists (project generated with testing).
 _TEST_FILES: dict[str, str] = {
     "tests/__init__.py": "",
-    "tests/test_app.py": '''import pytest
+    "tests/test_app.py": """import pytest
 
 from __PROJECT_SLUG__.__APP_NAME__.apps import __APP_CONFIG__
 
@@ -113,7 +114,7 @@ from __PROJECT_SLUG__.__APP_NAME__.apps import __APP_CONFIG__
 class Test__APP_CLASS__App:
     def test_app_config_is_importable(self):
         assert __APP_CONFIG__.name == "__PROJECT_SLUG__.__APP_NAME__"
-''',
+""",
     "tests/__APP_NAME___factories.py": """# import factory
 #
 # from __PROJECT_SLUG__.__APP_NAME__.models import Example
@@ -200,8 +201,7 @@ class Command(BaseCommand):
 
         if not _APP_NAME_RE.match(app_name):
             raise CommandError(
-                "App name must be a lowercase Python identifier "
-                "(start with a letter; only a-z, 0-9, underscore)."
+                "App name must be a lowercase Python identifier (start with a letter; only a-z, 0-9, underscore)."
             )
         if app_name in _RESERVED:
             raise CommandError(f"'{app_name}' is reserved in this template.")
@@ -229,11 +229,7 @@ class Command(BaseCommand):
         elif _testing_enabled() and no_tests:
             self.stdout.write(self.style.WARNING("Skipping test stubs (--no-tests)."))
         elif not _testing_enabled():
-            self.stdout.write(
-                self.style.NOTICE(
-                    "Testing not detected (no pytest.ini) — skipping test stubs."
-                )
-            )
+            self.stdout.write(self.style.NOTICE("Testing not detected (no pytest.ini) — skipping test stubs."))
 
         created: list[str] = []
         for relative, template in files.items():
@@ -247,16 +243,13 @@ class Command(BaseCommand):
         if not created and not force:
             self.stdout.write(self.style.WARNING("Nothing to create (files already present)."))
         else:
-            self.stdout.write(
-                self.style.SUCCESS(f"Created domain app '{app_name}' with {len(created)} file(s).")
-            )
+            self.stdout.write(self.style.SUCCESS(f"Created domain app '{app_name}' with {len(created)} file(s)."))
             for item in created:
                 self.stdout.write(f"  + {item}")
             if include_tests:
                 self.stdout.write(
                     self.style.SUCCESS(
-                        "Base tests included (pytest.ini found). "
-                        f"Run: pytest {_PROJECT_SLUG}/{app_name} -q"
+                        f"Base tests included (pytest.ini found). Run: pytest {_PROJECT_SLUG}/{app_name} -q"
                     )
                 )
 
@@ -268,17 +261,12 @@ class Command(BaseCommand):
             self.stdout.write("Next steps:")
             self.stdout.write("  1. Add to LOCAL_APPS in config/settings/apps.py:")
             self.stdout.write(f'       "{config_path}",')
-            self.stdout.write(
-                f"     Or re-run with: python manage.py start_domain_app {app_name} --register"
-            )
+            self.stdout.write(f"     Or re-run with: python manage.py start_domain_app {app_name} --register")
             self.stdout.write(f"  2. Wire URLs in {_PROJECT_SLUG}/api/urls.py, e.g.:")
             self.stdout.write(
-                f'       path("{app_name}/", '
-                f'include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}", "{app_name}"))),'
+                f'       path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}", "{app_name}"))),'
             )
-            self.stdout.write(
-                f"  3. Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations."
-            )
+            self.stdout.write(f"  3. Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations.")
 
     def _register_local_app(self, config_path: str, app_name: str) -> None:
         apps_file = _PROJECT_ROOT / "config" / "settings" / "apps.py"
@@ -306,7 +294,6 @@ class Command(BaseCommand):
         self.stdout.write("Still needed:")
         self.stdout.write(f"  - Wire URLs in {_PROJECT_SLUG}/api/urls.py")
         self.stdout.write(
-            f'      path("{app_name}/", '
-            f'include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}", "{app_name}"))),'
+            f'      path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}", "{app_name}"))),'
         )
         self.stdout.write(f"  - Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations")

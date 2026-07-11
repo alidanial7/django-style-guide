@@ -23,9 +23,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
     )
     def get(self, request):
         profile = get_profile(user=request.user)
-        return api_response(
-            data=UsersProfileOutputSerializer(profile, context={"request": request}).data
-        )
+        return api_response(data=UsersProfileOutputSerializer(profile, context={"request": request}).data)
 
     @extend_schema(
         tags=USERS_TAGS,
@@ -43,6 +41,4 @@ class UsersProfileApi(ApiAuthMixin, APIView):
             bio=serializer.validated_data.get("bio"),
             avatar=serializer.validated_data.get("avatar"),
         )
-        return api_response(
-            data=UsersProfileOutputSerializer(profile, context={"request": request}).data
-        )
+        return api_response(data=UsersProfileOutputSerializer(profile, context={"request": request}).data)

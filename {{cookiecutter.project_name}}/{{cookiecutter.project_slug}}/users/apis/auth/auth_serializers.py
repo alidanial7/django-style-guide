@@ -4,13 +4,11 @@ from rest_framework import serializers
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 from {{cookiecutter.project_slug}}.users.validators.password import PASSWORD_VALIDATORS
 
-
-{%- if cookiecutter.use_jwt == "y" %}
+{% if cookiecutter.use_jwt == "y" %}
 class AuthLogoutInputSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
-
-{%- endif %}
+{% endif %}
 class AuthPasswordChangeInputSerializer(serializers.Serializer):
     current_password = serializers.CharField()
     new_password = serializers.CharField(validators=PASSWORD_VALIDATORS)

@@ -1,6 +1,6 @@
-{%- if cookiecutter.use_jwt != "y" %}
+{% if cookiecutter.use_jwt != "y" -%}
 from django.contrib.auth import login
-{%- endif %}
+{% endif -%}
 from drf_spectacular.utils import extend_schema
 from rest_framework import parsers, status
 from rest_framework.throttling import ScopedRateThrottle
