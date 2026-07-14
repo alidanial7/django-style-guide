@@ -166,7 +166,7 @@ def get_profile(*, user: BaseUser) -> Profile:
     return profile
 ```
 
-**Why `get_or_create` is allowed here (narrow exception):**  
+**Why `get_or_create` is allowed here (narrow exception):**
 Every user *should* already have a profile via [signal](signals.md). This call is a **read-path safety net** for legacy/missing rows so `GET /profile/` does not 500. It is not a product “create profile” feature — that invariant still belongs to the signal / registration flow.
 
 Document similar exceptions in a one-line docstring when you add them.
@@ -299,12 +299,12 @@ Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pa
 
 ## ✅ Checklist: adding a selector
 
-1. Put it in `<entity>_selectors.py` (or `<app>_selectors.py` if tiny)  
-2. Name it `get_*` / `list_<entities>` / `list_<entities>_<purpose>` with keyword-only args  
-3. Add `select_related` / `prefetch_related` for the primary list/detail output  
-4. Export from `selector/__init__.py` if it is part of the public app API  
-5. Call it from APIs (and services if needed); apply FilterSet only in the API when needed  
-6. Add `selector/tests/…`  
+1. Put it in `<entity>_selectors.py` (or `<app>_selectors.py` if tiny)
+2. Name it `get_*` / `list_<entities>` / `list_<entities>_<purpose>` with keyword-only args
+3. Add `select_related` / `prefetch_related` for the primary list/detail output
+4. Export from `selector/__init__.py` if it is part of the public app API
+5. Call it from APIs (and services if needed); apply FilterSet only in the API when needed
+6. Add `selector/tests/…`
 
 ---
 

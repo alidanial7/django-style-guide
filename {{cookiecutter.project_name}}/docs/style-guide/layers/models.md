@@ -73,6 +73,106 @@ One primary model per file. Tiny related enums/helpers can live next to that mod
 
 ---
 
+## 🏷️ Labels, help text, Meta, docstrings
+
+Every concrete model should be labeled for **admin**, **integrity messages** (field `verbose_name` is reused when mapping DB errors), and **readers of the code**.
+
+Use `gettext_lazy as _` for import-time strings on model attributes — see [Translations](../platform/translations.md).
+
+### Full pattern
+
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+from {{cookiecutter.project_slug}}.common.models import BaseModel
+
+
+class Card(BaseModel):
+    """
+    Model to declare card
+    """
+
+    serial_number = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name=_("serial number"),
+        help_text="Human-readable identifier printed on the card.",
+    )
+    owner = models.ForeignKey(
+        "users.BaseUser",
+        on_delete=models.CASCADE,
+        related_name="cards",
+        verbose_name=_("owner"),
+        help_text="User who owns this card.",
+    )
+
+    class Meta:
+        verbose_name = _("card")
+        verbose_name_plural = _("cards")
+
+    def __str__(self):
+        return self.serial_number
+```
+
+### Field rules
+
+| Attribute | Required? | Convention |
+|-----------|-----------|------------|
+| `verbose_name` | **Yes** on every field you declare | `_("words with spaces")` — human-readable lowercase (`_("serial number")`, `_("email")`) |
+| `help_text` | **Yes whenever meaning is not obvious** | Short English sentence for admin / operators; plain string is fine (not a msgid) |
+
+```python
+# ✅
+email = models.EmailField(
+    unique=True,
+    verbose_name=_("email"),
+    help_text="Primary login identifier for the account.",
+)
+
+# ❌ — missing labels; Title Case msgids; underscore msgids
+email = models.EmailField(unique=True)
+email = models.EmailField(verbose_name=_("Email Address"))
+email = models.EmailField(verbose_name=_("serial_number"))
+```
+
+Inherited Django fields (`AbstractBaseUser.password`, `PermissionsMixin` flags, …) keep upstream labels unless you intentionally override them.
+
+### `Meta` verbose names
+
+Always set both, **singular / plural**, with lowercase gettext msgids:
+
+```python
+class Meta:
+    verbose_name = _("card")
+    verbose_name_plural = _("cards")
+```
+
+| ✅ | ❌ |
+|----|----|
+| `_("card")` / `_("cards")` | `_("Card")` / omitting `verbose_name_plural` |
+| Match the domain noun | Clever marketing slogans as msgids |
+
+### Class docstring
+
+Put a short module-level intent comment on the **class** (one short sentence). Prefer the `Model to declare <noun>` shape so scanners and agents recognize it:
+
+```python
+class Card(BaseModel):
+    """
+    Model to declare card
+    """
+```
+
+| ✅ | ❌ |
+|----|----|
+| `Model to declare profile` | Empty class with no docstring |
+| One line of purpose | Essay on HTTP / services inside the model docstring |
+
+Business workflows still belong in [services](services.md) — the docstring only says **what the table is**.
+
+---
+
 ## 🧱 `BaseModel` (`common.models`)
 
 Abstract base with timestamps — prefer it for domain entities that need audit fields:
@@ -80,8 +180,21 @@ Abstract base with timestamps — prefer it for domain entities that need audit 
 ```python
 # common/models.py
 class BaseModel(models.Model):
-    created_at = models.DateTimeField(db_index=True, default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
+    """
+    Model to declare shared timestamp fields
+    """
+
+    created_at = models.DateTimeField(
+        db_index=True,
+        default=timezone.now,
+        verbose_name=_("created at"),
+        help_text="When this row was first created.",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("updated at"),
+        help_text="When this row was last updated.",
+    )
 
     class Meta:
         abstract = True
@@ -89,12 +202,25 @@ class BaseModel(models.Model):
 
 ```python
 # blogs/models/post.py
+from django.utils.translation import gettext_lazy as _
+
 from {{cookiecutter.project_slug}}.common.models import BaseModel
 
 
 class Post(BaseModel):
-    title = models.CharField(max_length=200)
-    ...
+    """
+    Model to declare post
+    """
+
+    title = models.CharField(
+        max_length=200,
+        verbose_name=_("title"),
+        help_text="Public title shown in lists and detail views.",
+    )
+
+    class Meta:
+        verbose_name = _("post")
+        verbose_name_plural = _("posts")
 ```
 
 ### Real usage: `BaseUser`
@@ -102,12 +228,32 @@ class Post(BaseModel):
 ```python
 # users/models/base_user.py
 class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(verbose_name="email address", unique=True)
-    is_active = models.BooleanField(default=True)
-    is_admin = models.BooleanField(default=False)
+    """
+    Model to declare user
+    """
+
+    email = models.EmailField(
+        unique=True,
+        verbose_name=_("email"),
+        help_text="Primary login identifier for the account.",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("is active"),
+        help_text="Designates whether this user can authenticate.",
+    )
+    is_admin = models.BooleanField(
+        default=False,
+        verbose_name=_("is admin"),
+        help_text="Designates whether this user has admin/staff access.",
+    )
 
     objects = BaseUserManager()
     USERNAME_FIELD = "email"
+
+    class Meta:
+        verbose_name = _("user")
+        verbose_name_plural = _("users")
 ```
 
 `Profile` in this template does **not** subclass `BaseModel` (it is a thin 1:1 extension). That is fine — use `BaseModel` when timestamps matter for the entity itself.
@@ -135,17 +281,29 @@ flowchart TD
 | Password / format UX | `*Validator` on serializer/model field | `PASSWORD_VALIDATORS` |
 | “User may publish only if …” | Service | state machine in `services/` |
 
-**Validators improve API messages; they are not a substitute for constraints.**  
+**Validators improve API messages; they are not a substitute for constraints.**
 Two concurrent requests can both pass a serializer “email unique” check and then one hits the DB — integrity mapping turns that into `messages.email` with code `unique`. See [Validation & errors](../http/validation-and-errors.md).
 
 ### Example: `CheckConstraint` (`common.models.RandomModel`)
 
 ```python
 class RandomModel(BaseModel):
-    start_date = models.DateField()
-    end_date = models.DateField()
+    """
+    Model to declare random date range example
+    """
+
+    start_date = models.DateField(
+        verbose_name=_("start date"),
+        help_text="Inclusive start of the range.",
+    )
+    end_date = models.DateField(
+        verbose_name=_("end date"),
+        help_text="Exclusive-style end bound used by the check constraint.",
+    )
 
     class Meta:
+        verbose_name = _("random model")
+        verbose_name_plural = _("random models")
         constraints = [
             models.CheckConstraint(
                 name="start_date_before_end_date",
@@ -213,9 +371,35 @@ When you add reusable filters (`published()`, `for_user(user)`), prefer a custom
 ```python
 # users/models/profile.py
 class Profile(models.Model):
-    user = models.OneToOneField(BaseUser, on_delete=models.CASCADE, related_name="profile")
-    bio = models.CharField(max_length=1000, null=True, blank=True)
-    avatar = models.ImageField(upload_to="profiles/avatars/", blank=True, null=True)
+    """
+    Model to declare profile
+    """
+
+    user = models.OneToOneField(
+        BaseUser,
+        on_delete=models.CASCADE,
+        related_name="profile",
+        verbose_name=_("user"),
+        help_text="Account this profile belongs to.",
+    )
+    bio = models.CharField(
+        max_length=1000,
+        null=True,
+        blank=True,
+        verbose_name=_("bio"),
+        help_text="Optional short biography shown on the profile.",
+    )
+    avatar = models.ImageField(
+        upload_to="profiles/avatars/",
+        blank=True,
+        null=True,
+        verbose_name=_("avatar"),
+        help_text="Optional profile image.",
+    )
+
+    class Meta:
+        verbose_name = _("profile")
+        verbose_name_plural = _("profiles")
 ```
 
 Creating the related row for every new user is handled by a **signal** (mechanical invariant), while updating bio/avatar stays in a **service**. See [Signals](signals.md).
@@ -257,20 +441,24 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 
 ## ✅ Checklist: adding a new model
 
-1. Create `<app>/models/<name>.py`  
-2. Export it from `models/__init__.py`  
-3. Inherit `BaseModel` if timestamps are needed  
-4. Add DB constraints for anything the database must guarantee  
-5. Add a manager only if create/query helpers are real  
-6. Register in admin if operators need it  
-7. `makemigrations` + `migrate`  
-8. Build selectors/services/APIs on top — not fat methods on the model class  
+1. Create `<app>/models/<name>.py` with a short class docstring (`Model to declare …`)
+2. Export it from `models/__init__.py`
+3. Inherit `BaseModel` if timestamps are needed
+4. On every declared field: `verbose_name=_("serial number")`-style + `help_text="…"` when useful
+5. Set `Meta.verbose_name` / `verbose_name_plural` with lowercase `_()`
+6. Add DB constraints for anything the database must guarantee
+7. Add a manager only if create/query helpers are real
+8. Register in admin if operators need it
+9. `makemigrations` + `migrate`
+10. Build selectors/services/APIs on top — not fat methods on the model class
 
 ### ❌ Anti-patterns
 
 | Anti-pattern | Prefer |
 |--------------|--------|
 | Giant `models.py` with many models | Package + one file per model |
+| Fields without `verbose_name` | `_("field label")` with spaces, lowercase, on every declared field |
+| `Meta` without singular/plural labels | `verbose_name` + `verbose_name_plural` |
 | `Model.clean()` holding a whole workflow | Service function |
 | Checking uniqueness only in serializers | DB unique + integrity mapping |
 | Importing models via deep module paths from APIs | Package `__init__` exports |

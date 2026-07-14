@@ -95,8 +95,8 @@ This project was generated **with Redis**. Prefer Redis-backed `CACHES` in produ
 {%- else %}
 This project was generated **without Redis**. In multi-worker production, either:
 
-1. Regenerate / add Redis and point `CACHES` at it, or  
-2. Accept weaker per-process limits and put a reverse-proxy rate limit (nginx/traefik) in front  
+1. Regenerate / add Redis and point `CACHES` at it, or
+2. Accept weaker per-process limits and put a reverse-proxy rate limit (nginx/traefik) in front
 {%- endif %}
 
 Also consider edge rate limits at the reverse proxy for extra defense — see [Docker & production](../platform/docker-and-production.md).
@@ -124,7 +124,7 @@ class InviteAcceptApi(APIView):
     throttle_scope = "invite"
 ```
 
-3. **Document** for clients (Swagger `description` or this style guide) if the limit is part of the product contract.  
+3. **Document** for clients (Swagger `description` or this style guide) if the limit is part of the product contract.
 4. **Test** optionally with a low rate in the test settings override — don’t rely on flaky timing in CI unless necessary.
 
 ### Choosing a rate
@@ -152,11 +152,11 @@ class InviteAcceptApi(APIView):
 
 ## ✅ Checklist
 
-1. Abuse-prone route identified  
-2. Scope + rate in `DEFAULT_THROTTLE_RATES`  
-3. `ScopedRateThrottle` + `throttle_scope` on the view  
-4. Shared cache in multi-worker prod  
-5. Envelope 429 understood by clients  
+1. Abuse-prone route identified
+2. Scope + rate in `DEFAULT_THROTTLE_RATES`
+3. `ScopedRateThrottle` + `throttle_scope` on the view
+4. Shared cache in multi-worker prod
+5. Envelope 429 understood by clients
 
 ---
 

@@ -165,11 +165,11 @@ Use `env("NAME", default=...)`, `env.bool`, `env.int`, `env.db("DATABASE_URL")` 
 
 ## ✅ Checklist
 
-1. Right entrypoint for the process (`local` / `production` / `test`)  
-2. New knobs in a slice + `.env.example`  
-3. Secrets only via env  
-4. App registration via `LOCAL_APPS`  
-5. No domain literals living in settings  
+1. Right entrypoint for the process (`local` / `production` / `test`)
+2. New knobs in a slice + `.env.example`
+3. Secrets only via env
+4. App registration via `LOCAL_APPS`
+5. No domain literals living in settings
 
 ---
 

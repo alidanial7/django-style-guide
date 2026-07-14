@@ -90,9 +90,9 @@ SIMPLE_JWT = {
 
 On every successful `POST /api/v1/auth/jwt/refresh/`:
 
-1. Client sends the current `refresh`  
-2. Server returns a **new** `access` and a **new** `refresh`  
-3. The **previous** refresh token is blacklisted and must not be reused  
+1. Client sends the current `refresh`
+2. Server returns a **new** `access` and a **new** `refresh`
+3. The **previous** refresh token is blacklisted and must not be reused
 
 Clients must **replace** stored refresh tokens after each refresh. Reusing an old refresh → error.
 
@@ -104,8 +104,8 @@ Clients must **replace** stored refresh tokens after each refresh. Reusing an ol
 
 `POST /api/v1/auth/jwt/logout/` with body `{ "refresh": "<token>" }`:
 
-- Public (no access token required) — possession of the refresh token is enough to blacklist it  
-- Service `logout(refresh_token=...)` blacklists via SimpleJWT; invalid/expired → `UserErrorCode.INVALID_TOKEN`  
+- Public (no access token required) — possession of the refresh token is enough to blacklist it
+- Service `logout(refresh_token=...)` blacklists via SimpleJWT; invalid/expired → `UserErrorCode.INVALID_TOKEN`
 
 ```python
 # AuthLogoutApi → logout(refresh_token=...)
@@ -248,16 +248,16 @@ Do not pretend they exist in clients or docs for a fresh project.
 ## 🧪 Client integration checklist
 
 {%- if cookiecutter.use_jwt == "y" %}
-1. Register or login → store `access` + `refresh`  
-2. Send `Authorization: Bearer <access>` on protected routes  
-3. On 401, refresh once → replace both tokens → retry  
-4. On logout, send refresh to blacklist endpoint and clear local storage  
-5. Never log tokens; never put them in URL query strings  
+1. Register or login → store `access` + `refresh`
+2. Send `Authorization: Bearer <access>` on protected routes
+3. On 401, refresh once → replace both tokens → retry
+4. On logout, send refresh to blacklist endpoint and clear local storage
+5. Never log tokens; never put them in URL query strings
 {%- else %}
-1. Login or register → persist session cookie  
-2. Ensure CSRF token on `POST`/`PATCH`/`PUT`/`DELETE`  
-3. Logout via authenticated session logout endpoint  
-4. Same-site / CORS settings must allow credentialed requests from your frontend origin  
+1. Login or register → persist session cookie
+2. Ensure CSRF token on `POST`/`PATCH`/`PUT`/`DELETE`
+3. Logout via authenticated session logout endpoint
+4. Same-site / CORS settings must allow credentialed requests from your frontend origin
 {%- endif %}
 
 ---

@@ -216,12 +216,12 @@ flowchart TD
 
 ### Steps in plain language
 
-1. **Django `ValidationError`** (from services/validators) → convert to DRF validation error  
-2. **`Http404` / Django `PermissionDenied`** → DRF equivalents  
-3. **`ApplicationError`** → immediate 400 envelope with `application_error`  
-4. **DRF handler** runs for auth errors, throttling, NotFound, ValidationError, etc.  
-5. Response body is **replaced** with `{ success, status, result: [], messages }`  
-6. If still unhandled inside a DRF view → `logger.exception` + generic 500 envelope  
+1. **Django `ValidationError`** (from services/validators) → convert to DRF validation error
+2. **`Http404` / Django `PermissionDenied`** → DRF equivalents
+3. **`ApplicationError`** → immediate 400 envelope with `application_error`
+4. **DRF handler** runs for auth errors, throttling, NotFound, ValidationError, etc.
+5. Response body is **replaced** with `{ success, status, result: [], messages }`
+6. If still unhandled inside a DRF view → `logger.exception` + generic 500 envelope
 
 Nested DRF error dicts are flattened with dotted keys when needed (`parent.child`).
 

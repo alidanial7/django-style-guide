@@ -4,6 +4,7 @@ import django.db.models.deletion
 import django.utils.timezone
 from django.conf import settings
 from django.db import migrations, models
+from django.utils.translation import gettext_lazy as _
 
 
 class Migration(migrations.Migration):
@@ -45,18 +46,45 @@ class Migration(migrations.Migration):
                 (
                     "created_at",
                     models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now
+                        db_index=True,
+                        default=django.utils.timezone.now,
+                        help_text="When this row was first created.",
+                        verbose_name=_("created at"),
                     ),
                 ),
-                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="When this row was last updated.",
+                        verbose_name=_("updated at"),
+                    ),
+                ),
                 (
                     "email",
                     models.EmailField(
-                        max_length=254, unique=True, verbose_name="email address"
+                        help_text="Primary login identifier for the account.",
+                        max_length=254,
+                        unique=True,
+                        verbose_name=_("email"),
                     ),
                 ),
-                ("is_active", models.BooleanField(default=True)),
-                ("is_admin", models.BooleanField(default=False)),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Designates whether this user can authenticate.",
+                        verbose_name=_("is active"),
+                    ),
+                ),
+                (
+                    "is_admin",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates whether this user has admin/staff access.",
+                        verbose_name=_("is admin"),
+                    ),
+                ),
                 (
                     "groups",
                     models.ManyToManyField(
@@ -81,6 +109,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
+                "verbose_name": _("user"),
+                "verbose_name_plural": _("users"),
                 "abstract": False,
             },
         ),
@@ -96,21 +126,40 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("bio", models.CharField(blank=True, max_length=1000, null=True)),
+                (
+                    "bio",
+                    models.CharField(
+                        blank=True,
+                        help_text="Optional short biography shown on the profile.",
+                        max_length=1000,
+                        null=True,
+                        verbose_name=_("bio"),
+                    ),
+                ),
                 (
                     "avatar",
                     models.ImageField(
-                        blank=True, null=True, upload_to="profiles/avatars/"
+                        blank=True,
+                        help_text="Optional profile image.",
+                        null=True,
+                        upload_to="profiles/avatars/",
+                        verbose_name=_("avatar"),
                     ),
                 ),
                 (
                     "user",
                     models.OneToOneField(
+                        help_text="Account this profile belongs to.",
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="profile",
                         to=settings.AUTH_USER_MODEL,
+                        verbose_name=_("user"),
                     ),
                 ),
             ],
+            options={
+                "verbose_name": _("profile"),
+                "verbose_name_plural": _("profiles"),
+            },
         ),
     ]

@@ -308,12 +308,12 @@ sequenceDiagram
 
 **Checklist**
 
-1. Implement the `APIView` under `blogs/apis/…`  
-2. Add `path(...)` in `blogs/urls/blogs.py` with `name=`  
-3. Ensure `app_name = "blogs"`  
-4. `include` the module from `api/urls.py` under `blogs/`  
-5. Hit `/api/v1/blogs/…` and confirm it appears in Swagger (DEBUG)  
-6. In tests, prefer `reverse("blogs:posts-list")` over hard-coded strings  
+1. Implement the `APIView` under `blogs/apis/…`
+2. Add `path(...)` in `blogs/urls/blogs.py` with `name=`
+3. Ensure `app_name = "blogs"`
+4. `include` the module from `api/urls.py` under `blogs/`
+5. Hit `/api/v1/blogs/…` and confirm it appears in Swagger (DEBUG)
+6. In tests, prefer `reverse("blogs:posts-list")` over hard-coded strings
 
 ---
 

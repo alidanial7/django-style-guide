@@ -209,12 +209,12 @@ CI was not enabled at generation (`use_ci=n`). Add GitHub Actions or GitLab CI l
 
 ## ✅ Deploy checklist
 
-1. Strong secrets + `ALLOWED_HOSTS` + HTTPS cookie flags  
-2. `docker compose up --build -d`  
-3. Hit `/api/v1/health/`  
-4. Confirm reverse proxy serves static/media (if enabled)  
-5. Confirm migrations applied  
-6. Confirm logs/monitoring destination  
+1. Strong secrets + `ALLOWED_HOSTS` + HTTPS cookie flags
+2. `docker compose up --build -d`
+3. Hit `/api/v1/health/`
+4. Confirm reverse proxy serves static/media (if enabled)
+5. Confirm migrations applied
+6. Confirm logs/monitoring destination
 
 ---
 

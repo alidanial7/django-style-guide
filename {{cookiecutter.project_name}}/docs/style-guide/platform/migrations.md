@@ -29,23 +29,23 @@ flowchart LR
 
 ### Adding a required field
 
-1. Add column as **nullable** (or with DB default)  
-2. Deploy code that writes the new field  
-3. Backfill existing rows (management command / data migration)  
-4. Add `NOT NULL` / remove default in a **new** migration  
-5. Deploy code that assumes non-null  
+1. Add column as **nullable** (or with DB default)
+2. Deploy code that writes the new field
+3. Backfill existing rows (management command / data migration)
+4. Add `NOT NULL` / remove default in a **new** migration
+5. Deploy code that assumes non-null
 
 ### Renaming / replacing a column
 
-1. Add new column  
-2. Dual-write in the service layer  
-3. Backfill  
-4. Switch reads to the new column  
-5. Drop old column in a later release  
+1. Add new column
+2. Dual-write in the service layer
+3. Backfill
+4. Switch reads to the new column
+5. Drop old column in a later release
 
 ### Removing a field
 
-1. Stop writing in code (deploy)  
+1. Stop writing in code (deploy)
 2. Remove from models + migration that drops column (after old app versions are gone)
 
 ---

@@ -37,7 +37,7 @@ pre-commit install
 pre-commit run --all-files   # optional full-tree check
 ```
 
-Config: `.pre-commit-config.yaml`.  
+Config: `.pre-commit-config.yaml`.
 `docs/`, migrations, and `locale/` are excluded from hooks (see `exclude:`).
 
 ### Hook groups (enabled at generation)
@@ -108,11 +108,11 @@ Domain/architecture rules (selectors vs services, envelope, …) live in the res
 
 ## ✅ Checklist before opening a PR
 
-1. {%- if cookiecutter.use_code_style == "y" %} `pre-commit run --all-files` (or rely on commit hooks) {%- else %} `make lint` {%- endif %}  
-2. {%- if cookiecutter.use_testing == "y" %} `pytest` / `make test` {%- else %} Manual checks / `manage.py check` {%- endif %}  
-3. `python manage.py check`  
-4. No secrets in the diff  
-5. New code follows layer docs (apis/services/selectors/…)  
+1. {%- if cookiecutter.use_code_style == "y" %} `pre-commit run --all-files` (or rely on commit hooks) {%- else %} `make lint` {%- endif %}
+2. {%- if cookiecutter.use_testing == "y" %} `pytest` / `make test` {%- else %} Manual checks / `manage.py check` {%- endif %}
+3. `python manage.py check`
+4. No secrets in the diff
+5. New code follows layer docs (apis/services/selectors/…)
 
 ---
 

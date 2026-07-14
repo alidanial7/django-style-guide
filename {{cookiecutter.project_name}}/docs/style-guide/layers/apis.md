@@ -318,14 +318,14 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 
 ## ✅ Checklist: new endpoint
 
-1. Create feature folder under `apis/`  
-2. Add Input + Output serializers  
-3. Add `APIView` with `@extend_schema` + tags from `constants.py`  
-4. Wire auth mixin and/or throttle  
-5. Call selector/service only  
-6. Return `api_response` (correct HTTP status: 200/201/…)  
-7. Register path in `<app>/urls/` + `api/urls.py` if needed  
-8. Add API tests  
+1. Create feature folder under `apis/`
+2. Add Input + Output serializers
+3. Add `APIView` with `@extend_schema` + tags from `constants.py`
+4. Wire auth mixin and/or throttle
+5. Call selector/service only
+6. Return `api_response` (correct HTTP status: 200/201/…)
+7. Register path in `<app>/urls/` + `api/urls.py` if needed
+8. Add API tests
 
 ---
 

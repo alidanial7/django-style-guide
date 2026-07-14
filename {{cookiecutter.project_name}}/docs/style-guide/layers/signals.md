@@ -88,10 +88,10 @@ sequenceDiagram
 
 This project guarantees every `BaseUser` has a `Profile` (bio/avatar), including users created from:
 
-- `register()` / `create_user()` services  
-- Django admin  
-- shell / management commands  
-- tests / factories  
+- `register()` / `create_user()` services
+- Django admin
+- shell / management commands
+- tests / factories
 
 So the side effect is wired on `post_save`, not only inside `register()`.
 

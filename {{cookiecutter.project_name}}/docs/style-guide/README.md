@@ -43,7 +43,7 @@ docs/style-guide/
 
 | Doc | Topic |
 |-----|--------|
-| [Models](layers/models.md) | Models package, `BaseModel`, constraints |
+| [Models](layers/models.md) | Models package, `BaseModel`, labels, constraints |
 | [Selectors](layers/selectors.md) | Read queries, naming |
 | [Services](layers/services.md) | Writes, business rules, integrity |
 | [APIs & serializers](layers/apis.md) | Views, input/output serializers, Swagger tags |

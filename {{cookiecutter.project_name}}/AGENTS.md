@@ -19,6 +19,7 @@ Instructions for coding agents working in this generated project.
 | Lists | Selector (`list_<entities>`) → pagination; **no filters by default** |
 | Filters | When needed: always django-filter `<Entity>Filter` on selector QS — even for 1–2 fields; never silent `filter_backends` on `APIView` |
 | Selectors | `get_*` / `list_<entities>`; one optimized list selector (with related); second selector only for a **different job** (`list_post_ids`, …) |
+| Models | Class docstring `Model to declare …`; every field `verbose_name=_("serial number")`-style + useful `help_text`; `Meta.verbose_name(_plural)` |
 | Keyword-only | Services/selectors use `def foo(*, …)` |
 | New apps | `python manage.py start_domain_app <plural>` — never Django `startapp` |
 | Strings | Lowercase gettext msgids for user-facing text |

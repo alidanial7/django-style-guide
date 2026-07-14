@@ -2,6 +2,7 @@
 
 import django.utils.timezone
 from django.db import migrations, models
+from django.utils.translation import gettext_lazy as _
 
 
 class Migration(migrations.Migration):
@@ -26,14 +27,38 @@ class Migration(migrations.Migration):
                 (
                     "created_at",
                     models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now
+                        db_index=True,
+                        default=django.utils.timezone.now,
+                        help_text="When this row was first created.",
+                        verbose_name=_("created at"),
                     ),
                 ),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("start_date", models.DateField()),
-                ("end_date", models.DateField()),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="When this row was last updated.",
+                        verbose_name=_("updated at"),
+                    ),
+                ),
+                (
+                    "start_date",
+                    models.DateField(
+                        help_text="Inclusive start of the range.",
+                        verbose_name=_("start date"),
+                    ),
+                ),
+                (
+                    "end_date",
+                    models.DateField(
+                        help_text="Exclusive-style end bound used by the check constraint.",
+                        verbose_name=_("end date"),
+                    ),
+                ),
             ],
             options={
+                "verbose_name": _("random model"),
+                "verbose_name_plural": _("random models"),
                 "constraints": [
                     models.CheckConstraint(
                         condition=models.Q(("start_date__lt", models.F("end_date"))),

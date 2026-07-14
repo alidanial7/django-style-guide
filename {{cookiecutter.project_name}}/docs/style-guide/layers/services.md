@@ -70,9 +70,9 @@ def register(
 
 Prefer these for ordinary model writes. They:
 
-1. wrap work in `transaction.atomic()`  
-2. call `full_clean()`  
-3. catch `IntegrityError` and call `map_integrity_error`  
+1. wrap work in `transaction.atomic()`
+2. call `full_clean()`
+3. catch `IntegrityError` and call `map_integrity_error`
 
 | Helper | Signature (conceptually) | Use when |
 |--------|--------------------------|----------|
@@ -288,13 +288,13 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 
 ## ✅ Checklist: adding a service
 
-1. Add `def feature(*, ...) -> ...` in `<app>/services/<domain>_services.py`  
-2. Use `model_*` or `map_integrity_error` on every write  
-3. Wrap multi-step work in `@transaction.atomic`  
-4. Raise field-keyed `ValidationError` with domain codes  
-5. Re-export from `services/__init__.py`  
-6. Call only from APIs / management commands / admin hooks — not from serializers  
-7. Add `services/tests/…`  
+1. Add `def feature(*, ...) -> ...` in `<app>/services/<domain>_services.py`
+2. Use `model_*` or `map_integrity_error` on every write
+3. Wrap multi-step work in `@transaction.atomic`
+4. Raise field-keyed `ValidationError` with domain codes
+5. Re-export from `services/__init__.py`
+6. Call only from APIs / management commands / admin hooks — not from serializers
+7. Add `services/tests/…`
 
 ### ❌ Anti-patterns
 

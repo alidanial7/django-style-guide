@@ -99,13 +99,13 @@ Public auth surfaces must keep scoped rates. Multi-worker production needs a **s
 
 ## 🐳 Production checklist
 
-1. `DJANGO_SETTINGS_MODULE=config.django.production`  
-2. Strong `SECRET_KEY`, tight `ALLOWED_HOSTS`  
-3. HTTPS redirect / HSTS / secure cookies  
-4. DB not published publicly  
-5. Reverse proxy for static/media when selected  
-6. No Swagger in prod  
-7. Shared Redis for cache/throttles when multi-worker  
+1. `DJANGO_SETTINGS_MODULE=config.django.production`
+2. Strong `SECRET_KEY`, tight `ALLOWED_HOSTS`
+3. HTTPS redirect / HSTS / secure cookies
+4. DB not published publicly
+5. Reverse proxy for static/media when selected
+6. No Swagger in prod
+7. Shared Redis for cache/throttles when multi-worker
 
 Full deploy notes: [Docker & production](../platform/docker-and-production.md).
 

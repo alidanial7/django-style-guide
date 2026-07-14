@@ -122,12 +122,12 @@ Health uses `tags=["system"]`. Keep tag strings **lowercase and stable** — cli
 {%- if cookiecutter.use_jwt == "y" %}
 ## 🔓 Trying JWT in Swagger UI
 
-1. Open http://localhost:8000/  
-2. Call **register** or **JWT login**  
-3. Copy the `access` token from `result` (envelope)  
-4. Click **Authorize**  
-5. Enter `Bearer <access>` or just `<access>` depending on UI prompts (scheme is HTTP bearer)  
-6. Call protected routes like **profile**  
+1. Open http://localhost:8000/
+2. Call **register** or **JWT login**
+3. Copy the `access` token from `result` (envelope)
+4. Click **Authorize**
+5. Enter `Bearer <access>` or just `<access>` depending on UI prompts (scheme is HTTP bearer)
+6. Call protected routes like **profile**
 
 Because responses use the [API envelope](api-envelope.md), the token lives under `result.access` (login) or `result.token.access` (register) — not at the JSON root like raw SimpleJWT examples in upstream docs.
 
@@ -135,10 +135,10 @@ Because responses use the [API envelope](api-envelope.md), the token lives under
 {%- else %}
 ## 🔓 Trying session auth in Swagger UI
 
-1. Open http://localhost:8000/  
-2. Call **session login** (or register) so the browser stores the session cookie  
-3. For unsafe methods, ensure CSRF is satisfied (Swagger/browser cookie flows can be fiddly — many teams use the UI mainly for GET, and use httpie/Postman for session CSRF POSTs)  
-4. Call protected routes like **profile**  
+1. Open http://localhost:8000/
+2. Call **session login** (or register) so the browser stores the session cookie
+3. For unsafe methods, ensure CSRF is satisfied (Swagger/browser cookie flows can be fiddly — many teams use the UI mainly for GET, and use httpie/Postman for session CSRF POSTs)
+4. Call protected routes like **profile**
 
 If Authorize/CSRF friction blocks you, use `curl`/httpie with session + CSRF headers against the same DEBUG server — the schema is still the contract.
 {%- endif %}
@@ -197,13 +197,13 @@ python manage.py spectacular --validate --fail-on-warn  # if available in your s
 
 ## ✅ Checklist: new endpoint visible in Swagger
 
-1. Implement view + serializers  
-2. Add `@extend_schema(tags=…, summary=…, request=…, responses=…)`  
-3. Annotate method fields  
-4. Wire URL  
-5. Restart / refresh Swagger UI under DEBUG  
-6. Confirm tag group and try-it-out path  
-7. Point API consumers at [API envelope](api-envelope.md) for error shape  
+1. Implement view + serializers
+2. Add `@extend_schema(tags=…, summary=…, request=…, responses=…)`
+3. Annotate method fields
+4. Wire URL
+5. Restart / refresh Swagger UI under DEBUG
+6. Confirm tag group and try-it-out path
+7. Point API consumers at [API envelope](api-envelope.md) for error shape
 
 ---
 

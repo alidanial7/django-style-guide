@@ -66,8 +66,8 @@ addopts = --cov={{cookiecutter.project_slug}} --cov-report=term-missing --cov-fa
 
 From `config/django/test.py`:
 
-- If `DATABASE_URL` is set → use that DB (**CI uses Postgres**)  
-- Else → SQLite file `db.sqlite3` for quick local runs  
+- If `DATABASE_URL` is set → use that DB (**CI uses Postgres**)
+- Else → SQLite file `db.sqlite3` for quick local runs
 
 Integrity mapping is exercised more realistically on Postgres (pgcodes); SQLite still covers many paths via message fallback.
 {%- else %}
@@ -75,10 +75,10 @@ Integrity mapping is exercised more realistically on Postgres (pgcodes); SQLite 
 
 Testing was not enabled at generation. To add it:
 
-1. Add pytest + pytest-django (+ factory-boy, coverage as needed) to requirements  
-2. Add `pytest.ini` with `DJANGO_SETTINGS_MODULE = config.django.test`  
-3. Ensure `config/django/test.py` exists (ships with the template)  
-4. Re-scaffold apps with `start_domain_app … --force` or create test folders manually  
+1. Add pytest + pytest-django (+ factory-boy, coverage as needed) to requirements
+2. Add `pytest.ini` with `DJANGO_SETTINGS_MODULE = config.django.test`
+3. Ensure `config/django/test.py` exists (ships with the template)
+4. Re-scaffold apps with `start_domain_app … --force` or create test folders manually
 {%- endif %}
 
 ---
@@ -227,11 +227,11 @@ def test_password_requires_number():
 
 ## ✅ Checklist: new feature tests
 
-1. Validator/unit tests for new rules  
-2. Service tests for writes + domain errors  
-3. API tests: authz, validation envelope, happy path  
-4. Factory updates if new models appear  
-5. Coverage still meets threshold locally / CI  
+1. Validator/unit tests for new rules
+2. Service tests for writes + domain errors
+3. API tests: authz, validation envelope, happy path
+4. Factory updates if new models appear
+5. Coverage still meets threshold locally / CI
 
 ---
 

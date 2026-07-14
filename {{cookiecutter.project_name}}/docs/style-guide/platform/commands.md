@@ -66,11 +66,11 @@ python manage.py devserver
 
 Typical behavior (template):
 
-1. Apply migrations  
-2. Ensure default superuser exists (`admin@example.com` / `admin` — **local only**)  
-3. Start the development server  
+1. Apply migrations
+2. Ensure default superuser exists (`admin@example.com` / `admin` — **local only**)
+3. Start the development server
 {%- if cookiecutter.use_celery == "y" %}
-4. Start a Celery worker in the background when Celery is enabled  
+4. Start a Celery worker in the background when Celery is enabled
 {%- endif %}
 
 For Django-only without the extras:

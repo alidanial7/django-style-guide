@@ -221,9 +221,9 @@ Domain rules are wired into Django via `Password*DjangoValidator` adapters in th
 
 ## 5️⃣ Serializers (shape + object rules only)
 
-- Attach domain `*Validator` lists on fields  
-- Cross-field rules in `validate()` with field-keyed errors  
-- Platform vs domain codes as appropriate  
+- Attach domain `*Validator` lists on fields
+- Cross-field rules in `validate()` with field-keyed errors
+- Platform vs domain codes as appropriate
 
 ```python
 raise serializers.ValidationError(
@@ -240,7 +240,7 @@ Full patterns: [APIs](../layers/apis.md).
 
 Every write path must:
 
-1. use `model_create` / `model_save` / `model_update`, **or**  
+1. use `model_create` / `model_save` / `model_update`, **or**
 2. `except IntegrityError: map_integrity_error(...); raise`
 
 ```python
@@ -298,12 +298,12 @@ Use for controlled **non-field** application failures. The handler maps to `Erro
 
 ## ✅ Checklist: add a new field rule
 
-1. **Pure check** — generic → `common/validators/` as `is_*`; domain → `<app>/validators/`  
-2. **Code** — platform → `ErrorCode`; domain → `<app>/errors/codes.py`  
-3. **Raising validator** — `@deconstructible`, Django `ValidationError` + `code=` + lowercase `_()`  
-4. **Wire it** — model field if universal; serializer field for API; cross-field only in `validate()`  
-5. **Persist safely** — DB constraint for unique/FK/null; writes via `model_*` or `map_integrity_error`  
-6. **Tests** — validator unit tests + API/service case for the failure message/code  
+1. **Pure check** — generic → `common/validators/` as `is_*`; domain → `<app>/validators/`
+2. **Code** — platform → `ErrorCode`; domain → `<app>/errors/codes.py`
+3. **Raising validator** — `@deconstructible`, Django `ValidationError` + `code=` + lowercase `_()`
+4. **Wire it** — model field if universal; serializer field for API; cross-field only in `validate()`
+5. **Persist safely** — DB constraint for unique/FK/null; writes via `model_*` or `map_integrity_error`
+6. **Tests** — validator unit tests + API/service case for the failure message/code
 
 ---
 

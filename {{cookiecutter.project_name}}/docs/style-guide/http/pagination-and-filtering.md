@@ -123,10 +123,10 @@ Default ordering uses `-created_at` (works with `BaseModel`). Override `ordering
 
 Both:
 
-1. Instantiate your pagination class  
-2. `paginate_queryset(...)`  
-3. Serialize the page with `many=True`  
-4. Return `paginator.get_paginated_response(...)` → envelope  
+1. Instantiate your pagination class
+2. `paginate_queryset(...)`
+3. Serialize the page with `many=True`
+4. Return `paginator.get_paginated_response(...)` → envelope
 
 If pagination returns `None` (unusual with these settings), helpers fall back to `api_response(data=serializer.data)` for the full queryset.
 
@@ -318,13 +318,13 @@ Document filter params in `@extend_schema` — see [Swagger](swagger.md).
 
 ## ✅ Checklist: list endpoint
 
-1. Selector returns optimized base `QuerySet` (`list_<entities>`) — no request/query-param parsing  
-2. If the list accepts filters: add `<Entity>Filter` and apply it in the API  
-3. If the list accepts **no** filters: skip the FilterSet entirely  
-4. `get_paginated_response_context` (or non-context variant)  
-5. Output serializer only  
-6. `@extend_schema` documents filters when present  
-7. API test: `result.results`, `result.count`, `limit`/`offset`  
+1. Selector returns optimized base `QuerySet` (`list_<entities>`) — no request/query-param parsing
+2. If the list accepts filters: add `<Entity>Filter` and apply it in the API
+3. If the list accepts **no** filters: skip the FilterSet entirely
+4. `get_paginated_response_context` (or non-context variant)
+5. Output serializer only
+6. `@extend_schema` documents filters when present
+7. API test: `result.results`, `result.count`, `limit`/`offset`
 
 ---
 

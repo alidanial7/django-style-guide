@@ -83,6 +83,7 @@ Same pattern for integrity messages using `%(field)s` — see [Validation & erro
 | Translate | Usually don’t |
 |-----------|----------------|
 | Validation / API user messages | Machine `code` values (`password_mismatch`) |
+| Model `verbose_name` / `Meta.verbose_name(_plural)` via `_("serial number")` / `_("card")` | Model `help_text` prose (plain English for operators is fine) |
 | Email subjects/bodies shown to users | Log lines for operators (optional) |
 | Rare admin-facing strings you care about | Internal exception class names |
 
@@ -133,11 +134,11 @@ Also spot-check new validators/services for missing `_()` on user-facing strings
 
 ## ➕ Adding a new language (sketch)
 
-1. `python manage.py makemessages -l fa` (or your locale)  
-2. Translate `locale/fa/LC_MESSAGES/django.po`  
-3. `compilemessages`  
-4. Configure `LANGUAGES` + locale middleware / DRF language negotiation as your product requires  
-5. Document how API clients send `Accept-Language`  
+1. `python manage.py makemessages -l fa` (or your locale)
+2. Translate `locale/fa/LC_MESSAGES/django.po`
+3. `compilemessages`
+4. Configure `LANGUAGES` + locale middleware / DRF language negotiation as your product requires
+5. Document how API clients send `Accept-Language`
 
 The template ships oriented around `en-us`; multi-language activation is a product decision.
 
@@ -157,11 +158,11 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 
 ## ✅ Checklist: new user-facing string
 
-1. Wrap with `_()` / `gettext_lazy`  
-2. Lowercase msgid  
-3. Use `params=` for dynamic values  
-4. Run `./scripts/update_translations.sh`  
-5. Ensure API also sets a machine `code=` where applicable  
+1. Wrap with `_()` / `gettext_lazy`
+2. Lowercase msgid
+3. Use `params=` for dynamic values
+4. Run `./scripts/update_translations.sh`
+5. Ensure API also sets a machine `code=` where applicable
 
 ---
 

@@ -68,7 +68,10 @@ PRE_COMMIT_OPTIONS: tuple[tuple[str, str], ...] = (
     ("precommit_pyupgrade", "pyupgrade — modern Python syntax"),
     ("precommit_ruff", "Ruff — lint and format"),
     ("precommit_pydoclint", "pydoclint — Google-style docstrings"),
-    ("precommit_translation_lint", "django-translation-lint — lowercase gettext strings"),
+    (
+        "precommit_translation_lint",
+        "django-translation-lint — lowercase gettext strings",
+    ),
 )
 
 DEFAULT_PRE_COMMIT: frozenset[str] = frozenset(key for key, _ in PRE_COMMIT_OPTIONS)
@@ -164,9 +167,7 @@ def prompt_radio(
                 marker = "•" if index == selected else " "
                 pointer = "›" if index == focus else " "
                 style = f"{COLORS.bold}{COLORS.green}" if index == focus else ""
-                print(
-                    f"  {pointer} {style}({marker}) {label}{COLORS.reset}"
-                )
+                print(f"  {pointer} {style}({marker}) {label}{COLORS.reset}")
 
             print()
             print(COLORS.radio_hint)
@@ -289,8 +290,7 @@ def prompt_text(label: str, default: str = "") -> str:
     print(f"  {COLORS.bold}{label}{COLORS.reset}")
     if default:
         print(
-            f"  {COLORS.dim}›{COLORS.reset} "
-            f"[{COLORS.green}{default}{COLORS.reset}]: ",
+            f"  {COLORS.dim}›{COLORS.reset} [{COLORS.green}{default}{COLORS.reset}]: ",
             end="",
         )
     else:
@@ -336,7 +336,9 @@ def collect_answers() -> dict[str, str] | None:
     print_section("Project")
     project_name = prompt_text("Project name", "MyProject")
     default_slug = slugify(project_name)
-    project_slug = prompt_text("Project slug (Python package)", default_slug) or default_slug
+    project_slug = (
+        prompt_text("Project slug (Python package)", default_slug) or default_slug
+    )
 
     print_section("Author")
     first_name = prompt_text("First name", "author")
@@ -474,9 +476,7 @@ def collect_answers() -> dict[str, str] | None:
     )
     print(f"  {c.bold}License{c.reset}     {license_choice}")
     print(f"  {c.bold}Postgres{c.reset}    {postgres_version}")
-    print(
-        f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}"
-    )
+    print(f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}")
     if use_celery == "y":
         print(f"  {c.bold}Celery{c.reset}      broker={celery_broker}")
     print(f"  {c.bold}Proxy{c.reset}       {reverse_proxy}")

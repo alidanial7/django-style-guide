@@ -212,12 +212,12 @@ python manage.py migrate
 
 ### 4. Implement layers in order (recommended)
 
-1. **Model + constraints** — DB is source of truth for uniqueness/FK/null  
-2. **Error codes** in `errors/codes.py`  
-3. **Validators** if field rules need friendly API messages  
-4. **Services** for writes, **selectors** for reads  
-5. **APIs + serializers** + `@extend_schema`  
-6. **Tests** next to each layer  
+1. **Model + constraints** — DB is source of truth for uniqueness/FK/null
+2. **Error codes** in `errors/codes.py`
+3. **Validators** if field rules need friendly API messages
+4. **Services** for writes, **selectors** for reads
+5. **APIs + serializers** + `@extend_schema`
+6. **Tests** next to each layer
 
 ### 5. Validation & integrity on every write
 
@@ -319,11 +319,11 @@ Never put raising validators in `errors/`.
 
 Assume `blogs` is scaffolded and registered.
 
-**1. Model** — `blogs/models/post.py` + export in `models/__init__.py`  
-**2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `apis/posts/posts_filters.py` only if the list accepts filters)  
-**3. API** — `PostsListApi` in `apis/posts/posts_apis.py` returning `api_response`  
-**4. URL** — `path("posts/", PostsListApi.as_view(), name="posts-list")`  
-**5. Include** already under `/api/v1/blogs/`  
+**1. Model** — `blogs/models/post.py` + export in `models/__init__.py`
+**2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `apis/posts/posts_filters.py` only if the list accepts filters)
+**3. API** — `PostsListApi` in `apis/posts/posts_apis.py` returning `api_response`
+**4. URL** — `path("posts/", PostsListApi.as_view(), name="posts-list")`
+**5. Include** already under `/api/v1/blogs/`
 **6. Test** — `apis/posts/tests/test_posts_list.py`
 
 Write path (`POST` create) adds `services/` + validators + integrity mapping before exposing the endpoint.

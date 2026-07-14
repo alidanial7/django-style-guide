@@ -2,7 +2,7 @@
 
 > How logs are configured, where they go, how **request IDs** correlate traffic, and how to write log lines in application code.
 >
-> Config: `config/settings/logging.py` (+ `config/logging_formatters.py`, `config/request_id.py`).  
+> Config: `config/settings/logging.py` (+ `config/logging_formatters.py`, `config/request_id.py`).
 > This doc supersedes the old root `LOGGING.md` cheat sheet.
 
 ---
@@ -94,10 +94,10 @@ flowchart TB
 
 `config.request_id.RequestIdMiddleware`:
 
-1. Reads inbound `X-Request-ID` if present (stripped), otherwise generates `uuid4`  
-2. Sets `request.request_id`  
-3. Stores ID in a `contextvars.ContextVar` for the request lifetime  
-4. Echoes `X-Request-ID` on the **response**  
+1. Reads inbound `X-Request-ID` if present (stripped), otherwise generates `uuid4`
+2. Sets `request.request_id`
+3. Stores ID in a `contextvars.ContextVar` for the request lifetime
+4. Echoes `X-Request-ID` on the **response**
 
 `RequestIdFilter` copies the contextvar onto log records so JSON formatters can emit `"request_id"`.
 
@@ -174,11 +174,11 @@ Unexpected failures in the exception handler already call `logger.exception("Unh
 
 ## ✅ Checklist: logging a new feature
 
-1. Module logger via `__name__`  
-2. Info/warning for important business events (no secrets)  
-3. `logger.exception` only for unexpected errors  
-4. Confirm request_id appears in JSON when hitting via HTTP  
-5. If ops needs a new dedicated file/logger, extend `logging.py` deliberately — don’t scatter `FileHandler` in app code  
+1. Module logger via `__name__`
+2. Info/warning for important business events (no secrets)
+3. `logger.exception` only for unexpected errors
+4. Confirm request_id appears in JSON when hitting via HTTP
+5. If ops needs a new dedicated file/logger, extend `logging.py` deliberately — don’t scatter `FileHandler` in app code
 
 ---
 
