@@ -16,7 +16,7 @@ reads →  selector/
 writes → services/
 shape →  models/ + manager/
 rules →  validators/ + errors/
-glue  →  constants.py, signals/, utils/
+glue  →  constants.py, enums.py, signals/, utils/
 ```
 
 ```mermaid
@@ -124,6 +124,7 @@ blogs/
 ├── apps.py                 # BlogsConfig; ready() for signals later
 ├── admin.py                # Django admin registrations
 ├── constants.py            # tags / paths / literals → see constants.md
+├── enums.py                # TextChoices / IntegerChoices → see enums.md
 ├── models/                 # one module per model; export from __init__.py
 ├── manager/                # custom managers / querysets
 ├── selector/               # READ queries (+ tests/)
@@ -146,7 +147,8 @@ blogs/
 
 | Path | ✅ Does | ❌ Does not |
 |------|--------|------------|
-| `models/` | Fields, constraints, relations | HTTP, complex workflows |
+| `models/` | Fields, constraints, relations | HTTP, complex workflows, nested `TextChoices`, missing `related_name` |
+| `enums.py` | `TextChoices` / `IntegerChoices` for fields | Error codes / OpenAPI tags |
 | `manager/` | Reusable QuerySet/Manager methods | Call external APIs / send email as “business feature” |
 | `selector/` | Reads, annotations, derived URLs | `.create()` / `.save()` as the main job |
 | `services/` | Writes, transactions, domain rules | Parse `request.data` / return `Response` |
@@ -155,10 +157,11 @@ blogs/
 | `validators/` | Field-level pure + raising checks | Cross-aggregate workflows |
 | `errors/codes.py` | Stable machine codes | `raise ValidationError` |
 | `signals/` | Idempotent mechanical follow-ups | User-facing API validation |
-| `constants.py` | Shared literals | Env settings / error codes |
+| `constants.py` | Shared literals | Env settings / error codes / field choices |
+| `enums.py` | Field choice enums | `StrEnum` API codes — that is `errors/codes.py` |
 | `utils/` | Tiny pure helpers | Hidden second service layer |
 
-Deep dives: [Models](../layers/models.md), [Selectors](../layers/selectors.md), [Services](../layers/services.md), [APIs](../layers/apis.md), [Validation](../http/validation-and-errors.md), [Constants](../layers/constants.md), [Signals](../layers/signals.md).
+Deep dives: [Models](../layers/models.md), [Enums](../layers/enums.md), [Selectors](../layers/selectors.md), [Services](../layers/services.md), [APIs](../layers/apis.md), [Validation](../http/validation-and-errors.md), [Constants](../layers/constants.md), [Signals](../layers/signals.md).
 
 ---
 
@@ -212,12 +215,13 @@ python manage.py migrate
 
 ### 4. Implement layers in order (recommended)
 
-1. **Model + constraints** — DB is source of truth for uniqueness/FK/null
-2. **Error codes** in `errors/codes.py`
-3. **Validators** if field rules need friendly API messages
-4. **Services** for writes, **selectors** for reads
-5. **APIs + serializers** + `@extend_schema`
-6. **Tests** next to each layer
+1. **Model + constraints** — DB is source of truth for uniqueness/FK/null  
+2. **Field enums** in `enums.py` when the model has `choices=`  
+3. **Error codes** in `errors/codes.py`  
+4. **Validators** if field rules need friendly API messages  
+5. **Services** for writes, **selectors** for reads  
+6. **APIs + serializers** + `@extend_schema`  
+7. **Tests** next to each layer
 
 ### 5. Validation & integrity on every write
 

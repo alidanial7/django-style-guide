@@ -268,7 +268,9 @@ flowchart TD
     Q6 -->|yes| VAL[validators/]
     Q6 -->|no| Q7{Side effect on model save<br/>with no HTTP caller?}
     Q7 -->|yes| SIG[signals/]
-    Q7 -->|no| CST[constants.py / utils/]
+    Q7 -->|no| Q8{Is it a field choice set<br/>TextChoices / IntegerChoices?}
+    Q8 -->|yes| EN[enums.py]
+    Q8 -->|no| CST[constants.py / utils/]
 ```
 
 | Situation | Put it here |
@@ -278,6 +280,7 @@ flowchart TD
 | “Publish post + notify + validate state machine” | `services/` |
 | Shared date range constraint example | `common.models` / DB constraints |
 | OpenAPI tag name `"users"` | `<app>/constants.py` — see [Constants](../layers/constants.md) |
+| Post status `draft` / `published` | `<app>/enums.py` — see [Enums](../layers/enums.md) |
 | Create related row when user is created | `signals/` — see [Signals](../layers/signals.md) |
 
 ---
@@ -291,7 +294,8 @@ These are the style rules that make the codebase look like a large Django servic
 | `apis/` | Auth/throttle, Input/Output serializers, call selector/service, `api_response` / pagination helpers, `@extend_schema` | ORM queries, business rules, uniqueness checks, building error envelopes by hand |
 | `selector/` | Read ORM, `select_related` / `prefetch`, filters as kwargs, derived values | `.create()` / `.update()` / `.delete()`, calling write services, touching `Request` except optional `request` for absolute URLs |
 | `services/` | Writes, rules, `transaction.atomic`, `model_*` + integrity mapping, calling selectors for reads needed by a write | HTTP status codes, serializers, pagination, “list screens” querysets for unrelated UIs |
-| `models/` | Fields, constraints, managers, `__str__` | HTTP, workflows, calling external APIs |
+| `models/` | Fields, constraints, managers, `__str__`, labels + **help_text on every field**, explicit **`related_name` on every FK/O2O** | HTTP, workflows, nested `TextChoices` (use `enums.py`), default `foo_set` reverses |
+| `enums.py` | `TextChoices` / `IntegerChoices` for fields | API error codes (`errors/codes.py`) / tags (`constants.py`) |
 | `serializers` | Shape + field/cross-field validation | Creating rows, permission decisions, raw ORM uniqueness as the only guard |
 | `common/` | Envelope, integrity helpers, `BaseModel`, shared validators | Domain-specific business rules for one app |
 

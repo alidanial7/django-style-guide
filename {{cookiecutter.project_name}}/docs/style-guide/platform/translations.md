@@ -83,7 +83,7 @@ Same pattern for integrity messages using `%(field)s` — see [Validation & erro
 | Translate | Usually don’t |
 |-----------|----------------|
 | Validation / API user messages | Machine `code` values (`password_mismatch`) |
-| Model `verbose_name` / `Meta.verbose_name(_plural)` via `_("serial number")` / `_("card")` | Model `help_text` prose (plain English for operators is fine) |
+| Model `verbose_name` / `Meta.verbose_name(_plural)` via `_("serial number")` / `_("card")` | Model `help_text` (required plain English prose on every field — not a msgid) |
 | Email subjects/bodies shown to users | Log lines for operators (optional) |
 | Rare admin-facing strings you care about | Internal exception class names |
 

@@ -43,7 +43,8 @@ docs/style-guide/
 
 | Doc | Topic |
 |-----|--------|
-| [Models](layers/models.md) | Models package, `BaseModel`, labels, constraints |
+| [Models](layers/models.md) | Models package, `BaseModel`, labels, `related_name`, constraints |
+| [Enums](layers/enums.md) | `TextChoices` / `IntegerChoices` in `enums.py` |
 | [Selectors](layers/selectors.md) | Read queries, naming |
 | [Services](layers/services.md) | Writes, business rules, integrity |
 | [APIs & serializers](layers/apis.md) | Views, input/output serializers, Swagger tags |

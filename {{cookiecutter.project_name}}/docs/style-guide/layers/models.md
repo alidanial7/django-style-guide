@@ -69,13 +69,15 @@ Inside the package, relative imports between sibling modules are fine (`profile.
 | `Profile` | `profile.py` |
 | `BlogPost` | `blog_post.py` |
 
-One primary model per file. Tiny related enums/helpers can live next to that model if they are not reused elsewhere.
+One primary model per file. Related **field choice enums** (`TextChoices`) live in [`enums.py`](enums.md) — not nested on the model class. Tiny helpers that are not reused elsewhere can stay next to the model.
 
 ---
 
 ## 🏷️ Labels, help text, Meta, docstrings
 
 Every concrete model should be labeled for **admin**, **integrity messages** (field `verbose_name` is reused when mapping DB errors), and **readers of the code**.
+
+On every field you declare: set **`verbose_name`** and **`help_text`** together.
 
 Use `gettext_lazy as _` for import-time strings on model attributes — see [Translations](../platform/translations.md).
 
@@ -120,7 +122,10 @@ class Card(BaseModel):
 | Attribute | Required? | Convention |
 |-----------|-----------|------------|
 | `verbose_name` | **Yes** on every field you declare | `_("words with spaces")` — human-readable lowercase (`_("serial number")`, `_("email")`) |
-| `help_text` | **Yes whenever meaning is not obvious** | Short English sentence for admin / operators; plain string is fine (not a msgid) |
+| `help_text` | **Yes** on every field you declare | Short English sentence for admin / operators / readers; plain string (not a gettext msgid) |
+| `related_name` | **Yes** on every `ForeignKey` / `OneToOneField` | Plural / role-prefixed / singular (O2O), or `"+"` — see below |
+
+Always pass **`verbose_name` and `help_text`**. On relations, also set **`related_name`** (see below). `verbose_name` is the short label (integrity messages, admin column headers). `help_text` explains what the field is for.
 
 ```python
 # ✅
@@ -130,13 +135,115 @@ email = models.EmailField(
     help_text="Primary login identifier for the account.",
 )
 
-# ❌ — missing labels; Title Case msgids; underscore msgids
+# ❌ — missing verbose_name and/or help_text; Title Case / underscore msgids
 email = models.EmailField(unique=True)
-email = models.EmailField(verbose_name=_("Email Address"))
-email = models.EmailField(verbose_name=_("serial_number"))
+email = models.EmailField(verbose_name=_("email"))  # help_text missing
+email = models.EmailField(verbose_name=_("Email Address"), help_text="…")
+email = models.EmailField(verbose_name=_("serial_number"), help_text="…")
 ```
 
-Inherited Django fields (`AbstractBaseUser.password`, `PermissionsMixin` flags, …) keep upstream labels unless you intentionally override them.
+Inherited Django fields (`AbstractBaseUser.password`, `PermissionsMixin` flags, …) keep upstream labels/`help_text` unless you intentionally override them.
+
+### `related_name` (required on every FK / O2O)
+
+Every `ForeignKey` and `OneToOneField` you declare **must** set `related_name` explicitly. Never rely on Django’s default `modelname_set`.
+
+| Situation | `related_name` | Example |
+|-----------|----------------|---------|
+| One-to-many (default) | **Plural** noun for the child collection | `books`, `orders`, `cards` |
+| Role / multiple FKs to the same model | **Role-prefixed** plural | `created_orders`, `assigned_tasks` |
+| Ambiguous (two+ FKs to one target, or unclear reverse) | **Must be explicit** — never omit or reuse the same name | See dual-FK example below |
+| One-to-one | **Singular** name of the related object from the parent | `profile` on `Profile.user` → `user.profile` |
+| No reverse access wanted | `"+"` | Suppresses the reverse descriptor |
+
+#### One-to-many — plural
+
+```python
+class Book(BaseModel):
+    """
+    Model to declare book
+    """
+
+    author = models.ForeignKey(
+        "authors.Author",
+        on_delete=models.CASCADE,
+        related_name="books",  # author.books.all()
+        verbose_name=_("author"),
+        help_text="Author of this book.",
+    )
+```
+
+#### Role-prefixed — when the same model is linked twice
+
+```python
+class Task(BaseModel):
+    """
+    Model to declare task
+    """
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_tasks",
+        verbose_name=_("created by"),
+        help_text="User who created this task.",
+    )
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="assigned_tasks",
+        verbose_name=_("assignee"),
+        help_text="User currently assigned to this task.",
+    )
+```
+
+If both used `related_name="tasks"`, Django would reject the clash — and even with one FK, a bare `tasks` would hide *which* role you mean. Prefer `created_tasks` / `assigned_tasks`.
+
+#### Ambiguous → always explicit
+
+| ❌ Ambiguous | ✅ Explicit |
+|--------------|-------------|
+| Omit `related_name` → `book_set` | `related_name="books"` |
+| Two FKs both `related_name="orders"` | `placed_orders` + `fulfilled_orders` |
+| Vague `related_name="items"` on several models | Name after the child: `order_items`, `cart_items` |
+
+#### Suppress reverse relation with `"+"`
+
+`related_name="+"` (a single plus) tells Django: **do not create a reverse attribute** on the target model.
+
+```python
+class AuditEvent(BaseModel):
+    """
+    Model to declare audit event
+    """
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="+",  # no user.<something> reverse accessor
+        verbose_name=_("actor"),
+        help_text="User who triggered this event, if known.",
+    )
+```
+
+| With `related_name="audit_events"` | With `related_name="+"` |
+|------------------------------------|-------------------------|
+| `user.audit_events.all()` works | There is **no** reverse manager on `User` |
+| Ideal when you list children from the parent | Ideal for write-only / rare lookups you always start from the child (`AuditEvent.objects.filter(actor=…)`) |
+
+Use `"+"` when the reverse collection would be useless, huge, or accidental API surface — not as a shortcut to skip naming. If you *do* need the reverse later, change to a real name and migrate.
+
+Still set `verbose_name` and `help_text` on that FK; `"+"` only affects the reverse side.
+
+#### One-to-one — singular
+
+```python
+# Profile.user → related_name="profile"
+user.profile   # singular; not profiles
+```
+
+---
 
 ### `Meta` verbose names
 
@@ -204,6 +311,7 @@ class BaseModel(models.Model):
 # blogs/models/post.py
 from django.utils.translation import gettext_lazy as _
 
+from {{cookiecutter.project_slug}}.blogs.enums import PostStatus
 from {{cookiecutter.project_slug}}.common.models import BaseModel
 
 
@@ -217,12 +325,20 @@ class Post(BaseModel):
         verbose_name=_("title"),
         help_text="Public title shown in lists and detail views.",
     )
+    status = models.CharField(
+        max_length=20,
+        choices=PostStatus.choices,
+        default=PostStatus.DRAFT,
+        verbose_name=_("status"),
+        help_text="Publication state of the post.",
+    )
 
     class Meta:
         verbose_name = _("post")
         verbose_name_plural = _("posts")
 ```
 
+`PostStatus` is defined in `blogs/enums.py` — see [Enums](enums.md).
 ### Real usage: `BaseUser`
 
 ```python
@@ -444,20 +560,26 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 1. Create `<app>/models/<name>.py` with a short class docstring (`Model to declare …`)
 2. Export it from `models/__init__.py`
 3. Inherit `BaseModel` if timestamps are needed
-4. On every declared field: `verbose_name=_("serial number")`-style + `help_text="…"` when useful
-5. Set `Meta.verbose_name` / `verbose_name_plural` with lowercase `_()`
-6. Add DB constraints for anything the database must guarantee
-7. Add a manager only if create/query helpers are real
-8. Register in admin if operators need it
-9. `makemigrations` + `migrate`
-10. Build selectors/services/APIs on top — not fat methods on the model class
+4. On every declared field: both `verbose_name=_("serial number")`-style **and** `help_text="…"`  
+5. On every `ForeignKey` / `OneToOneField`: explicit `related_name` (plural / role-prefixed / singular O2O, or `"+"`)  
+6. Set `Meta.verbose_name` / `verbose_name_plural` with lowercase `_()`  
+7. Put field choice enums in `<app>/enums.py` (not nested on the model)  
+8. Add DB constraints for anything the database must guarantee  
+9. Add a manager only if create/query helpers are real  
+10. Register in admin if operators need it  
+11. `makemigrations` + `migrate`  
+12. Build selectors/services/APIs on top — not fat methods on the model class  
 
 ### ❌ Anti-patterns
 
 | Anti-pattern | Prefer |
 |--------------|--------|
 | Giant `models.py` with many models | Package + one file per model |
+| Nested `TextChoices` on the model class | `<app>/enums.py` — see [Enums](enums.md) |
 | Fields without `verbose_name` | `_("field label")` with spaces, lowercase, on every declared field |
+| Fields without `help_text` | Short English sentence on every declared field |
+| FK/O2O without `related_name` | Plural / role name / singular O2O, or `"+"` |
+| Two FKs to User both named `orders` | `created_orders` + `assigned_orders` (or similar roles) |
 | `Meta` without singular/plural labels | `verbose_name` + `verbose_name_plural` |
 | `Model.clean()` holding a whole workflow | Service function |
 | Checking uniqueness only in serializers | DB unique + integrity mapping |
@@ -472,6 +594,7 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 |-----|-----|
 | [Selectors](selectors.md) | How to read models |
 | [Services](services.md) | How to write models safely |
+| [Enums](enums.md) | `TextChoices` / `IntegerChoices` for fields |
 | [Validation & errors](../http/validation-and-errors.md) | Constraints ↔ API messages |
 | [Signals](signals.md) | Related-row invariants |
 | [Domain apps](../structure/domain-apps.md) | Where `models/` sits in the scaffold |

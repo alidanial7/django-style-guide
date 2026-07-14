@@ -60,6 +60,12 @@ class __APP_CONFIG__(AppConfig):
 """,
     "constants.py": '''"""App-level constants for __APP_NAME__."""
 ''',
+    "enums.py": '''"""App-level Django choice enums for __APP_NAME__.
+
+Define ``models.TextChoices`` / ``IntegerChoices`` here; import them from models,
+serializers, filters, and services. Do not nest choice enums inside model classes.
+"""
+''',
     "models/__init__.py": """# from .example import Example
 #
 # __all__ = ["Example"]
@@ -167,7 +173,7 @@ class Test__APP_CLASS__Apis:
 class Command(BaseCommand):
     help = (
         "Create a domain app with this project's style-guide layout "
-        "(models/, services/, selector/, apis/, validators/, errors/, …). "
+        "(models/, enums.py, services/, selector/, apis/, validators/, errors/, …). "
         "When testing is enabled (pytest.ini), also scaffolds base test stubs. "
         "Prefer this over Django's default startapp."
     )

@@ -19,7 +19,8 @@ Instructions for coding agents working in this generated project.
 | Lists | Selector (`list_<entities>`) → pagination; **no filters by default** |
 | Filters | When needed: always django-filter `<Entity>Filter` on selector QS — even for 1–2 fields; never silent `filter_backends` on `APIView` |
 | Selectors | `get_*` / `list_<entities>`; one optimized list selector (with related); second selector only for a **different job** (`list_post_ids`, …) |
-| Models | Class docstring `Model to declare …`; every field `verbose_name=_("serial number")`-style + useful `help_text`; `Meta.verbose_name(_plural)` |
+| Models | Class docstring `Model to declare …`; every field **both** `verbose_name=_("serial number")`-style **and** `help_text="…"`; every FK/O2O has explicit `related_name` (plural / role / `"+"`); `Meta.verbose_name(_plural)` |
+| Enums | `TextChoices` / `IntegerChoices` in `<app>/enums.py` — never nested on the model |
 | Keyword-only | Services/selectors use `def foo(*, …)` |
 | New apps | `python manage.py start_domain_app <plural>` — never Django `startapp` |
 | Strings | Lowercase gettext msgids for user-facing text |
@@ -38,6 +39,7 @@ Soft delete, multi-tenancy, full RBAC, outbox, idempotency keys — see [`docs/s
 - [Architecture](docs/style-guide/structure/architecture.md)
 - [APIs](docs/style-guide/layers/apis.md)
 - [Selectors](docs/style-guide/layers/selectors.md)
+- [Enums](docs/style-guide/layers/enums.md)
 - [Pagination & filtering](docs/style-guide/http/pagination-and-filtering.md)
 - [Security](docs/style-guide/http/security.md)
 - [Validation & errors](docs/style-guide/http/validation-and-errors.md)

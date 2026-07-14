@@ -4,7 +4,7 @@
 >
 > File: `<app>/constants.py` (created by `start_domain_app`).
 
-Constants are **not** settings (those live in `config/settings/` + env), **not** error codes (those live in `errors/codes.py`), and **not** business rules (those live in services/validators).
+Constants are **not** settings (those live in `config/settings/` + env), **not** error codes (those live in `errors/codes.py`), **not** field choice enums (those live in [`enums.py`](enums.md)), and **not** business rules (those live in services/validators).
 
 ---
 
@@ -44,6 +44,7 @@ url = static(DEFAULT_AVATAR_STATIC_PATH)
 ```text
 users/
 ├── constants.py          ← app-level constants (this doc)
+├── enums.py              ← TextChoices / IntegerChoices (different concern)
 ├── errors/codes.py       ← machine error codes (different concern)
 ├── apis/...
 └── selector/...
@@ -153,6 +154,7 @@ The file on disk is `users/static/users/default_avatar.png`. The constant is the
 |----------------------|----------|
 | `config/settings/` + `.env` | `SECRET_KEY`, DB URL, JWT lifetimes, email backend, `DEBUG` |
 | `<app>/errors/codes.py` | `UserErrorCode.PASSWORD_MISMATCH` — machine codes for the API envelope |
+| `<app>/enums.py` | `PostStatus` / other `TextChoices` for model fields |
 | Model / migration | Max length that the DB must enforce (`CharField(max_length=…)`) |
 | Services | Workflow rules (“cannot publish draft without title”) |
 | Validators | Password charset rules |
@@ -200,7 +202,7 @@ USERS_TAGS = ["Users", "user-api", "Users App"]
 
 ## 🧪 How to add a new constant (checklist)
 
-1. Decide it is **not** settings, **not** an error code, **not** a one-off local variable.
+1. Decide it is **not** settings, **not** an error code, **not** a `TextChoices` set, **not** a one-off local variable.
 2. Add it under a section banner in `<app>/constants.py`.
 3. Import it at every call site — do not leave old string literals behind.
 4. If it is a static file path, confirm the file exists under `<app>/static/...` and matches the constant.
@@ -215,6 +217,9 @@ flowchart LR
     subgraph Constants["constants.py"]
         T[tags / paths / magic strings]
     end
+    subgraph Enums["enums.py"]
+        C[TextChoices / IntegerChoices]
+    end
     subgraph Errors["errors/codes.py"]
         E[StrEnum machine codes]
     end
@@ -222,16 +227,18 @@ flowchart LR
         S[deploy-time config]
     end
     subgraph Models["models/"]
-        M[DB field limits / choices]
+        M[fields + constraints — import enums]
     end
 
     T -.->|not the same| E
     T -.->|not the same| S
-    T -.->|not the same| M
+    T -.->|not the same| C
+    C --> M
 ```
 
 | Need | Doc |
 |------|-----|
+| Field choice enums | [Enums](enums.md) |
 | Error machine codes | [Validation & errors](../http/validation-and-errors.md) |
 | Env / deploy config | [Settings](../platform/settings.md) |
 | Signal side effects | [Signals](signals.md) |
