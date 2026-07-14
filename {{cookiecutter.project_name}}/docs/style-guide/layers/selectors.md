@@ -35,7 +35,7 @@ def get(self, request):
 
 ```mermaid
 flowchart LR
-    API[APIView GET/list] --> SEL[selector/]
+    API[APIView GET/list] --> SEL[selectors/]
     SVC[service that needs a read] --> SEL
     SEL --> ORM[QuerySet / model]
     SEL --> VAL[plain values / URLs]
@@ -47,10 +47,9 @@ flowchart LR
 ## 📂 Location & naming
 
 ```text
-blogs/selector/
+blogs/selectors/
 ├── __init__.py
 ├── post_selectors.py          # entity module (preferred as the app grows)
-├── post_filters.py            # PostFilter (only when the list accepts filters)
 ├── comment_selectors.py
 └── tests/
     ├── test_post_selectors.py
@@ -64,8 +63,9 @@ Small apps may keep a single `<app>_selectors.py` (e.g. `users_selectors.py`). W
 | Pattern | Example | When |
 |---------|---------|------|
 | `<entity>_selectors.py` | `post_selectors.py`, `profile_selectors.py` | Default once you have clear entities |
-| `<entity>_filters.py` | `post_filters.py` | django-filter `FilterSet` for that entity’s list |
 | `<app>_selectors.py` | `users_selectors.py` | Tiny app / single aggregate |
+
+List `FilterSet`s live under **`apis/`** as `*_search_filters.py` — not here. See [Pagination & filtering](../http/pagination-and-filtering.md).
 
 Use **singular** entity names in the module (`post_`, not `posts_`).
 
@@ -137,24 +137,20 @@ Call sites become self-documenting: `get_profile(user=request.user)` — not `ge
 
 Serialization stays in the API layer (`OutputSerializer`).
 
-### 3. Put query optimization **and** list filters here
+### 3. Put query optimization here (not FilterSets)
 
 ```python
-def list_posts(*, query_params: Mapping[str, str] | None = None) -> QuerySet[Post]:
-    qs = (
+def list_posts() -> QuerySet[Post]:
+    return (
         Post.objects.filter(status="published")
         .select_related("author")
         .prefetch_related("tags")
         .order_by("-created_at")
     )
-    if query_params is not None:
-        qs = PostFilter(query_params, queryset=qs).qs
-    return qs
 ```
 
 Do not leave N+1 fixes only inside one `APIView`.  
-Do **not** take `request` — take `query_params=` (from `request.query_params` or a plain `dict` in tests).  
-FilterSet classes live in `selector/<entity>_filters.py` — see [Pagination & filtering](../http/pagination-and-filtering.md).
+Do **not** take `request`. Client query-string FilterSets live under `apis/` (`*_search_filters.py`) — see [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ### 4. Type hints
 
@@ -167,7 +163,7 @@ Annotate parameters and return types. Prefer concrete model types over `Any`.
 ### `get_profile`
 
 ```python
-# users/selector/users_selectors.py
+# users/selectors/users_selectors.py
 def get_profile(*, user: BaseUser) -> Profile:
     profile, _ = Profile.objects.get_or_create(user=user)
     return profile
@@ -225,7 +221,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
 
 ```text
 ┌──────────────┐
-│  selector/   │  READ  — get / list / derive
+│  selectors/   │  READ  — get / list / derive
 └──────────────┘
 ┌──────────────┐
 │  services/   │  WRITE — create / update / delete / workflows
@@ -240,7 +236,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
 | “Fetch profile for this user” | Selector |
 | “Update bio/avatar” | Service (may *call* `get_profile`) |
 | “Low-level create_user with hashed password” | Manager, wrapped by a service |
-| “Paginated list for API” | Selector returns queryset (applies FilterSet when needed) → pagination helper |
+| “Paginated list for API” | Selector returns base queryset → API applies optional FilterSet → pagination helper |
 
 Services **may call selectors** when a write needs a fresh read. Selectors must **not** call services that write (avoids hidden side effects in “read” code).
 
@@ -248,7 +244,7 @@ Services **may call selectors** when a write needs a fresh read. Selectors must 
 
 ## 🧪 Testing
 
-Place tests under `selector/tests/`.
+Place tests under `selectors/tests/`.
 
 ```python
 @pytest.mark.django_db
@@ -267,28 +263,23 @@ def test_get_profile_returns_existing_profile(user):
 
 ## 📋 List endpoints + filters
 
+Selectors own the **base** optimized queryset. FilterSets live next to the list API:
+
 ```python
-# selector/post_filters.py — FilterSet next to selectors
-class PostFilter(django_filters.FilterSet):
-    ...
-
-
-# selector/post_selectors.py — apply inside list_*
-def list_posts(*, query_params: Mapping[str, str] | None = None) -> QuerySet[Post]:
-    qs = (
+# blogs/selectors/post_selectors.py
+def list_posts() -> QuerySet[Post]:
+    return (
         Post.objects.filter(status="published")
         .select_related("author")
         .prefetch_related("tags")
         .order_by("-created_at")
     )
-    if query_params is not None:
-        qs = PostFilter(query_params, queryset=qs).qs
-    return qs
 ```
 
 ```python
-# API — pass query_params only; do not apply FilterSet in the view
-qs = list_posts(query_params=request.query_params)
+# blogs/apis/posts/posts_apis.py
+qs = list_posts()
+qs = PostFilter(request.query_params, queryset=qs).qs
 return get_paginated_response_context(...)
 ```
 
@@ -300,14 +291,14 @@ Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pa
 
 | Anti-pattern | Why it’s bad | Do this instead |
 |--------------|--------------|-----------------|
-| ORM list/filter only inside `APIView.get` | Can’t reuse; N+1 appears in one place only | Selector + optional FilterSet in `selector/` |
+| ORM list only inside `APIView.get` | Can’t reuse; N+1 appears in one place only | Selector for base QS |
 | `selector` that calls `.create()` as its purpose | Hidden writes | Service |
 | Returning `ModelSerializer(...).data` from a selector | Couples reads to DRF | Return model/QS; serialize in API |
 | Positional bag of args | Unreadable call sites | Keyword-only `*` |
 | Duplicating the same base QS in 4 views | Drift | One `list_*` selector |
 | `list_posts` + `list_posts_with_related` | Noise | One optimized `list_posts` |
-| Selector takes `request` | Couples reads to HTTP | `query_params=` mapping only |
-| FilterSet under `apis/` + apply in the view | Filter logic leaves the read layer | `selector/<entity>_filters.py` + apply in `list_*` |
+| Selector takes `request` / `query_params` for FilterSet | Couples reads to HTTP filter plumbing | Base QS in selector; FilterSet in `apis/` |
+| FilterSet under `selectors/` + apply inside `list_*` | Mixes HTTP filter params into the read layer | `*_search_filters.py` under `apis/` + apply in the view |
 
 ---
 
@@ -316,10 +307,10 @@ Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pa
 1. Put it in `<entity>_selectors.py` (or `<app>_selectors.py` if tiny)  
 2. Name it `get_*` / `list_<entities>` / `list_<entities>_<purpose>` with keyword-only args  
 3. Add `select_related` / `prefetch_related` for the primary list/detail output  
-4. If the list is filterable: add `<entity>_filters.py` and apply it inside `list_*` via `query_params=`  
-5. Export from `selector/__init__.py` if it is part of the public app API  
+4. Leave list FilterSets to `apis/<route…>/<entity>_search_filters.py`  
+5. Export from `selectors/__init__.py` if it is part of the public app API  
 6. Call it from APIs (and services if needed)  
-7. Add `selector/tests/…` 
+7. Add `selectors/tests/…` 
 
 ---
 

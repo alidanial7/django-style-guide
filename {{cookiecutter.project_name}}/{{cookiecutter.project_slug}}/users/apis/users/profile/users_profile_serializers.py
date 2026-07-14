@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from {{cookiecutter.project_slug}}.users.models import Profile
-from {{cookiecutter.project_slug}}.users.selector.users_selectors import get_avatar_url
+from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_avatar_url
 
 
 class UsersProfileOutputSerializer(serializers.ModelSerializer):

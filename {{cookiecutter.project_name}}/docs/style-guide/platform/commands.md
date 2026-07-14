@@ -89,7 +89,7 @@ python manage.py start_domain_app blogs --force
 python manage.py start_domain_app blogs --no-tests
 ```
 
-Scaffolds the style-guide layout (models/services/selector/apis/…). Full guide: [Domain apps](../structure/domain-apps.md).
+Scaffolds the style-guide layout (models/services/selectors/apis/…). Full guide: [Domain apps](../structure/domain-apps.md).
 
 ---
 

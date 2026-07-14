@@ -71,7 +71,7 @@ serializers, filters, and services. Do not nest choice enums inside model classe
 # __all__ = ["Example"]
 """,
     "manager/__init__.py": "",
-    "selector/__init__.py": """# from .__APP_NAME___selectors import ...
+    "selectors/__init__.py": """# from .__APP_NAME___selectors import ...
 #
 # __all__ = []
 """,
@@ -81,7 +81,7 @@ serializers, filters, and services. Do not nest choice enums inside model classe
 """,
     "apis/__init__.py": "",
     "urls/__init__.py": "",
-    "urls/__APP_NAME__.py": """from django.urls import path
+    "urls/__APP_NAME___url.py": """from django.urls import path
 
 app_name = "__APP_NAME__"
 
@@ -144,26 +144,15 @@ class Test__APP_CLASS__Services:
     def test_placeholder_ready_for_services(self):
         assert True
 ''',
-    "selector/tests/__init__.py": "",
-    "selector/tests/test___APP_NAME___selectors.py": '''import pytest
+    "selectors/tests/__init__.py": "",
+    "selectors/tests/test___APP_NAME___selectors.py": '''import pytest
 
 
 @pytest.mark.django_db
 class Test__APP_CLASS__Selectors:
-    """Add selector tests as you implement __PROJECT_SLUG__.__APP_NAME__.selector."""
+    """Add selector tests as you implement __PROJECT_SLUG__.__APP_NAME__.selectors."""
 
     def test_placeholder_ready_for_selectors(self):
-        assert True
-''',
-    "apis/tests/__init__.py": "",
-    "apis/tests/test___APP_NAME___apis.py": '''import pytest
-
-
-@pytest.mark.django_db
-class Test__APP_CLASS__Apis:
-    """Add API tests under feature folders (see users/apis/.../tests/) as endpoints land."""
-
-    def test_placeholder_ready_for_apis(self):
         assert True
 ''',
     "validators/tests/__init__.py": "",
@@ -173,7 +162,7 @@ class Test__APP_CLASS__Apis:
 class Command(BaseCommand):
     help = (
         "Create a domain app with this project's style-guide layout "
-        "(models/, enums.py, services/, selector/, apis/, validators/, errors/, …). "
+        "(models/, enums.py, services/, selectors/, apis/, validators/, errors/, …). "
         "When testing is enabled (pytest.ini), also scaffolds base test stubs. "
         "Prefer this over Django's default startapp."
     )
@@ -271,7 +260,7 @@ class Command(BaseCommand):
             self.stdout.write(f"     Or re-run with: python manage.py start_domain_app {app_name} --register")
             self.stdout.write(f"  2. Wire URLs in {_PROJECT_SLUG}/api/urls.py, e.g.:")
             self.stdout.write(
-                f'       path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}", "{app_name}"))),'
+                f'       path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}_url", "{app_name}"))),'
             )
             self.stdout.write(f"  3. Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations.")
 
@@ -301,6 +290,6 @@ class Command(BaseCommand):
         self.stdout.write("Still needed:")
         self.stdout.write(f"  - Wire URLs in {_PROJECT_SLUG}/api/urls.py")
         self.stdout.write(
-            f'      path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}", "{app_name}"))),'
+            f'      path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}_url", "{app_name}"))),'
         )
         self.stdout.write(f"  - Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations")

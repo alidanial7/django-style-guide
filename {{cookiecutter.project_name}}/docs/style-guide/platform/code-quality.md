@@ -14,7 +14,7 @@
 |------|-----|
 | Consistent Python style | Formatter + linter |
 | Catch foot-guns early | Pre-commit (debug leftovers, secrets, YAML, …) |
-| Stable i18n msgids | Lowercase gettext lint — see [Translations](translations.md) |
+| Stable i18n msgids | Prefer lowercase, space-separated gettext — see [Translations](translations.md) |
 | Readable APIs | Google-style docstrings where pydoclint is enabled |
 
 ```mermaid
@@ -50,7 +50,7 @@ Which groups appear depends on cookiecutter choices (`precommit_*` flags). Typic
 | **pyupgrade** | Rewrites older syntax toward Python 3.12 (`list[str]` instead of `List[str]`, …) |
 | **Ruff** | `ruff check --fix` + `ruff format` |
 | **pydoclint** | Google-style docstrings on functions/methods |
-| **django-translation-lint** | `_()` / gettext msgids must be **lowercase** |
+| **django-translation-lint** | Preferred: `_()` / gettext msgids are **lowercase** (aligns with [Translations](translations.md) strong recommendation) |
 
 To disable a group: comment out or remove its `repo:` block, then optionally `pre-commit autoupdate`.
 
@@ -87,7 +87,7 @@ Consider enabling Ruff + pre-commit later for the same developer experience as t
 | Python version | 3.12+ syntax |
 | Imports | Sorted / cleaned by Ruff I-rules when enabled |
 | Types | Prefer modern builtins (`list[str]`, `X \| None`) |
-| User-facing strings | Lowercase gettext msgids |
+| User-facing strings | Prefer lowercase, space-separated gettext msgids |
 | Docstrings | Google style when pydoclint is on; don’t invent a second style mid-file |
 | Secrets | Never commit `.env` with real secrets; hooks detect private keys |
 
@@ -120,7 +120,7 @@ Domain/architecture rules (selectors vs services, envelope, …) live in the res
 
 | Doc | Why |
 |-----|-----|
-| [Translations](translations.md) | Lowercase msgid rule |
+| [Translations](translations.md) | Lowercase + spaces msgid recommendation |
 | [Testing](testing.md) | CI test expectations |
 | [Commands](commands.md) | `make lint` / `make format` |
 | [Settings](settings.md) | Tooling is not Django settings |

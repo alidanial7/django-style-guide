@@ -14,7 +14,7 @@ flowchart TB
     SER --> SVC[services/]
     SVC --> HELP["common.services model_*"]
     SVC --> MGR[manager / ORM]
-    SVC --> SEL[selector — optional reads]
+    SVC --> SEL[selectors — optional reads]
     HELP --> DB[(DB)]
     MGR --> DB
     SVC -->|ValidationError| ENV[api_exception_handler]
@@ -34,10 +34,18 @@ flowchart TB
 ```text
 users/services/
 ├── __init__.py              # re-export public functions
-├── user_services.py
+├── user_services.py         # always *_services.py (plural)
 └── tests/
     └── test_user_services.py
 ```
+
+| ✅ | ❌ |
+|----|----|
+| `user_services.py` | `user_service.py` |
+| `pos_charge_services.py` | `pos_menu_service.py` |
+| `order_services.py` | `services.py` mega-file for many domains |
+
+One domain/concern per `*_services.py` module. Re-export public callables from `services/__init__.py`.
 
 ```python
 # users/services/__init__.py
@@ -197,7 +205,7 @@ def change_password(*, user: BaseUser, current_password: str, new_password: str)
 |-------|---------|
 | Field-keyed dict errors | Bare string-only errors when a field is known |
 | Domain `UserErrorCode` / app codes | Random undocumented string codes |
-| Lowercase gettext messages | Hard-coded untranslated UI strings (see [Translations](translations.md)) |
+| Lowercase gettext messages (strong recommendation) | Hard-coded untranslated UI strings (see [Translations](translations.md)) |
 | Let unexpected bugs propagate / log | Swallow `IntegrityError` without mapping |
 
 Other real services in this repo:
@@ -306,6 +314,7 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 | Service returns `Response` | Return models; API builds envelope |
 | Silent `except IntegrityError: pass` | Always map or re-raise |
 | Mixing huge read/report queries into write services | Call a selector instead |
+| Module named `*_service.py` (singular) | Always `*_services.py` |
 
 ---
 

@@ -44,7 +44,7 @@ flowchart TB
     end
 
     subgraph Domain["Domain app"]
-        SEL[selector/ — reads]
+        SEL[selectors/ — reads]
         SVC[services/ — writes + rules]
         VAL[validators/ + errors/]
         MOD[models/ + manager/]
@@ -83,7 +83,7 @@ flowchart TB
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  URLs                                                       │
-│  config/urls.py  →  api/urls.py  →  users/urls/users.py     │
+│  config/urls.py  →  api/urls.py  →  users/urls/users_url.py     │
 └────────────────────────────┬────────────────────────────────┘
                              │
                              ▼
@@ -98,7 +98,7 @@ flowchart TB
               ┌──────────────┴──────────────┐
               ▼                             ▼
 ┌──────────────────────────┐   ┌──────────────────────────────┐
-│  selector/  (READ)       │   │  services/  (WRITE)           │
+│  selectors/  (READ)       │   │  services/  (WRITE)           │
 │  get_*, list_*, …        │   │  create_*, update_*, …       │
 │  QuerySet / derived vals │   │  rules + model_* / Integrity │
 └────────────┬─────────────┘   └──────────────┬───────────────┘
@@ -186,7 +186,7 @@ This is the canonical “happy path” for a write API in this repo.
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant URL as users/urls/users.py
+    participant URL as users/urls/users_url.py
     participant API as UsersRegisterApi
     participant SER as UsersRegisterInputSerializer
     participant SVC as register()
@@ -259,7 +259,7 @@ flowchart TD
     Q1 -->|no| Q2{Does it change DB state<br/>or enforce a business rule?}
     Q2 -->|yes| SVC[services/]
     Q2 -->|no| Q3{Is it a read / query<br/>or derived value from DB?}
-    Q3 -->|yes| SEL[selector/]
+    Q3 -->|yes| SEL[selectors/]
     Q3 -->|no| Q4{Is it reusable across<br/>many domain apps?}
     Q4 -->|yes| COM[common/]
     Q4 -->|no| Q5{Is it only a machine code<br/>string for errors?}
@@ -275,8 +275,8 @@ flowchart TD
 
 | Situation | Put it here |
 |-----------|-------------|
-| New REST endpoint | `<app>/apis/<feature>/` + `<app>/urls/` + include in `api/urls.py` |
-| “List published posts for homepage” | `selector/` |
+| New REST endpoint | `<app>/apis/…` folders mirroring the URL + `<app>/urls/` + include in `api/urls.py` |
+| “List published posts for homepage” | `selectors/` |
 | “Publish post + notify + validate state machine” | `services/` |
 | Shared date range constraint example | `common.models` / DB constraints |
 | OpenAPI tag name `"users"` | `<app>/constants.py` — see [Constants](../layers/constants.md) |
@@ -291,17 +291,17 @@ These are the style rules that make the codebase look like a large Django servic
 
 | Layer | May | Must not |
 |-------|-----|----------|
-| `apis/` | Auth/throttle, Input/Output serializers, call selector/service, `api_response` / pagination helpers, `@extend_schema` | ORM queries, business rules, uniqueness checks, building error envelopes by hand |
-| `selector/` | Read ORM, `select_related` / `prefetch`, optional **FilterSet via `query_params=`**, derived values | `.create()` / `.update()` / `.delete()`, calling write services, taking `request` (use `query_params` only) |
+| `apis/` | Auth/throttle, Input/Output serializers, call selectors/service, `api_response` / pagination helpers, `@extend_schema` | ORM queries, business rules, uniqueness checks, building error envelopes by hand |
+| `selectors/` | Read ORM, `select_related` / `prefetch`, auth/ownership scoping, derived values | `.create()` / `.update()` / `.delete()`, calling write services, taking `request`, django-filter FilterSets |
 | `services/` | Writes, rules, `transaction.atomic`, `model_*` + integrity mapping, calling selectors for reads needed by a write | HTTP status codes, serializers, pagination, “list screens” querysets for unrelated UIs |
 | `models/` | Fields, constraints, managers, `__str__`, labels + **help_text on every field**, explicit **`related_name` on every FK/O2O** | HTTP, workflows, nested `TextChoices` (use `enums.py`), default `foo_set` reverses |
 | `enums.py` | `TextChoices` / `IntegerChoices` for fields | API error codes (`errors/codes.py`) / tags (`constants.py`) |
 | `serializers` | Shape + field/cross-field validation | Creating rows, permission decisions, raw ORM uniqueness as the only guard |
 | `common/` | Envelope, integrity helpers, `BaseModel`, shared validators | Domain-specific business rules for one app |
 
-**List endpoints:** selector (`list_*`, optionally applying FilterSet from `query_params=`) → pagination helper. Default is **no filters**. Never `Model.objects.filter(...)` or `FilterSet` inside `APIView.get`.
+**List endpoints:** selector (`list_*`) → optional `FilterSet` in `apis/*_search_filters.py` applied in the view → pagination helper. Default is **no filters**. Never `Model.objects.filter(...)` for the base list in the view.
 
-**Keyword-only APIs:** `def register(*, email: str, …)` and `def list_posts(*, query_params=None)` — no positional bags.
+**Keyword-only APIs:** `def register(*, email: str, …)` and `def list_posts(*, user=…)` when scoping is needed — no positional bags. FilterSets stay in the API layer.
 
 ---
 
@@ -316,13 +316,13 @@ These are the style rules that make the codebase look like a large Django servic
 - Map every write path through `model_create` / `model_save` / `model_update` **or** explicit `map_integrity_error`
 - Add domain apps with `start_domain_app`
 - Set `AllowAny` only on intentionally public endpoints (default is authenticated)
-- Apply list filters inside the selector (`selector/<entity>_filters.py` + `query_params=`); otherwise skip FilterSet entirely
-- Do not take `request` in selectors — pass `query_params` from the API
+- Apply list filters in the API (`apis/<route…>/<entity>_search_filters.py`); otherwise skip FilterSet entirely
+- Do not take `request` in selectors; leave FilterSet application to the view
 
 ### ❌ Don’t
 
 - Call `Model.objects.create` / `.save()` directly from views or serializers
-- Put list/filter ORM in services (that is selector territory)
+- Put list/filter base ORM in services (that is `selectors/` territory; FilterSets go in `apis/`)
 - Return raw `Response({"email": ...})` without the envelope
 - Mix read + write in one function (“god” service that also builds querysets for unrelated screens)
 - Copy-paste integrity / exception handling into each app

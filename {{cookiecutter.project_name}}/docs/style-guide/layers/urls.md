@@ -14,7 +14,7 @@ flowchart TB
 
     ROOT["config/urls.py"]
     API["{{cookiecutter.project_slug}}/api/urls.py"]
-    USERS["users/urls/users.py"]
+    USERS["users/urls/users_url.py"]
     VIEW["UsersProfileApi.as_view()"]
 
     REQ --> ROOT
@@ -85,25 +85,25 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include(("{{cookiecutter.project_slug}}.core.urls", "core"))),
-    path("auth/", include(("{{cookiecutter.project_slug}}.users.urls.auth", "auth"))),
-    path("users/", include(("{{cookiecutter.project_slug}}.users.urls.users", "users"))),
-    # path("blogs/", include(("{{cookiecutter.project_slug}}.blogs.urls.blogs", "blogs"))),
+    path("auth/", include(("{{cookiecutter.project_slug}}.users.urls.auth_url", "auth"))),
+    path("users/", include(("{{cookiecutter.project_slug}}.users.urls.users_url", "users"))),
+    # path("blogs/", include(("{{cookiecutter.project_slug}}.blogs.urls.blogs_url", "blogs"))),
 ]
 ```
 
 | Include | Final public prefix | Notes |
 |---------|---------------------|-------|
 | `core.urls` at `""` | `/api/v1/health/` | System endpoints |
-| `users.urls.auth` at `auth/` | `/api/v1/auth/…` | Login, logout, password |
-| `users.urls.users` at `users/` | `/api/v1/users/…` | Register, profile |
-| future `blogs.urls.blogs` | `/api/v1/blogs/…` | Add one line when scaffolding |
+| `users.urls.auth_url` at `auth/` | `/api/v1/auth/…` | Login, logout, password |
+| `users.urls.users_url` at `users/` | `/api/v1/users/…` | Register, profile |
+| future `blogs.urls.blogs_url` | `/api/v1/blogs/…` | Add one line when scaffolding |
 
 ### `include((module, namespace))` form
 
 We use the tuple form so the URL **namespace** is explicit:
 
 ```python
-include(("{{cookiecutter.project_slug}}.users.urls.users", "users"))
+include(("{{cookiecutter.project_slug}}.users.urls.users_url", "users"))
 #                              ↑ module                         ↑ namespace
 ```
 
@@ -111,20 +111,20 @@ That namespace pairs with `app_name` inside the included module (see below) for 
 
 ---
 
-## 🌳 Layer 3 — per-app `urls/` package
+## 🌳 Layer 3 — per-app `urls/` package (**multiple `*_url.py` modules**)
 
-Each domain app owns its routes under `<app>/urls/`.
+Each domain app owns its routes under `<app>/urls/`. Prefer **one module per public mount** included from `api/urls.py`. Name modules `<prefix>_url.py`.
 
-### Reference: `users` (split by concern)
+### Reference: `users` (two mounts → two modules)
 
 ```text
 users/urls/
-├── auth.py      # /api/v1/auth/…
-└── users.py     # /api/v1/users/…
+├── auth_url.py      # /api/v1/auth/…
+└── users_url.py     # /api/v1/users/…
 ```
 
 ```python
-# users/urls/users.py
+# users/urls/users_url.py
 from django.urls import path
 
 from {{cookiecutter.project_slug}}.users.apis.users import UsersProfileApi, UsersRegisterApi
@@ -138,7 +138,7 @@ urlpatterns = [
 ```
 
 ```python
-# users/urls/auth.py (shape — JWT vs session depends on generation)
+# users/urls/auth_url.py (shape — JWT vs session depends on generation)
 app_name = "auth"
 
 urlpatterns = [
@@ -161,6 +161,22 @@ urlpatterns = [
 ]
 ```
 
+### Growing apps (POS-style)
+
+As soon as you mount a second public prefix, add another `*_url.py` — do not grow one mega-file:
+
+```text
+pos/urls/
+├── pos_url.py
+└── pos_menu_url.py
+```
+
+```python
+# api/urls.py
+path("pos/", include(("….pos.urls.pos_url", "pos"))),
+path("pos-menu/", include(("….pos.urls.pos_menu_url", "pos_menu"))),
+```
+
 ### Reference: `core`
 
 ```python
@@ -175,7 +191,7 @@ urlpatterns = [
 ### Scaffold default for a new app
 
 ```python
-# blogs/urls/blogs.py
+# blogs/urls/blogs_url.py
 from django.urls import path
 
 app_name = "blogs"
@@ -186,7 +202,7 @@ urlpatterns = [
 ]
 ```
 
-When the app grows, split like `users` (`urls/posts.py`, `urls/public.py`, …) and add matching `include`s in `api/urls.py`.
+When the app grows, **prefer more `*_url.py` modules** (like `users`: `auth_url.py` + `users_url.py`) and add matching `include`s in `api/urls.py`. Do not collapse every mount into one URLconf file.
 
 ---
 
@@ -297,7 +313,7 @@ Auth routes often include a clear action (`login`, `logout`, `refresh`) because 
 ```mermaid
 sequenceDiagram
     participant Dev as Developer
-    participant App as blogs/urls/blogs.py
+    participant App as blogs/urls/blogs_url.py
     participant API as api/urls.py
     participant Root as config/urls.py
 
@@ -309,8 +325,8 @@ sequenceDiagram
 
 **Checklist**
 
-1. Implement the `APIView` under `blogs/apis/…`
-2. Add `path(...)` in `blogs/urls/blogs.py` with `name=`
+1. Implement the `APIView` under `blogs/apis/…` in folders that mirror the URL
+2. Add `path(...)` in `blogs/urls/blogs_url.py` with `name=`
 3. Ensure `app_name = "blogs"`
 4. `include` the module from `api/urls.py` under `blogs/`
 5. Hit `/api/v1/blogs/…` and confirm it appears in Swagger (DEBUG)
@@ -342,7 +358,8 @@ Services and selectors generally **should not** need `reverse()` — building pr
 | Forgetting `include` in `api/urls.py` | App exists, always 404 | Add the `path("blogs/", include(...))` line |
 | Missing trailing slash in clients | Redirect / method weirdness | Call `/…/profile/` |
 | No `name=` | Can’t `reverse()`, fragile tests | Always set `name` |
-| Defining routes only in `config/urls.py` | Unmaintainable root URLconf | Domain routes live in `<app>/urls/` |
+| Defining routes only in `config/urls.py` | Unmaintainable root URLconf | Domain routes live in `<app>/urls/*_url.py` |
+| One mega URL module for many public prefixes | Hard to navigate | Prefer multiple `<prefix>_url.py` modules + separate `include`s |
 | Putting register under `/auth/` | Confuses “session/token” with “user resource” | Keep register under `/users/` (as this template does) |
 | Shipping Swagger in production | Schema leakage | Keep schema views behind `DEBUG` |
 

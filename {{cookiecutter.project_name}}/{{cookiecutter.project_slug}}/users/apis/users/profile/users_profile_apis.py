@@ -10,7 +10,7 @@ from {{cookiecutter.project_slug}}.users.apis.users.profile.users_profile_serial
     UsersProfileUpdateInputSerializer,
 )
 from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS
-from {{cookiecutter.project_slug}}.users.selector.users_selectors import get_profile
+from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_profile
 from {{cookiecutter.project_slug}}.users.services.user_services import profile_update
 
 

@@ -6,7 +6,9 @@
 > This project was generated **without** testing tooling. The layout below is still the style to follow if you add pytest later (`pytest.ini`, factories, layer tests).
 {%- endif %}
 >
-> Test **next to the code they protect**: `services/tests/`, `selector/tests/`, `apis/.../tests/`, `validators/tests/`.
+> Test **next to the code they protect**: `services/tests/`, `selectors/tests/`, `apis/<route…>/tests/`, `validators/tests/`.
+>
+> Do **not** create a root `apis/tests/` package — API tests belong only under each URL leaf.
 
 ---
 
@@ -25,7 +27,7 @@ flowchart TB
     subgraph Unitish
         V[validators/tests]
         S[services/tests]
-        SEL[selector/tests]
+        SEL[selectors/tests]
     end
     subgraph HTTP
         A[apis/**/tests]
@@ -145,9 +147,9 @@ Profile rows appear via the [user signal](../layers/signals.md) when the user is
 | Layer | Path | Assert |
 |-------|------|--------|
 | Validators | `validators/tests/` | Codes + messages for bad inputs |
-| Selectors | `selector/tests/` | Returned instances / queryset contents / URL shapes |
+| Selectors | `selectors/tests/` | Returned instances / queryset contents / URL shapes |
 | Services | `services/tests/` | Writes, domain `ValidationError`, integrity |
-| APIs | `apis/<feature>/tests/` | HTTP status + envelope + auth/throttle behavior |
+| APIs | `apis/<url-segments…>/tests/` | HTTP status + envelope + auth/throttle behavior |
 | App smoke | `tests/test_app.py` | AppConfig importable (scaffold) |
 | Cross-cutting | e.g. `common/db/integrity/tests/` | Integrity mapping |
 | Config | `config/tests/` | Request ID middleware, etc. |

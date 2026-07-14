@@ -1,6 +1,6 @@
 # 🌍 Translations (i18n)
 
-> User-facing strings use Django gettext. Msgids are **lowercase**. Locale files live under `locale/` and are refreshed with `scripts/update_translations.sh`.
+> User-facing strings use Django gettext. Prefer **lowercase**, **space-separated** English msgids (strong recommendation). Locale files live under `locale/` and are refreshed with `scripts/update_translations.sh`.
 
 ---
 
@@ -9,7 +9,7 @@
 | Goal | How |
 |------|-----|
 | Translatable API / validation messages | `_()` / `gettext_lazy` on messages |
-| Stable msgids | Lowercase English source strings |
+| Stable, deduplicated msgids | Lowercase English words separated by spaces |
 | Parameterized text | `params=` on `ValidationError` — not pre-interpolated msgids |
 | Operator workflow | One script for `makemessages` (+ optional compile) |
 
@@ -52,18 +52,40 @@ Default language is US English. Add languages to Django’s `LANGUAGES` (and mid
 
 Password validators in this repo use lazy `_` for `message` attributes and eager gettext in Django adapter `get_help_text()` — see `users/validators/password.py`.
 
-### Lowercase msgids (required convention)
+### Lowercase + spaces (strong recommendation)
+
+Prefer every gettext msgid to be:
+
+1. **all lowercase** (no Title Case / sentence capitals in the source string)
+2. **words separated by spaces** (human phrase, not `snake_case` or `kebab-case` inside `_()`)
 
 ```python
-# ✅
+# ✅ preferred
 _("password must include number")
 _("confirm password is not equal to password")
+_("serial number")
 
-# ❌ — rejected by django-translation-lint when code-style hooks are on
+# ❌ avoid — Title Case / mixed casing
 _("Password must include number")
+_("Confirm Password Is Not Equal To Password")
+
+# ❌ avoid — separators that are not spaces
+_("password_must_include_number")
+_("password-must-include-number")
 ```
 
-Why: consistent catalogs, simpler reviews, and a project hook that enforces lowercase gettext strings — see [Code quality](code-quality.md).
+**Why this project prefers it (not a hard product law):**
+
+| Reason | Detail |
+|--------|--------|
+| One catalog entry | Gettext treats `"Password…"` and `"password…"` as **different** msgids. Teams otherwise translate the same idea twice and drift. |
+| Easier to write | Developers don’t debate “capitalize email?” vs “Email”; the rule is boring and scannable. |
+| Uniform diffs / reviews | PR reviewers spot new strings without casing noise. |
+| Matches labels | Same style as field `verbose_name=_("serial number")` and choice labels. |
+
+Presentation casing (e.g. start a sentence with a capital in the **translated** UI) belongs in the **`.po` translation**, not by inventing a second English msgid.
+
+This is a **strong recommendation**. Ship the consistent form by default. Rare exceptions (proper nouns, legal quotes that must match a trademark) are fine — document why in the PR. When `django-translation-lint` is enabled in pre-commit, **lowercase** is additionally enforced at commit time — see [Code quality](code-quality.md).
 
 ### Parameterized messages
 
@@ -119,13 +141,13 @@ Commit `.po` files with string changes. Prefer committing compiled `.mo` only if
 ## 🧪 Checking conventions
 
 {%- if cookiecutter.use_code_style == "y" %}
-Pre-commit includes **django-translation-lint** (when enabled in generation) to keep `_()` msgids lowercase. Run:
+Pre-commit includes **django-translation-lint** (when enabled in generation) to keep `_()` msgids lowercase — optional tooling that backs the strong recommendation above. Run:
 
 ```bash
 pre-commit run --all-files
 ```
 {%- else %}
-When adding code-style tooling, enable a gettext lowercase check so msgid casing does not drift.
+When adding code-style tooling, enable a gettext lowercase check so msgid casing does not drift (still a convention preference in the docs; the hook is what makes it mechanical).
 {%- endif %}
 
 Also spot-check new validators/services for missing `_()` on user-facing strings.
@@ -148,7 +170,9 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 
 | Anti-pattern | Fix |
 |--------------|-----|
-| Uppercase / title-case msgids | Lowercase source English |
+| Title Case / mixed-case msgids | Prefer lowercase source English |
+| Snake_case / kebab-case inside `_()` | Prefer space-separated words (`_("serial number")`) |
+| Duplicate msgids that differ only by casing | Reuse one lowercase msgid; capitalize in the locale translation if needed |
 | f-strings inside `_()` | `_("hello %(name)s") % {"name": …}` or `params=` / `format` after gettext |
 | Translating error **codes** | Keep codes stable English snake_case |
 | Editing `.mo` by hand | Edit `.po`, then compile |
@@ -159,7 +183,7 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 ## ✅ Checklist: new user-facing string
 
 1. Wrap with `_()` / `gettext_lazy`
-2. Lowercase msgid
+2. Prefer lowercase, space-separated msgid (strong recommendation)
 3. Use `params=` for dynamic values
 4. Run `./scripts/update_translations.sh`
 5. Ensure API also sets a machine `code=` where applicable

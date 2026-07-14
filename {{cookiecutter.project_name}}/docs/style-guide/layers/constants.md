@@ -47,7 +47,7 @@ users/
 ├── enums.py              ← TextChoices / IntegerChoices (different concern)
 ├── errors/codes.py       ← machine error codes (different concern)
 ├── apis/...
-└── selector/...
+└── selectors/...
 ```
 
 Use **section banners** when the file grows, same style as `users`:
@@ -128,7 +128,7 @@ In Swagger UI you then get clean groups: **users**, **auth**, **system** (health
 **2. Static path in a selector**
 
 ```python
-# users/selector/users_selectors.py
+# users/selectors/users_selectors.py
 from django.templatetags.static import static
 
 from {{cookiecutter.project_slug}}.users.constants import DEFAULT_AVATAR_STATIC_PATH

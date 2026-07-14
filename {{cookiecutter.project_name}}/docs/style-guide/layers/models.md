@@ -10,7 +10,7 @@
 
 ```mermaid
 flowchart LR
-    API[apis/] --> SEL[selector/]
+    API[apis/] --> SEL[selectors/]
     API --> SVC[services/]
     SEL --> MOD[models/]
     SVC --> MOD

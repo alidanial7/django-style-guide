@@ -12,7 +12,7 @@ A domain app owns one business area end-to-end:
 
 ```text
 HTTP  →  apis/ + urls/
-reads →  selector/
+reads →  selectors/
 writes → services/
 shape →  models/ + manager/
 rules →  validators/ + errors/
@@ -24,7 +24,7 @@ flowchart TB
     subgraph DomainApp["blogs/ (example domain app)"]
         URLs[urls/]
         APIs[apis/]
-        SEL[selector/]
+        SEL[selectors/]
         SVC[services/]
         MOD[models/]
         VAL[validators/ + errors/]
@@ -102,7 +102,8 @@ python manage.py start_domain_app blogs --register
 This project was generated **with testing** (`pytest.ini` present). The command also creates base stubs under:
 
 - `tests/` (smoke + factory stub)
-- `services/tests/`, `selector/tests/`, `apis/tests/`, `validators/tests/`
+- `services/tests/`, `selectors/tests/`, `validators/tests/`
+- API tests are **not** scaffolded at `apis/tests/` — add `apis/<route…>/tests/` when the first endpoint lands
 
 They collect and pass out of the box; replace placeholders as you implement features.
 
@@ -127,11 +128,11 @@ blogs/
 ├── enums.py                # TextChoices / IntegerChoices → see enums.md
 ├── models/                 # one module per model; export from __init__.py
 ├── manager/                # custom managers / querysets
-├── selector/               # READ queries + optional <entity>_filters.py (+ tests/)
-├── services/               # WRITE + business rules (+ tests/)
-├── apis/                   # DRF views + serializers, grouped by feature (+ tests/)
+├── selectors/              # READ queries (+ tests/) — no FilterSets here
+├── services/               # WRITE + business rules; modules = *_services.py (+ tests/)
+├── apis/                   # DRF views + serializers + optional *_search_filters.py; folders mirror URL routes (+ tests per leaf)
 ├── urls/
-│   └── blogs.py            # urlpatterns + app_name for this app
+│   └── blogs_url.py        # urlpatterns + app_name; split into more *_url.py modules as mounts grow
 ├── validators/             # is_* pures + *Validator raisers (+ tests/)
 ├── errors/
 │   └── codes.py            # BlogsErrorCode StrEnum — codes ONLY
@@ -150,10 +151,10 @@ blogs/
 | `models/` | Fields, constraints, relations | HTTP, complex workflows, nested `TextChoices`, missing `related_name` |
 | `enums.py` | `TextChoices` / `IntegerChoices` for fields | Error codes / OpenAPI tags |
 | `manager/` | Reusable QuerySet/Manager methods | Call external APIs / send email as “business feature” |
-| `selector/` | Reads, annotations, derived URLs, optional FilterSet via `query_params=` | `.create()` / `.save()` as the main job; taking `request` |
-| `services/` | Writes, transactions, domain rules | Parse `request.data` / return `Response` |
-| `apis/` | Auth, validate input, call selector/service, `api_response` | Fat ORM blocks |
-| `urls/` | Path → view mapping | Business logic |
+| `selectors/` | Reads, annotations, derived URLs, auth/ownership scoping on QS | `.create()` / `.save()` as the main job; taking `request`; django-filter FilterSets |
+| `services/` | Writes, transactions, domain rules; files named `*_services.py` | Parse `request.data` / return `Response`; singular `*_service.py` |
+| `apis/` | Auth, validate input, optional `*_search_filters.py`, call selector/service, `api_response`; **folders mirror URL routes**; tests per leaf | Fat ORM blocks; root `apis/tests/` |
+| `urls/` | Path → view mapping; prefer **multiple** `<prefix>_url.py` modules | Business logic; one mega-`urls.py` for many mounts |
 | `validators/` | Field-level pure + raising checks | Cross-aggregate workflows |
 | `errors/codes.py` | Stable machine codes | `raise ValidationError` |
 | `signals/` | Idempotent mechanical follow-ups | User-facing API validation |
@@ -197,9 +198,9 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include(("{{cookiecutter.project_slug}}.core.urls", "core"))),
-    path("auth/", include(("{{cookiecutter.project_slug}}.users.urls.auth", "auth"))),
-    path("users/", include(("{{cookiecutter.project_slug}}.users.urls.users", "users"))),
-    path("blogs/", include(("{{cookiecutter.project_slug}}.blogs.urls.blogs", "blogs"))),
+    path("auth/", include(("{{cookiecutter.project_slug}}.users.urls.auth_url", "auth"))),
+    path("users/", include(("{{cookiecutter.project_slug}}.users.urls.users_url", "users"))),
+    path("blogs/", include(("{{cookiecutter.project_slug}}.blogs.urls.blogs_url", "blogs"))),
 ]
 ```
 
@@ -231,72 +232,88 @@ Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`
 
 ---
 
-## 🗂️ Feature grouping under `apis/`
+## 🗂️ `apis/` folders mirror URL routes
 
-Group by **feature**, not by HTTP verb or by “all serializers in one file”.
+Folder names under `apis/` follow the **real path segments** (after the app mount). Nested actions and `/<id>/` segments become nested directories (`wallet/charge/init/`, `id/revoke/`). Full rules and POS-style tree: [APIs](../layers/apis.md).
 
 ### Reference: `users`
 
 ```text
 users/apis/
-├── auth/                      # login, logout, password
-│   ├── auth_jwt_apis.py       # or auth_session_apis.py
+├── auth/                      # /auth/…
+│   ├── auth_jwt_apis.py
 │   ├── auth_password_apis.py
 │   ├── auth_serializers.py
 │   └── tests/
-└── users/
-    ├── register/
+└── users/                     # /users/…
+    ├── register/              # /users/register/
     │   ├── users_register_apis.py
     │   ├── users_register_serializers.py
     │   └── tests/
-    └── profile/
+    └── profile/               # /users/profile/
         ├── users_profile_apis.py
         ├── users_profile_serializers.py
         └── tests/
 ```
 
-### Suggested layout for `blogs`
+### Suggested layout for `blogs` (`/posts/`, `/posts/<id>/`)
 
 ```text
 blogs/apis/
-├── posts/
-│   ├── posts_apis.py
-│   ├── posts_serializers.py
-│   └── tests/
-└── comments/
-    ├── comments_apis.py
-    ├── comments_serializers.py
-    └── tests/
+└── posts/
+    ├── posts_apis.py              # PostListCreateApiView
+    ├── posts_serializers.py
+    ├── posts_search_filters.py    # optional — only if the list accepts filters
+    ├── tests/
+    └── id/
+        ├── posts_id_apis.py       # PostRetrieveUpdateDestroyApiView
+        ├── posts_id_serializers.py
+        └── tests/
 ```
 
-Each feature folder typically contains:
+Each URL leaf typically contains:
 
 | File | Role |
 |------|------|
 | `*_apis.py` | `APIView` classes |
 | `*_serializers.py` | Input + output serializers |
-| `tests/` | HTTP / permission tests for that feature |
+| `*_search_filters.py` | List FilterSet (only when the leaf accepts filters) |
+| `tests/` | HTTP / permission tests for that leaf |
 
-Naming prefix (`users_profile_…`, `posts_…`) keeps grepping and imports obvious.
+Do **not** keep an empty root `apis/tests/`.
+
+File prefixes follow the path (`users_register_…`, `pos_wallet_balance_…`) so grepping and imports stay obvious.
 
 ---
 
-## 🔗 URLs inside the app
+## 🔗 URLs inside the app — **prefer multiple `*_url.py` modules**
 
-Scaffold creates:
+Every public mount that `api/urls.py` includes gets its own module named `<prefix>_url.py`:
+
+```text
+users/urls/
+├── auth_url.py     # included at auth/
+└── users_url.py    # included at users/
+
+pos/urls/           # example shape as the app grows
+├── pos_url.py
+└── pos_menu_url.py
+```
+
+Scaffold creates one starter module:
 
 ```python
-# blogs/urls/blogs.py
+# blogs/urls/blogs_url.py
 from django.urls import path
 
 app_name = "blogs"
 
 urlpatterns = [
-    # path("", PostListCreateApiView.as_view(), name="posts-list-create"),
+    # path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
 ]
 ```
 
-Split modules when the surface grows (like `users/urls/auth.py` + `users/urls/users.py`), and include each from `api/urls.py`.
+**Default as the surface grows:** split by mounted prefix (not by stuffing everything into one file). Each split module is included separately from `api/urls.py` — same pattern as `auth_url` + `users_url`.
 
 ---
 
@@ -324,11 +341,11 @@ Never put raising validators in `errors/`.
 Assume `blogs` is scaffolded and registered.
 
 **1. Model** — `blogs/models/post.py` + export in `models/__init__.py`
-**2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `selector/post_filters.py` and apply it inside `list_posts` only if the list accepts filters)  
-**3. API** — `PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` in `apis/posts/posts_apis.py` returning `api_response`  
-**4. URL** — `path("posts/", PostListCreateApiView.as_view(), name="posts-list-create")` + detail path with `post_id`  
-**5. Include** already under `/api/v1/blogs/`
-**6. Test** — `apis/posts/tests/test_posts_list.py`
+**2. Selector** — `list_posts()` in `selectors/post_selectors.py` (base QS only)  
+**3. API** — `PostListCreateApiView` in `apis/posts/posts_apis.py` (+ `posts_search_filters.py` only if the list accepts filters) + `PostRetrieveUpdateDestroyApiView` in `apis/posts/id/posts_id_apis.py`  
+**4. URL** — routes in `urls/blogs_url.py` (`path("posts/", …)` + `path("posts/<int:post_id>/", …)`); split more `*_url.py` modules when you add new public mounts  
+**5. Include** already under `/api/v1/blogs/`  
+**6. Test** — `apis/posts/tests/…` and `apis/posts/id/tests/…` (never a root `apis/tests/`)  
 
 Write path (`POST` create) adds `services/` + validators + integrity mapping before exposing the endpoint.
 
@@ -340,7 +357,8 @@ Write path (`POST` create) adds `services/` + validators + integrity mapping bef
 |---------|-----|
 | `django-admin startapp blogs` | `python manage.py start_domain_app blogs` |
 | Singular `blog` app label | Plural `blogs` |
-| Putting views in `views.py` at app root | Use `apis/<feature>/` |
+| Putting views in `views.py` at app root | Use `apis/` folders that mirror URL segments |
+| Flat apis tree that disagrees with nested URLs | Nest `apis/` to match the route |
 | One giant `serializers.py` for the whole app | Per-feature serializer modules |
 | Business rules in `apis/` | Move to `services/` |
 | Registering app but forgetting `api/urls.py` | No route → 404; wire the include |

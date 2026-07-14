@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from {{cookiecutter.project_slug}}.common.errors.codes import ErrorCode
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 from {{cookiecutter.project_slug}}.users.models import BaseUser
-from {{cookiecutter.project_slug}}.users.selector.users_selectors import get_avatar_url
+from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_avatar_url
 from {{cookiecutter.project_slug}}.users.validators.password import PASSWORD_VALIDATORS
 
 

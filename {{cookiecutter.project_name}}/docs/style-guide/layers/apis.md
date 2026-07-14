@@ -29,23 +29,83 @@ flowchart LR
 
 ---
 
-## 📂 File layout (feature folders)
+## 📂 File layout (folders mirror URL routes)
 
-Group by **feature**, not by verb and not one mega-`views.py`:
+Under `<app>/apis/`, **folder names follow the real URL path segments** (after the app’s mount in `api/urls.py`). Do **not** invent a parallel “feature nickname” tree that disagrees with the route.
+
+```text
+URL:  /api/v1/pos/wallet/charge/init/
+Dirs: apis/pos/wallet/charge/init/
+```
+
+### Rules
+
+| Rule | Detail |
+|------|--------|
+| One path segment → one folder | `pos/` → `wallet/` → `balance/` |
+| Collection / CRUD at that segment | `*_apis.py` + `*_serializers.py` (+ `tests/`) in **that** folder |
+| Nested action | Deeper folder: `…/charge/init/`, `…/id/revoke/` |
+| Path param segment | Use a stable folder name such as `id/` for `/…/<id>/…` |
+| URL kebab-case | Folder stays snake_case: `/pos-menu/` → `apis/pos_menu/` |
+| File prefix | Snake path of the leaf (and parents as needed for uniqueness): `pos_wallet_balance_apis.py` |
+| Tests | `tests/` **next to** that leaf’s apis/serializers |
+
+### Shape (POS-style resource)
+
+```text
+apis/
+├── pos/                                    # /pos/
+│   ├── pos_apis.py                         # list/create (or collection handlers)
+│   ├── pos_serializers.py
+│   ├── tests/
+│   ├── heartbeat/                          # /pos/heartbeat/
+│   │   ├── pos_heartbeat_apis.py
+│   │   ├── pos_heartbeat_serializers.py
+│   │   └── tests/
+│   ├── config/
+│   │   └── sync/                           # /pos/config/sync/
+│   │       ├── pos_config_sync_apis.py
+│   │       ├── pos_config_sync_serializers.py
+│   │       └── tests/
+│   ├── id/                                 # /pos/<id>/…
+│   │   ├── pos_id_apis.py                  # retrieve/update/destroy for one POS
+│   │   ├── pos_id_serializers.py
+│   │   ├── tests/
+│   │   └── revoke/                         # /pos/<id>/revoke/
+│   │       ├── pos_id_revoke_apis.py
+│   │       ├── pos_id_revoke_serializers.py
+│   │       └── tests/
+│   └── wallet/
+│       ├── balance/                        # /pos/…/wallet/balance/
+│       ├── charge/
+│       │   ├── init/
+│       │   └── confirm/
+│       └── transactions/
+│           └── recent/
+└── pos_menu/                               # /pos-menu/ (or /pos_menu/)
+    ├── pos_menu_apis.py
+    ├── pos_menu_serializers.py
+    └── tests/
+```
+
+### Reference: shipped `users` app
+
+Paths under `/api/v1/` already match the tree:
 
 ```text
 users/apis/
-├── auth/
-│   ├── auth_jwt_apis.py          # or auth_session_apis.py
+├── auth/                      # /auth/…  (mounted separately in api/urls.py)
+│   ├── auth_jwt_apis.py       # or auth_session_apis.py
 │   ├── auth_password_apis.py
+│   ├── auth_logout_apis.py
 │   ├── auth_serializers.py
 │   └── tests/
-└── users/
-    ├── register/
+└── users/                     # /users/…
+    ├── register/              # /users/register/
     │   ├── users_register_apis.py
     │   ├── users_register_serializers.py
     │   └── tests/
-    └── profile/
+    └── profile/               # /users/profile/
         ├── users_profile_apis.py
         ├── users_profile_serializers.py
         └── tests/
@@ -55,9 +115,12 @@ users/apis/
 |------|----------|
 | `*_apis.py` | `APIView` classes |
 | `*_serializers.py` | `*InputSerializer` + `*OutputSerializer` |
-| `tests/` | HTTP / auth / payload tests for that feature |
+| `*_search_filters.py` | django-filter `FilterSet` for **that list leaf** (only when needed) |
+| `tests/` | HTTP / auth / payload tests for **that URL leaf** |
 
-Name with app + feature prefix (`users_profile_…`) so grepping and imports stay obvious.
+Do **not** create a root `apis/tests/` package — tests live only under each route leaf.
+
+List FilterSets live next to the list APIs as `*_search_filters.py` (see [Pagination & filtering](../http/pagination-and-filtering.md)).
 
 ---
 
@@ -75,7 +138,8 @@ Still use plain `APIView` (explicit `get` / `post` / …) — these names **mirr
 `{Entity}` is **PascalCase singular** (`Post`, `Order`, `Comment`) — not `Posts`, not `pos`.
 
 ```python
-# blogs/apis/posts/posts_apis.py
+# blogs/apis/posts/posts_apis.py          → /posts/
+# blogs/apis/posts/id/posts_id_apis.py    → /posts/<id>/
 class PostListCreateApiView(ApiAuthMixin, APIView):
     def get(self, request):
         ...  # list_posts + pagination
@@ -99,7 +163,7 @@ class PostRetrieveUpdateDestroyApiView(ApiAuthMixin, APIView):
 ```
 
 ```python
-# blogs/urls/blogs.py
+# blogs/urls/blogs_url.py
 urlpatterns = [
     path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
     path("posts/<int:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
@@ -163,7 +227,7 @@ from {{cookiecutter.project_slug}}.api.mixins import ApiAuthMixin
 from {{cookiecutter.project_slug}}.common.http import api_response
 from {{cookiecutter.project_slug}}.common.http.schema import envelope_serializer
 from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS
-from {{cookiecutter.project_slug}}.users.selector.users_selectors import get_profile
+from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_profile
 from {{cookiecutter.project_slug}}.users.services.user_services import profile_update
 
 
@@ -244,7 +308,7 @@ class UsersRegisterApi(APIView):
 | `ApiAuthMixin` when login is required | Ad‑hoc auth checks buried in `get/post` |
 | `permission_classes = [AllowAny]` on public routes | Assuming new views are public (default is authenticated) |
 | Explicit `<Entity>Filter` when the list accepts filters | Raw query params / silent `filter_backends` on `APIView` |
-| `list_*(query_params=request.query_params)` | Applying `FilterSet` inside the view |
+| `qs = list_*()` then `FilterSet(request.query_params, queryset=qs).qs` | Hiding FilterSet inside the selector / `query_params=` on `list_*` |
 
 ---
 
@@ -254,7 +318,7 @@ class UsersRegisterApi(APIView):
 |------|-----------|------|
 | `*InputSerializer` | Request body → Python | Validate shape; run field/cross-field rules |
 | `*OutputSerializer` | Domain → JSON | Expose only what clients may see |
-| `<Entity>Filter` (django-filter) | Query string → filtered QS | Defined under `selector/`; applied inside `list_*` — see [Pagination & filtering](../http/pagination-and-filtering.md) |
+| `<Entity>Filter` (django-filter) | Query string → filtered QS | Defined under `apis/` as `*_search_filters.py`; applied in the list view — see [Pagination & filtering](../http/pagination-and-filtering.md) |
 
 Do **not** reuse one `ModelSerializer` for both directions unless the shapes are truly identical and tiny (rare). Register input has `password` / `confirm_password`; output must never echo passwords.
 
@@ -298,16 +362,16 @@ class UsersRegisterInputSerializer(serializers.Serializer):
 
 Use **field-keyed** errors and platform vs domain codes correctly (`ErrorCode.REQUIRED` vs `UserErrorCode.PASSWORD_MISMATCH`).
 
-### List filters (django-filter inside selectors)
+### List filters (django-filter under `apis/`)
 
-Default list endpoints apply **no** filters. When the client may filter, put `<Entity>Filter` under `selector/` and apply it **inside** the list selector:
+Default list endpoints apply **no** filters. When the client may filter, put `<Entity>Filter` in `*_search_filters.py` next to that list leaf and apply it **in the view**:
 
 ```python
-# API — do not call PostFilter here
-qs = list_posts(query_params=request.query_params)
+qs = list_posts()
+qs = PostFilter(request.query_params, queryset=qs).qs
 ```
 
-Do not use a parallel `*QuerySerializer` style for the same list query params. Do not take `request` in the selector. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](../http/pagination-and-filtering.md).
+Do not use a parallel `*QuerySerializer` style for the same list query params. Do not take `request` / `query_params` in the selector. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ### Output serializer rules
 
@@ -375,7 +439,7 @@ Clients then may send `multipart/form-data` (file + fields) or JSON (without fil
 
 ## 🧪 Testing APIs
 
-Place tests under the feature folder: `apis/<feature>/tests/`.
+Place tests under the URL leaf: `apis/<…path…>/tests/`.
 
 | Assert | How |
 |--------|-----|
@@ -398,19 +462,20 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 | Uniqueness check in serializer | DB constraint + integrity mapping |
 | Permission logic in `validate()` | Permission classes / mixin |
 | Missing `@extend_schema` | Document every public handler |
-| `views.py` at app root | `apis/<feature>/` |
-| List filters only inside `get` with raw query params | `FilterSet` in `selector/` applied inside `list_*` |
+| `views.py` at app root | `apis/` tree that mirrors URL segments |
+| Flat `apis/posts/` only while URLs are `/posts/…/wallet/…` | Nest folders to match the route |
+| List filters only inside `get` with raw query params | `*_search_filters.py` under `apis/` + apply FilterSet in the view |
 | `PostsListApi` / `PostDetailApi` for standard CRUD | `PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` |
 
 ---
 
 ## ✅ Checklist: new endpoint
 
-1. Create feature folder under `apis/`
-2. Add Input + Output serializers
+1. Create folders under `apis/` that mirror the URL path  
+2. Add Input + Output serializers (and `tests/`) in that leaf  
 3. Add `APIView` named per convention (`PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` / action `*ApiView`) with `@extend_schema` + tags from `constants.py` 
 4. Wire auth mixin and/or throttle
-5. Call selector/service only
+5. Call selectors/service only
 6. Return `api_response` (correct HTTP status: 200/201/…)
 7. Register path in `<app>/urls/` + `api/urls.py` if needed
 8. Add API tests

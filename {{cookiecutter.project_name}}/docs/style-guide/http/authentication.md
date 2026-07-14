@@ -42,7 +42,7 @@ flowchart TB
 | Password change / reset | `auth_password_apis.py` + `user_services` |
 | Register | `users/apis/users/register/` |
 | Profile | `users/apis/users/profile/` |
-| URLConf | `users/urls/auth.py`, `users/urls/users.py` |
+| URLConf | `users/urls/auth_url.py`, `users/urls/users_url.py` |
 | User model | `users.BaseUser` (`AUTH_USER_MODEL`) |
 | DRF default auth class | `config/settings/drf.py` |
 | Permissions mixin | [Permissions](permissions.md) |

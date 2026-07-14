@@ -69,11 +69,11 @@ flowchart TB
 
 | Rule | Example |
 |------|---------|
-| `gettext_lazy` / `_()` msgids are **lowercase** | `_("password must include number")` |
+| `gettext_lazy` / `_()` msgids: prefer **lowercase + spaces** | `_("password must include number")` — strong recommendation; see [Translations](../platform/translations.md) |
 | Parameterized messages use `params=` | `params={"limit_value": 10}` |
 | Don’t bake values into the msgid | ❌ `_("password must be at least 10 characters")` as the only form when limit may change |
 
-Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see [Translations](../platform/translations.md) / [Code quality](../platform/code-quality.md).
+Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see [Translations](../platform/translations.md) / [Code quality](../platform/code-quality.md). Style guide treats the casing rule as a **strong recommendation**; the lint makes it commit-blocking when that hook is on.
 
 ---
 
@@ -334,4 +334,4 @@ users/
 | [Services](../layers/services.md) | Where integrity mapping is called |
 | [APIs](../layers/apis.md) | Serializer usage |
 | [Models](../layers/models.md) | Constraints |
-| [Translations](../platform/translations.md) | Lowercase msgids |
+| [Translations](../platform/translations.md) | Prefer lowercase + space-separated msgids |

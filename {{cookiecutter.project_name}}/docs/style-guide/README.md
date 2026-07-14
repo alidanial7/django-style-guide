@@ -26,7 +26,7 @@ docs/style-guide/
 5. **One API envelope** for success and error (`success`, `status`, `result`, `messages`).
 6. **Platform vs domain** — shared infrastructure in `common/`; app-specific codes and validators in the app.
 7. **Deny by default** — APIs are `IsAuthenticated` unless a view sets `AllowAny`.
-8. **Lists** — selector + pagination by default; filters live in `selector/` (`FilterSet` applied inside `list_*` via `query_params=`).
+8. **Lists** — selector + pagination by default; filters live in `apis/` as `*_search_filters.py` (FilterSet applied in the list view after `list_*()`).
 
 ## Index
 
@@ -47,7 +47,7 @@ docs/style-guide/
 | [Enums](layers/enums.md) | `TextChoices` / `IntegerChoices` in `enums.py` |
 | [Selectors](layers/selectors.md) | Read queries, naming |
 | [Services](layers/services.md) | Writes, business rules, integrity |
-| [APIs & serializers](layers/apis.md) | Views (`*ListCreateApiView` / `*RetrieveUpdateDestroyApiView`), serializers, Swagger tags |
+| [APIs & serializers](layers/apis.md) | Route-mirrored `apis/` folders, `*ListCreateApiView` / `*RetrieveUpdateDestroyApiView`, serializers |
 | [URLs & routing](layers/urls.md) | Versioned API, per-app `urls/` |
 | [Constants](layers/constants.md) | Tags, static paths, app-level literals |
 | [Signals](layers/signals.md) | Mechanical side effects, `AppConfig.ready()` |
@@ -62,7 +62,7 @@ docs/style-guide/
 | [Permissions](http/permissions.md) | Deny-by-default, `AllowAny`, `ApiAuthMixin` |
 | [Security](http/security.md) | Secrets, DEBUG, CSRF, production hardening |
 | [Swagger / OpenAPI](http/swagger.md) | drf-spectacular, envelope in schema |
-| [Pagination & filtering](http/pagination-and-filtering.md) | Limit/offset, cursor, FilterSet inside selectors |
+| [Pagination & filtering](http/pagination-and-filtering.md) | Limit/offset, cursor, FilterSet under `apis/` |
 | [Throttling](http/throttling.md) | Scoped rates for auth/register/reset |
 
 ### `platform/`
@@ -73,7 +73,7 @@ docs/style-guide/
 | [Migrations](platform/migrations.md) | Expand/contract, zero-downtime habits |
 | [Settings](platform/settings.md) | Modular `config/settings/` |
 | [Testing](platform/testing.md) | pytest layout, factories |
-| [Translations](platform/translations.md) | gettext, lowercase msgids |
+| [Translations](platform/translations.md) | gettext; prefer lowercase + space-separated msgids |
 | [Code quality](platform/code-quality.md) | Ruff / pre-commit / flake8 |
 | [Celery](platform/celery.md) | Background tasks (if enabled) |
 | [WebSockets](platform/websockets.md) | Channels (if enabled) |

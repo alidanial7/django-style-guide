@@ -1,7 +1,7 @@
 import pytest
 from django.test import RequestFactory
 
-from {{cookiecutter.project_slug}}.users.selector.users_selectors import get_avatar_url, get_profile
+from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_avatar_url, get_profile
 from {{cookiecutter.project_slug}}.users.tests.user_factories import BaseUserFactory
 
 
