@@ -292,7 +292,7 @@ from django.urls import path
 app_name = "blogs"
 
 urlpatterns = [
-    # path("", SomeApi.as_view(), name="list"),
+    # path("", PostListCreateApiView.as_view(), name="posts-list-create"),
 ]
 ```
 
@@ -325,8 +325,8 @@ Assume `blogs` is scaffolded and registered.
 
 **1. Model** — `blogs/models/post.py` + export in `models/__init__.py`
 **2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `selector/post_filters.py` and apply it inside `list_posts` only if the list accepts filters)  
-**3. API** — `PostsListApi` in `apis/posts/posts_apis.py` returning `api_response`
-**4. URL** — `path("posts/", PostsListApi.as_view(), name="posts-list")`
+**3. API** — `PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` in `apis/posts/posts_apis.py` returning `api_response`  
+**4. URL** — `path("posts/", PostListCreateApiView.as_view(), name="posts-list-create")` + detail path with `post_id`  
 **5. Include** already under `/api/v1/blogs/`
 **6. Test** — `apis/posts/tests/test_posts_list.py`
 

@@ -102,7 +102,7 @@ class IsPostAuthor(BasePermission):
 ```
 
 ```python
-class PostDetailApi(ApiAuthMixin, APIView):
+class PostRetrieveUpdateDestroyApiView(ApiAuthMixin, APIView):
     permission_classes = (*ApiAuthMixin.permission_classes, IsPostAuthor)
 
     def get(self, request, post_id):

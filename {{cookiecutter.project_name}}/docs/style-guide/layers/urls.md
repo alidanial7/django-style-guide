@@ -181,7 +181,8 @@ from django.urls import path
 app_name = "blogs"
 
 urlpatterns = [
-    # path("posts/", PostsListApi.as_view(), name="posts-list"),
+    # path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
+    # path("posts/<int:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
 ]
 ```
 
@@ -300,7 +301,7 @@ sequenceDiagram
     participant API as api/urls.py
     participant Root as config/urls.py
 
-    Dev->>App: path("posts/", PostsListApi.as_view(), name="posts-list")
+    Dev->>App: path("posts/", PostListCreateApiView.as_view(), name="posts-list-create")
     Dev->>API: path("blogs/", include(..., "blogs"))
     Note over Root: already mounts api/v1/ — no change needed
     Dev->>Dev: curl /api/v1/blogs/posts/

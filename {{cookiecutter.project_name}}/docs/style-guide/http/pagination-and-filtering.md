@@ -74,7 +74,7 @@ GET /api/v1/blogs/posts/?limit=20&offset=40
 ### Per-view overrides
 
 ```python
-class PostListApi(ApiAuthMixin, APIView):
+class PostListCreateApiView(ApiAuthMixin, APIView):
     class Pagination(LimitOffsetPagination):
         default_limit = 20
         max_limit = 100
@@ -87,7 +87,7 @@ class PostListApi(ApiAuthMixin, APIView):
 ```python
 from {{cookiecutter.project_slug}}.api.pagination import CursorPagination, get_paginated_response_context
 
-class PostFeedApi(ApiAuthMixin, APIView):
+class PostFeedListApiView(ApiAuthMixin, APIView):
     class Pagination(CursorPagination):
         page_size = 20
         ordering = "-created_at"
@@ -179,7 +179,7 @@ def list_posts() -> QuerySet[Post]:
 
 
 # blogs/apis/posts/posts_apis.py
-class PostsListApi(ApiAuthMixin, APIView):
+class PostListCreateApiView(ApiAuthMixin, APIView):
     class Pagination(LimitOffsetPagination):
         default_limit = 20
 
@@ -264,7 +264,7 @@ from blogs.selector.post_filters import PostFilter
 from blogs.selector.post_selectors import list_posts
 
 
-class PostsListApi(ApiAuthMixin, APIView):
+class PostListCreateApiView(ApiAuthMixin, APIView):
     class Pagination(LimitOffsetPagination):
         default_limit = 20
 

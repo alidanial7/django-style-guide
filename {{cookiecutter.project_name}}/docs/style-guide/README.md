@@ -47,7 +47,7 @@ docs/style-guide/
 | [Enums](layers/enums.md) | `TextChoices` / `IntegerChoices` in `enums.py` |
 | [Selectors](layers/selectors.md) | Read queries, naming |
 | [Services](layers/services.md) | Writes, business rules, integrity |
-| [APIs & serializers](layers/apis.md) | Views, input/output serializers, Swagger tags |
+| [APIs & serializers](layers/apis.md) | Views (`*ListCreateApiView` / `*RetrieveUpdateDestroyApiView`), serializers, Swagger tags |
 | [URLs & routing](layers/urls.md) | Versioned API, per-app `urls/` |
 | [Constants](layers/constants.md) | Tags, static paths, app-level literals |
 | [Signals](layers/signals.md) | Mechanical side effects, `AppConfig.ready()` |

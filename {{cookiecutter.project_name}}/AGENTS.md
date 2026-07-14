@@ -13,6 +13,7 @@ Instructions for coding agents working in this generated project.
 | Rule | Detail |
 |------|--------|
 | Layers | APIs glue only; **selectors** read; **services** write — see [Architecture → Layer contracts](docs/style-guide/structure/architecture.md) |
+| APIs | Prefer `{Entity}ListCreateApiView` / `{Entity}RetrieveUpdateDestroyApiView` (singular entity + `ApiView` suffix); action endpoints use descriptive `*ApiView` names |
 | Responses | Always `api_response` / pagination helpers — envelope `{success,status,result,messages}` |
 | Permissions | Default is **IsAuthenticated**; public views must set `AllowAny` |
 | Validation | `is_*` + `*Validator` + domain `*ErrorCode`; uniqueness via DB + `map_integrity_error` |

@@ -61,6 +61,92 @@ Name with app + feature prefix (`users_profile_…`) so grepping and imports sta
 
 ---
 
+## 🏷️ `APIView` class naming
+
+Still use plain `APIView` (explicit `get` / `post` / …) — these names **mirror DRF’s generic view vocabulary** so scanners and teammates know which HTTP verbs belong on the class. You are **not** required to inherit DRF generics.
+
+### Resource CRUD (default)
+
+| Class name | HTTP methods | Typical URL |
+|------------|--------------|-------------|
+| `{Entity}ListCreateApiView` | `GET` list + `POST` create | `/posts/` |
+| `{Entity}RetrieveUpdateDestroyApiView` | `GET` / `PUT` / `PATCH` / `DELETE` by id | `/posts/<id>/` |
+
+`{Entity}` is **PascalCase singular** (`Post`, `Order`, `Comment`) — not `Posts`, not `pos`.
+
+```python
+# blogs/apis/posts/posts_apis.py
+class PostListCreateApiView(ApiAuthMixin, APIView):
+    def get(self, request):
+        ...  # list_posts + pagination
+
+    def post(self, request):
+        ...  # create service
+
+
+class PostRetrieveUpdateDestroyApiView(ApiAuthMixin, APIView):
+    def get(self, request, post_id: int):
+        ...
+
+    def put(self, request, post_id: int):
+        ...
+
+    def patch(self, request, post_id: int):
+        ...
+
+    def delete(self, request, post_id: int):
+        ...
+```
+
+```python
+# blogs/urls/blogs.py
+urlpatterns = [
+    path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
+    path("posts/<int:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
+]
+```
+
+### Split verbs when the surface is not full CRUD
+
+Only expose the methods you implement; name the class after **that** set:
+
+| Class name | Methods |
+|------------|---------|
+| `{Entity}ListApiView` | `GET` list only |
+| `{Entity}CreateApiView` | `POST` create only |
+| `{Entity}RetrieveApiView` | `GET` detail only |
+| `{Entity}UpdateApiView` | `PUT` / `PATCH` |
+| `{Entity}DestroyApiView` | `DELETE` |
+| `{Entity}RetrieveUpdateApiView` | `GET` + `PUT` / `PATCH` |
+| `{Entity}ListCreateApiView` | list + create (preferred when both exist) |
+| `{Entity}RetrieveUpdateDestroyApiView` | detail write/delete combo (preferred when all exist) |
+
+Do **not** invent parallel suffixes like `PostsListApi`, `PostDetailApi`, `PostCRUDView` for the same idea.
+
+### Non-CRUD / action endpoints
+
+Login, register, password reset, health, “me” profile shortcuts, etc. are **actions**, not collection CRUD. Use a descriptive PascalCase name that still ends with **`ApiView`**:
+
+| ✅ | Role |
+|----|------|
+| `UserRegisterApiView` | Public register |
+| `AuthJwtLoginApiView` | Auth action |
+| `HealthApiView` | Probe |
+| `ProfileRetrieveUpdateApiView` | Current-user profile (no `<id>` in path) |
+
+The shipped `users` app may still use shorter historical `*Api` names (`UsersProfileApi`, …); **new resource endpoints should follow `{Entity}ListCreateApiView` / `{Entity}RetrieveUpdateDestroyApiView`**.
+
+### Rules of thumb
+
+| ✅ Do | ❌ Don’t |
+|-------|---------|
+| Singular entity: `PostListCreateApiView` | `PostsListCreateApiView` / `PosListCreateApiView` |
+| Suffix `ApiView` | Bare `PostList` or `PostViewSet` for these patterns |
+| One resource → at most two classes (list-create + detail RUD) unless you intentionally split | One mega-class handling `/` and `/<id>/` |
+| Match URL + verbs to the name | `PostListCreateApiView` that only implements `get` |
+
+---
+
 ## 🧱 View pattern (`APIView`)
 
 Prefer explicit `APIView` methods over fat generic class-based views that hide business logic in mixins you do not control.
@@ -314,6 +400,7 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 | Missing `@extend_schema` | Document every public handler |
 | `views.py` at app root | `apis/<feature>/` |
 | List filters only inside `get` with raw query params | `FilterSet` in `selector/` applied inside `list_*` |
+| `PostsListApi` / `PostDetailApi` for standard CRUD | `PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` |
 
 ---
 
@@ -321,7 +408,7 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 
 1. Create feature folder under `apis/`
 2. Add Input + Output serializers
-3. Add `APIView` with `@extend_schema` + tags from `constants.py`
+3. Add `APIView` named per convention (`PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` / action `*ApiView`) with `@extend_schema` + tags from `constants.py` 
 4. Wire auth mixin and/or throttle
 5. Call selector/service only
 6. Return `api_response` (correct HTTP status: 200/201/…)
