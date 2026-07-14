@@ -292,16 +292,16 @@ These are the style rules that make the codebase look like a large Django servic
 | Layer | May | Must not |
 |-------|-----|----------|
 | `apis/` | Auth/throttle, Input/Output serializers, call selector/service, `api_response` / pagination helpers, `@extend_schema` | ORM queries, business rules, uniqueness checks, building error envelopes by hand |
-| `selector/` | Read ORM, `select_related` / `prefetch`, filters as kwargs, derived values | `.create()` / `.update()` / `.delete()`, calling write services, touching `Request` except optional `request` for absolute URLs |
+| `selector/` | Read ORM, `select_related` / `prefetch`, optional **FilterSet via `query_params=`**, derived values | `.create()` / `.update()` / `.delete()`, calling write services, taking `request` (use `query_params` only) |
 | `services/` | Writes, rules, `transaction.atomic`, `model_*` + integrity mapping, calling selectors for reads needed by a write | HTTP status codes, serializers, pagination, “list screens” querysets for unrelated UIs |
 | `models/` | Fields, constraints, managers, `__str__`, labels + **help_text on every field**, explicit **`related_name` on every FK/O2O** | HTTP, workflows, nested `TextChoices` (use `enums.py`), default `foo_set` reverses |
 | `enums.py` | `TextChoices` / `IntegerChoices` for fields | API error codes (`errors/codes.py`) / tags (`constants.py`) |
 | `serializers` | Shape + field/cross-field validation | Creating rows, permission decisions, raw ORM uniqueness as the only guard |
 | `common/` | Envelope, integrity helpers, `BaseModel`, shared validators | Domain-specific business rules for one app |
 
-**List endpoints:** selector base QS → optional explicit **`FilterSet`** (only if the endpoint accepts filters) → pagination helper. Default is **no filters**. Never `Model.objects.filter(...)` inside `APIView.get` for the list shape.
+**List endpoints:** selector (`list_*`, optionally applying FilterSet from `query_params=`) → pagination helper. Default is **no filters**. Never `Model.objects.filter(...)` or `FilterSet` inside `APIView.get`.
 
-**Keyword-only APIs:** `def register(*, email: str, …)` and `def list_posts(*, author_id: int | None = None)` — no positional bags.
+**Keyword-only APIs:** `def register(*, email: str, …)` and `def list_posts(*, query_params=None)` — no positional bags.
 
 ---
 
@@ -316,7 +316,8 @@ These are the style rules that make the codebase look like a large Django servic
 - Map every write path through `model_create` / `model_save` / `model_update` **or** explicit `map_integrity_error`
 - Add domain apps with `start_domain_app`
 - Set `AllowAny` only on intentionally public endpoints (default is authenticated)
-- Apply list filters with django-filter `FilterSet` when the endpoint accepts filters; otherwise skip FilterSet entirely
+- Apply list filters inside the selector (`selector/<entity>_filters.py` + `query_params=`); otherwise skip FilterSet entirely
+- Do not take `request` in selectors — pass `query_params` from the API
 
 ### ❌ Don’t
 

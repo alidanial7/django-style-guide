@@ -50,6 +50,7 @@ flowchart LR
 blogs/selector/
 ├── __init__.py
 ├── post_selectors.py          # entity module (preferred as the app grows)
+├── post_filters.py            # PostFilter (only when the list accepts filters)
 ├── comment_selectors.py
 └── tests/
     ├── test_post_selectors.py
@@ -63,6 +64,7 @@ Small apps may keep a single `<app>_selectors.py` (e.g. `users_selectors.py`). W
 | Pattern | Example | When |
 |---------|---------|------|
 | `<entity>_selectors.py` | `post_selectors.py`, `profile_selectors.py` | Default once you have clear entities |
+| `<entity>_filters.py` | `post_filters.py` | django-filter `FilterSet` for that entity’s list |
 | `<app>_selectors.py` | `users_selectors.py` | Tiny app / single aggregate |
 
 Use **singular** entity names in the module (`post_`, not `posts_`).
@@ -135,19 +137,24 @@ Call sites become self-documenting: `get_profile(user=request.user)` — not `ge
 
 Serialization stays in the API layer (`OutputSerializer`).
 
-### 3. Put query optimization here
+### 3. Put query optimization **and** list filters here
 
 ```python
-def list_posts() -> QuerySet[Post]:
-    return (
+def list_posts(*, query_params: Mapping[str, str] | None = None) -> QuerySet[Post]:
+    qs = (
         Post.objects.filter(status="published")
         .select_related("author")
         .prefetch_related("tags")
         .order_by("-created_at")
     )
+    if query_params is not None:
+        qs = PostFilter(query_params, queryset=qs).qs
+    return qs
 ```
 
-Do not leave N+1 fixes only inside one `APIView`. Do not parse `request.query_params` here — list filters belong in a FilterSet in the API layer.
+Do not leave N+1 fixes only inside one `APIView`.  
+Do **not** take `request` — take `query_params=` (from `request.query_params` or a plain `dict` in tests).  
+FilterSet classes live in `selector/<entity>_filters.py` — see [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ### 4. Type hints
 
@@ -233,7 +240,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
 | “Fetch profile for this user” | Selector |
 | “Update bio/avatar” | Service (may *call* `get_profile`) |
 | “Low-level create_user with hashed password” | Manager, wrapped by a service |
-| “Paginated list for API” | Selector returns queryset → optional FilterSet in API → pagination helper |
+| “Paginated list for API” | Selector returns queryset (applies FilterSet when needed) → pagination helper |
 
 Services **may call selectors** when a write needs a fresh read. Selectors must **not** call services that write (avoids hidden side effects in “read” code).
 
@@ -261,20 +268,27 @@ def test_get_profile_returns_existing_profile(user):
 ## 📋 List endpoints + filters
 
 ```python
-# selector — base QS only (no query-param filters)
-def list_posts() -> QuerySet[Post]:
-    return (
+# selector/post_filters.py — FilterSet next to selectors
+class PostFilter(django_filters.FilterSet):
+    ...
+
+
+# selector/post_selectors.py — apply inside list_*
+def list_posts(*, query_params: Mapping[str, str] | None = None) -> QuerySet[Post]:
+    qs = (
         Post.objects.filter(status="published")
         .select_related("author")
         .prefetch_related("tags")
         .order_by("-created_at")
     )
+    if query_params is not None:
+        qs = PostFilter(query_params, queryset=qs).qs
+    return qs
 ```
 
 ```python
-# API — default: no FilterSet. When filters are required:
-qs = list_posts()
-qs = PostFilter(request.query_params, queryset=qs).qs
+# API — pass query_params only; do not apply FilterSet in the view
+qs = list_posts(query_params=request.query_params)
 return get_paginated_response_context(...)
 ```
 
@@ -286,25 +300,26 @@ Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pa
 
 | Anti-pattern | Why it’s bad | Do this instead |
 |--------------|--------------|-----------------|
-| ORM list/filter only inside `APIView.get` | Can’t reuse; N+1 appears in one place only | Selector + optional FilterSet |
+| ORM list/filter only inside `APIView.get` | Can’t reuse; N+1 appears in one place only | Selector + optional FilterSet in `selector/` |
 | `selector` that calls `.create()` as its purpose | Hidden writes | Service |
 | Returning `ModelSerializer(...).data` from a selector | Couples reads to DRF | Return model/QS; serialize in API |
 | Positional bag of args | Unreadable call sites | Keyword-only `*` |
 | Duplicating the same base QS in 4 views | Drift | One `list_*` selector |
 | `list_posts` + `list_posts_with_related` | Noise | One optimized `list_posts` |
-| Selector parses `request.query_params` | Couples reads to HTTP | `FilterSet` in the API |
-| Query-param filter kwargs piled into the selector | Mixes HTTP filters with read API | FilterSet on selector QS |
+| Selector takes `request` | Couples reads to HTTP | `query_params=` mapping only |
+| FilterSet under `apis/` + apply in the view | Filter logic leaves the read layer | `selector/<entity>_filters.py` + apply in `list_*` |
 
 ---
 
 ## ✅ Checklist: adding a selector
 
-1. Put it in `<entity>_selectors.py` (or `<app>_selectors.py` if tiny)
-2. Name it `get_*` / `list_<entities>` / `list_<entities>_<purpose>` with keyword-only args
-3. Add `select_related` / `prefetch_related` for the primary list/detail output
-4. Export from `selector/__init__.py` if it is part of the public app API
-5. Call it from APIs (and services if needed); apply FilterSet only in the API when needed
-6. Add `selector/tests/…`
+1. Put it in `<entity>_selectors.py` (or `<app>_selectors.py` if tiny)  
+2. Name it `get_*` / `list_<entities>` / `list_<entities>_<purpose>` with keyword-only args  
+3. Add `select_related` / `prefetch_related` for the primary list/detail output  
+4. If the list is filterable: add `<entity>_filters.py` and apply it inside `list_*` via `query_params=`  
+5. Export from `selector/__init__.py` if it is part of the public app API  
+6. Call it from APIs (and services if needed)  
+7. Add `selector/tests/…` 
 
 ---
 

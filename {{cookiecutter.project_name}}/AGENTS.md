@@ -17,7 +17,7 @@ Instructions for coding agents working in this generated project.
 | Permissions | Default is **IsAuthenticated**; public views must set `AllowAny` |
 | Validation | `is_*` + `*Validator` + domain `*ErrorCode`; uniqueness via DB + `map_integrity_error` |
 | Lists | Selector (`list_<entities>`) → pagination; **no filters by default** |
-| Filters | When needed: always django-filter `<Entity>Filter` on selector QS — even for 1–2 fields; never silent `filter_backends` on `APIView` |
+| Filters | When needed: `<Entity>Filter` in `selector/<entity>_filters.py`, applied **inside** `list_*` via `query_params=` — never in the view / never `request` on the selector |
 | Selectors | `get_*` / `list_<entities>`; one optimized list selector (with related); second selector only for a **different job** (`list_post_ids`, …) |
 | Models | Class docstring `Model to declare …`; every field **both** `verbose_name=_("serial number")`-style **and** `help_text="…"`; every FK/O2O has explicit `related_name` (plural / role / `"+"`); `Meta.verbose_name(_plural)` |
 | Enums | `TextChoices` / `IntegerChoices` in `<app>/enums.py` — never nested on the model |

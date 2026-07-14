@@ -127,7 +127,7 @@ blogs/
 ├── enums.py                # TextChoices / IntegerChoices → see enums.md
 ├── models/                 # one module per model; export from __init__.py
 ├── manager/                # custom managers / querysets
-├── selector/               # READ queries (+ tests/)
+├── selector/               # READ queries + optional <entity>_filters.py (+ tests/)
 ├── services/               # WRITE + business rules (+ tests/)
 ├── apis/                   # DRF views + serializers, grouped by feature (+ tests/)
 ├── urls/
@@ -150,7 +150,7 @@ blogs/
 | `models/` | Fields, constraints, relations | HTTP, complex workflows, nested `TextChoices`, missing `related_name` |
 | `enums.py` | `TextChoices` / `IntegerChoices` for fields | Error codes / OpenAPI tags |
 | `manager/` | Reusable QuerySet/Manager methods | Call external APIs / send email as “business feature” |
-| `selector/` | Reads, annotations, derived URLs | `.create()` / `.save()` as the main job |
+| `selector/` | Reads, annotations, derived URLs, optional FilterSet via `query_params=` | `.create()` / `.save()` as the main job; taking `request` |
 | `services/` | Writes, transactions, domain rules | Parse `request.data` / return `Response` |
 | `apis/` | Auth, validate input, call selector/service, `api_response` | Fat ORM blocks |
 | `urls/` | Path → view mapping | Business logic |
@@ -324,7 +324,7 @@ Never put raising validators in `errors/`.
 Assume `blogs` is scaffolded and registered.
 
 **1. Model** — `blogs/models/post.py` + export in `models/__init__.py`
-**2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `apis/posts/posts_filters.py` only if the list accepts filters)
+**2. Selector** — `list_posts()` in `selector/post_selectors.py` (add `PostFilter` in `selector/post_filters.py` and apply it inside `list_posts` only if the list accepts filters)  
 **3. API** — `PostsListApi` in `apis/posts/posts_apis.py` returning `api_response`
 **4. URL** — `path("posts/", PostsListApi.as_view(), name="posts-list")`
 **5. Include** already under `/api/v1/blogs/`

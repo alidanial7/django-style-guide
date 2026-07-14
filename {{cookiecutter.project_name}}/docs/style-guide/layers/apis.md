@@ -158,6 +158,7 @@ class UsersRegisterApi(APIView):
 | `ApiAuthMixin` when login is required | Ad‑hoc auth checks buried in `get/post` |
 | `permission_classes = [AllowAny]` on public routes | Assuming new views are public (default is authenticated) |
 | Explicit `<Entity>Filter` when the list accepts filters | Raw query params / silent `filter_backends` on `APIView` |
+| `list_*(query_params=request.query_params)` | Applying `FilterSet` inside the view |
 
 ---
 
@@ -167,7 +168,7 @@ class UsersRegisterApi(APIView):
 |------|-----------|------|
 | `*InputSerializer` | Request body → Python | Validate shape; run field/cross-field rules |
 | `*OutputSerializer` | Domain → JSON | Expose only what clients may see |
-| `<Entity>Filter` (django-filter) | Query string → filtered QS | List filters — see [Pagination & filtering](../http/pagination-and-filtering.md) |
+| `<Entity>Filter` (django-filter) | Query string → filtered QS | Defined under `selector/`; applied inside `list_*` — see [Pagination & filtering](../http/pagination-and-filtering.md) |
 
 Do **not** reuse one `ModelSerializer` for both directions unless the shapes are truly identical and tiny (rare). Register input has `password` / `confirm_password`; output must never echo passwords.
 
@@ -211,16 +212,16 @@ class UsersRegisterInputSerializer(serializers.Serializer):
 
 Use **field-keyed** errors and platform vs domain codes correctly (`ErrorCode.REQUIRED` vs `UserErrorCode.PASSWORD_MISMATCH`).
 
-### List filters (django-filter)
+### List filters (django-filter inside selectors)
 
-Default list endpoints apply **no** filters. When the client may filter, add `<Entity>Filter` and apply it in the view:
+Default list endpoints apply **no** filters. When the client may filter, put `<Entity>Filter` under `selector/` and apply it **inside** the list selector:
 
 ```python
-qs = list_posts()
-qs = PostFilter(request.query_params, queryset=qs).qs
+# API — do not call PostFilter here
+qs = list_posts(query_params=request.query_params)
 ```
 
-Do not use a parallel `*QuerySerializer` style for the same list query params. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](../http/pagination-and-filtering.md).
+Do not use a parallel `*QuerySerializer` style for the same list query params. Do not take `request` in the selector. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](../http/pagination-and-filtering.md).
 
 ### Output serializer rules
 
@@ -312,7 +313,7 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 | Permission logic in `validate()` | Permission classes / mixin |
 | Missing `@extend_schema` | Document every public handler |
 | `views.py` at app root | `apis/<feature>/` |
-| List filters only inside `get` with raw query params | `FilterSet` on selector QS |
+| List filters only inside `get` with raw query params | `FilterSet` in `selector/` applied inside `list_*` |
 
 ---
 

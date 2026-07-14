@@ -26,7 +26,7 @@ docs/style-guide/
 5. **One API envelope** for success and error (`success`, `status`, `result`, `messages`).
 6. **Platform vs domain** — shared infrastructure in `common/`; app-specific codes and validators in the app.
 7. **Deny by default** — APIs are `IsAuthenticated` unless a view sets `AllowAny`.
-8. **Lists** — selector + pagination by default; filters only via explicit django-filter `FilterSet` when you add them.
+8. **Lists** — selector + pagination by default; filters live in `selector/` (`FilterSet` applied inside `list_*` via `query_params=`).
 
 ## Index
 
@@ -62,7 +62,7 @@ docs/style-guide/
 | [Permissions](http/permissions.md) | Deny-by-default, `AllowAny`, `ApiAuthMixin` |
 | [Security](http/security.md) | Secrets, DEBUG, CSRF, production hardening |
 | [Swagger / OpenAPI](http/swagger.md) | drf-spectacular, envelope in schema |
-| [Pagination & filtering](http/pagination-and-filtering.md) | Limit/offset, cursor, django-filter (explicit) |
+| [Pagination & filtering](http/pagination-and-filtering.md) | Limit/offset, cursor, FilterSet inside selectors |
 | [Throttling](http/throttling.md) | Scoped rates for auth/register/reset |
 
 ### `platform/`

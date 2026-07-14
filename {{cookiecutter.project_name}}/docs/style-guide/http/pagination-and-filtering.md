@@ -1,6 +1,6 @@
 # 📄 Pagination & filtering
 
-> How list endpoints return pages inside the [API envelope](api-envelope.md). Filters are **off by default**; when needed, apply an explicit **django-filter `FilterSet`** on a selector queryset.
+> How list endpoints return pages inside the [API envelope](api-envelope.md). Filters are **off by default**; when needed, a **django-filter `FilterSet`** lives under **`selector/`** and is applied **inside** the list selector.
 >
 > Helpers live in `{{cookiecutter.project_slug}}/api/pagination.py`.
 
@@ -133,13 +133,13 @@ If pagination returns `None` (unusual with these settings), helpers fall back to
 ### Full example
 
 - **No query filters:** selector → pagination (see Filtering → default).
-- **With filters:** selector base QS → explicit `FilterSet` → pagination.
+- **With filters:** selector owns base QS **and** applies `FilterSet` from `query_params` → API only paginates / serializes.
 
-**Selector returns the queryset (with `select_related` / `prefetch` for the list output).** The API only applies an optional FilterSet, paginates, and serializes — never `Model.objects.filter(...)` or `[:10]` in the view.
+**Never** `Model.objects.filter(...)` or `[:10]` in the view. **Never** pass `request` into a selector — pass `request.query_params` (or another mapping) as `query_params=`.
 
 ---
 
-## 🔎 Filtering (django-filter — explicit only)
+## 🔎 Filtering (django-filter **inside selectors**)
 
 ### Project rules
 
@@ -147,16 +147,20 @@ If pagination returns `None` (unusual with these settings), helpers fall back to
 |------|--------|
 | Default | **Nothing is filtered.** List = selector + pagination only |
 | When you need filters | Always use a **`django_filters.FilterSet`**, even for 1–2 fields |
-| How it runs | You apply it yourself: `PostFilter(request.query_params, queryset=qs).qs` |
+| Where it lives | FilterSet module under **`selector/`**; applied **inside** the `list_*` selector |
+| Selector input | Keyword-only `query_params` (QueryDict / mapping) — **not** `request` |
+| API role | Call `list_posts(query_params=request.query_params)` → paginate → serialize |
 | Auto backends | **Off.** Plain `APIView` does not run `filter_backends`; we do not set `DEFAULT_FILTER_BACKENDS` |
 
 `django-filter` is in dependencies for this path. Do not invent a parallel QuerySerializer-based filter style for list query params.
 
 ```mermaid
 flowchart LR
-    SEL[list_posts selector] --> OPT{Need filters?}
+    API[APIView] -->|"query_params=…"| SEL[list_posts selector]
+    SEL --> BASE[base QS + select_related]
+    BASE --> OPT{FilterSet?}
     OPT -->|no| PAG[pagination helper]
-    OPT -->|yes| FS["PostFilter(...).qs"]
+    OPT -->|yes| FS["PostFilter(query_params, qs).qs"]
     FS --> PAG
     PAG --> ENV[envelope]
 ```
@@ -192,20 +196,18 @@ class PostsListApi(ApiAuthMixin, APIView):
 
 No FilterSet file. No filter query params. Clients only use `limit` / `offset` (or cursor params).
 
-### With filters — always `FilterSet`
-
-Put the FilterSet next to the feature API (or under `apis/<feature>/`):
+### With filters — `FilterSet` under `selector/`
 
 ```text
-blogs/apis/posts/
-├── posts_apis.py
-├── posts_serializers.py
-├── posts_filters.py      # PostFilter
+blogs/selector/
+├── __init__.py
+├── post_selectors.py     # list_posts applies PostFilter
+├── post_filters.py       # PostFilter
 └── tests/
 ```
 
 ```python
-# blogs/apis/posts/posts_filters.py
+# blogs/selector/post_filters.py
 import django_filters
 
 from blogs.models import Post
@@ -235,8 +237,30 @@ class PostFilter(django_filters.FilterSet):
 ```
 
 ```python
+# blogs/selector/post_selectors.py
+from typing import Mapping
+
+from django.db.models import QuerySet
+
+from blogs.models import Post
+from blogs.selector.post_filters import PostFilter
+
+
+def list_posts(*, query_params: Mapping[str, str] | None = None) -> QuerySet[Post]:
+    qs = (
+        Post.objects.filter(status="published")
+        .select_related("author", "category")
+        .prefetch_related("tags")
+        .order_by("-created_at")
+    )
+    if query_params is not None:
+        qs = PostFilter(query_params, queryset=qs).qs
+    return qs
+```
+
+```python
 # blogs/apis/posts/posts_apis.py
-from blogs.apis.posts.posts_filters import PostFilter
+from blogs.selector.post_filters import PostFilter
 from blogs.selector.post_selectors import list_posts
 
 
@@ -247,13 +271,11 @@ class PostsListApi(ApiAuthMixin, APIView):
     @extend_schema(
         tags=BLOGS_TAGS,
         summary="List published posts",
-        parameters=[PostFilter],  # spectacular picks FilterSet fields when configured
+        parameters=[PostFilter],  # spectacular / OpenAPI for query params
         responses=PostOutputSerializer,
     )
     def get(self, request):
-        qs = list_posts()
-        qs = PostFilter(request.query_params, queryset=qs).qs
-
+        qs = list_posts(query_params=request.query_params)
         return get_paginated_response_context(
             pagination_class=self.Pagination,
             serializer_class=PostOutputSerializer,
@@ -265,9 +287,15 @@ class PostsListApi(ApiAuthMixin, APIView):
 
 | Piece | Owns |
 |-------|------|
-| `list_posts()` | Base QS + status scope + `select_related` / `prefetch` for **output** |
-| `PostFilter` | Optional query-param filters (including FK / related lookups) |
-| API | Wire the two; paginate; serialize |
+| `PostFilter` | Query-param → ORM filter mapping (FK / dates / …) |
+| `list_posts(*, query_params=…)` | Base QS + `select_related` / `prefetch` + apply FilterSet |
+| API | Pass `query_params`; paginate; serialize; document FilterSet in OpenAPI |
+
+Call the same selector from tests/services with a plain `dict` when useful:
+
+```python
+list_posts(query_params={"author_id": "5", "tag": "django"})
+```
 
 Example request:
 
@@ -288,15 +316,15 @@ Filtering uses SQL joins/lookups. Prefetch is for **reading** related data in th
 
 ### Ordering / search
 
-Add as FilterSet fields (e.g. `OrderingFilter` from django-filter, or a `CharFilter` that you map carefully). Do **not** set DRF `filter_backends = [OrderingFilter, SearchFilter]` on plain `APIView` and expect them to run automatically.
+Add as FilterSet fields (e.g. `OrderingFilter` from django-filter, or a `CharFilter` mapped carefully). Do **not** set DRF `filter_backends = [OrderingFilter, SearchFilter]` on plain `APIView` and expect them to run automatically.
 
-Document filter params in `@extend_schema` — see [Swagger](swagger.md).
+Document filter params in `@extend_schema(parameters=[PostFilter])` — see [Swagger](swagger.md).
 
 ### Naming FilterSets
 
 | Item | Convention | Example |
 |------|------------|---------|
-| Module | `<feature>_filters.py` | `posts_filters.py` |
+| Module | `selector/<entity>_filters.py` | `post_filters.py` |
 | Class | `<Entity>Filter` (singular model name) | `PostFilter`, `CommentFilter` |
 
 ---
@@ -308,8 +336,10 @@ Document filter params in `@extend_schema` — see [Swagger](swagger.md).
 | `return Response(paginator.get_paginated_response(...).data)` without envelope | Use project `LimitOffsetPagination` / helpers |
 | `Model.objects.all()[offset:offset+limit]` in the view | Selector + pagination helper |
 | Loading all rows then slicing in Python | DB-level pagination via DRF paginator |
+| `PostFilter` under `apis/` + apply in the view | `selector/<entity>_filters.py` + apply inside `list_*` |
+| `list_posts(*, request=…)` | `query_params=request.query_params` only |
 | Filter logic copied into 3 views | One FilterSet + one `list_*` selector |
-| `filter_backends = [...]` on plain `APIView` with no manual invoke | Explicit `FilterSet(...).qs` |
+| `filter_backends = [...]` on plain `APIView` with no manual invoke | FilterSet inside selector |
 | Raw `request.query_params.get` + `int(...)` in the view | `FilterSet` fields |
 | Parallel `*QuerySerializer` style for the same list filters | One style: django-filter only |
 | `max_limit` removed “so mobile can load everything” | Cap limits; offer export endpoints if needed |
@@ -318,14 +348,13 @@ Document filter params in `@extend_schema` — see [Swagger](swagger.md).
 
 ## ✅ Checklist: list endpoint
 
-1. Selector returns optimized base `QuerySet` (`list_<entities>`) — no request/query-param parsing
-2. If the list accepts filters: add `<Entity>Filter` and apply it in the API
-3. If the list accepts **no** filters: skip the FilterSet entirely
-4. `get_paginated_response_context` (or non-context variant)
-5. Output serializer only
-6. `@extend_schema` documents filters when present
-7. API test: `result.results`, `result.count`, `limit`/`offset`
-
+1. Selector returns optimized base `QuerySet` (`list_<entities>`)  
+2. If the list accepts filters: `<entity>_filters.py` + apply inside the selector via `query_params=`  
+3. If the list accepts **no** filters: skip the FilterSet entirely  
+4. API passes `query_params` only when filters exist; then paginate  
+5. Output serializer only  
+6. `@extend_schema(parameters=[…Filter])` when filters exist  
+7. API test: `result.results`, `result.count`, `limit`/`offset` 
 ---
 
 ## 🔗 Related docs
