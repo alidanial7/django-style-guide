@@ -37,9 +37,5 @@ class UsersProfileApi(ApiAuthMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         profile = get_profile(user=request.user)
-        profile = profile_update(
-            profile=profile,
-            bio=serializer.validated_data.get("bio"),
-            avatar=serializer.validated_data.get("avatar"),
-        )
+        profile = profile_update(profile=profile, data=serializer.validated_data)
         return api_response(data=UsersProfileOutputSerializer(profile, context={"request": request}).data)

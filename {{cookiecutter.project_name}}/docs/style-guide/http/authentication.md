@@ -194,7 +194,7 @@ Shared for both auth modes; implemented in `auth_password_apis.py` + `user_servi
 
 `POST /api/v1/auth/password/change/` — requires `ApiAuthMixin`.
 
-Body: current password + new password (+ confirm as defined by serializer). Wrong current password → `UserErrorCode.PASSWORD_INCORRECT`. New password uses the same domain [password validators](validation-and-errors.md).
+Body: current password + new password (+ confirm as defined by serializer). Wrong current password → `UserErrorCode.PASSWORD_INCORRECT`. New password uses the same domain [password validators](../domain/validation.md).
 
 ### Reset request (public)
 
@@ -223,7 +223,7 @@ Throttles: scope `password_reset` (see [Throttling](throttling.md)).
 | Piece | Detail |
 |-------|--------|
 | User model | `users.BaseUser` — email as `USERNAME_FIELD`, no username |
-| Profile | `bio`, `avatar`; created by [signal](../layers/signals.md) on user create |
+| Profile | `bio`, `avatar`; created by [signal](../domain/signals.md) on user create |
 | Default avatar | Static `users/default_avatar.png` via selector |
 | Update | `PATCH /api/v1/users/profile/` — multipart for avatar |
 
@@ -284,8 +284,8 @@ Do not pretend they exist in clients or docs for a fresh project.
 | Doc | Why |
 |-----|-----|
 | [Permissions](permissions.md) | `ApiAuthMixin` and custom gates |
-| [Validation & errors](validation-and-errors.md) | Password codes / validators |
-| [APIs](../layers/apis.md) | View patterns |
+| [Validation](../domain/validation.md) | Password codes / validators |
+| [APIs](../domain/apis.md) | View patterns |
 | [Throttling](throttling.md) | `auth` / `register` / `password_reset` |
 | [Swagger](swagger.md) | Trying endpoints in DEBUG |
-| [URLs](../layers/urls.md) | Path map |
+| [URLs](../domain/urls.md) | Path map |

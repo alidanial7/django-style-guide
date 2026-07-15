@@ -2,7 +2,7 @@
 
 > Security baseline for this blueprint: **deny-by-default APIs**, secrets handling, DEBUG boundaries, auth/CSRF, throttling, and safe health checks.
 >
-> Pair with [Permissions](permissions.md), [Authentication](authentication.md), [Throttling](throttling.md), and [Docker & production](../platform/docker-and-production.md).
+> Pair with [Permissions](permissions.md), [Authentication](authentication.md), [Throttling](throttling.md), and [Docker & production](../ops/docker-and-production.md).
 
 ---
 
@@ -81,7 +81,7 @@ Do not mount schema UI in production URLconf.
 - `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE` when serving HTTPS.
 {%- endif %}
 
-Password policy is shared between API validators and `AUTH_PASSWORD_VALIDATORS` — see [Validation](validation-and-errors.md).
+Password policy is shared between API validators and `AUTH_PASSWORD_VALIDATORS` — see [Validation](../domain/validation.md).
 
 ---
 
@@ -107,7 +107,7 @@ Public auth surfaces must keep scoped rates. Multi-worker production needs a **s
 6. No Swagger in prod
 7. Shared Redis for cache/throttles when multi-worker
 
-Full deploy notes: [Docker & production](../platform/docker-and-production.md).
+Full deploy notes: [Docker & production](../ops/docker-and-production.md).
 
 ---
 
@@ -118,4 +118,4 @@ Full deploy notes: [Docker & production](../platform/docker-and-production.md).
 | [Permissions](permissions.md) | AllowAny vs mixin |
 | [Authentication](authentication.md) | Token/session flows |
 | [Swagger](swagger.md) | DEBUG-only docs |
-| [Enterprise extensions](../structure/enterprise-extensions.md) | RBAC, multi-tenant, etc. (not shipped) |
+| [Enterprise extensions](../ops/enterprise-extensions.md) | RBAC, multi-tenant, etc. (not shipped) |

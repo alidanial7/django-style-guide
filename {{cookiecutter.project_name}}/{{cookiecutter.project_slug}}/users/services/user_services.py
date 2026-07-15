@@ -15,6 +15,7 @@ from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_erro
 from {{cookiecutter.project_slug}}.common.services import model_save
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 from {{cookiecutter.project_slug}}.users.models import BaseUser, Profile
+from {{cookiecutter.project_slug}}.users.types import ChangePasswordData, ProfileUpdateData, RegisterData
 
 _password_reset_token_generator = PasswordResetTokenGenerator()
 
@@ -28,22 +29,16 @@ def create_user(*, email: str, password: str) -> BaseUser:
 
 
 @transaction.atomic
-def register(
-    *,
-    email: str,
-    password: str,
-    bio: str | None = None,
-    avatar=None,
-) -> BaseUser:
-    user = create_user(email=email, password=password)
+def register(*, data: RegisterData) -> BaseUser:
+    user = create_user(email=data["email"], password=data["password"])
     profile = Profile.objects.get(user=user)
 
     update_fields: list[str] = []
-    if bio:
-        profile.bio = bio
+    if data.get("bio"):
+        profile.bio = data["bio"]
         update_fields.append("bio")
-    if avatar is not None:
-        profile.avatar = avatar
+    if data.get("avatar") is not None:
+        profile.avatar = data["avatar"]
         update_fields.append("avatar")
 
     if update_fields:
@@ -53,14 +48,15 @@ def register(
 
 
 @transaction.atomic
-def profile_update(*, profile: Profile, bio: str | None = None, avatar=None) -> Profile:
+def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
+    """Apply only keys present in ``data`` — PATCH-safe; ``None`` ≠ missing."""
     update_fields: list[str] = []
 
-    if bio is not None:
-        profile.bio = bio
+    if "bio" in data:
+        profile.bio = data["bio"]
         update_fields.append("bio")
-    if avatar is not None:
-        profile.avatar = avatar
+    if "avatar" in data:
+        profile.avatar = data["avatar"]
         update_fields.append("avatar")
 
     if update_fields:
@@ -69,8 +65,8 @@ def profile_update(*, profile: Profile, bio: str | None = None, avatar=None) -> 
     return profile
 
 
-def change_password(*, user: BaseUser, current_password: str, new_password: str) -> None:
-    if not user.check_password(current_password):
+def change_password(*, user: BaseUser, data: ChangePasswordData) -> None:
+    if not user.check_password(data["current_password"]):
         raise ValidationError(
             {
                 "current_password": ValidationError(
@@ -79,7 +75,7 @@ def change_password(*, user: BaseUser, current_password: str, new_password: str)
                 )
             }
         )
-    user.set_password(new_password)
+    user.set_password(data["new_password"])
     user.save(update_fields=["password"])
 
 {% if cookiecutter.use_jwt == "y" %}

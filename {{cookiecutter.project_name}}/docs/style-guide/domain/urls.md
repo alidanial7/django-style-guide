@@ -71,7 +71,7 @@ Exposing the full schema in production leaks endpoint inventory and often auth d
 
 ### Media
 
-In production with nginx/traefik, the reverse proxy should serve `/media/` and `/static/`. Django’s `serve()` fallback exists for DEBUG (and for the “no reverse proxy” generation choice). Details: [Docker & production](../platform/docker-and-production.md).
+In production with nginx/traefik, the reverse proxy should serve `/media/` and `/static/`. Django’s `serve()` fallback exists for DEBUG (and for the “no reverse proxy” generation choice). Details: [Docker & production](../ops/docker-and-production.md).
 
 ---
 
@@ -393,8 +393,8 @@ Auth semantics: [Authentication](../http/authentication.md).
 
 | Doc | Why |
 |-----|-----|
-| [Domain apps](../structure/domain-apps.md) | Scaffold + where to add the include |
-| [Project structure](../structure/project-structure.md) | Where `config/urls.py` and `api/` live |
+| [Domain apps](../overview/domain-apps.md) | Scaffold + where to add the include |
+| [Project structure](../overview/project-structure.md) | Where `config/urls.py` and `api/` live |
 | [APIs](apis.md) | What the view at the end of the path should do |
 | [Swagger](../http/swagger.md) | How routes show up in OpenAPI |
 | [Authentication](../http/authentication.md) | Auth path details |

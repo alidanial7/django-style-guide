@@ -27,11 +27,7 @@ class AuthPasswordChangeApi(ApiAuthMixin, APIView):
     def post(self, request):
         serializer = AuthPasswordChangeInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        change_password(
-            user=request.user,
-            current_password=serializer.validated_data["current_password"],
-            new_password=serializer.validated_data["new_password"],
-        )
+        change_password(user=request.user, data=serializer.validated_data)
         return api_response(data={"detail": "password changed."})
 
 

@@ -8,6 +8,8 @@
 >
 > Test **next to the code they protect**: `services/tests/`, `selectors/tests/`, `apis/<route…>/tests/`, `validators/tests/`.
 >
+> Layer focus: **selectors → query correctness**, **services → business logic**, **apis → integration**.
+>
 > Do **not** create a root `apis/tests/` package — API tests belong only under each URL leaf.
 
 ---
@@ -16,21 +18,24 @@
 
 | Principle | Detail |
 |-----------|--------|
-| Mirror layers | Service tests don’t need HTTP; API tests don’t re-test every validator path in isolation |
+| Selectors = query correctness | Right rows, filters/scoping, `select_related` / N+1 when it matters — **no HTTP** |
+| Services = business logic | Writes, rules, `ValidationError` / integrity — **no HTTP** |
+| APIs = integration | Real request path: auth, envelope, status, wiring to service/selector |
+| Mirror layers | Don’t re-prove every selector query inside every API test |
 | Use factories | Prefer `BaseUserFactory` over hand-built model graphs |
 | Assert the envelope | API tests check `success`, `status`, `result`, `messages` — see [API envelope](../http/api-envelope.md) |
-| Prefer `reverse()` | Stable names from [URLs](../layers/urls.md) |
+| Prefer `reverse()` | Stable names from [URLs](../domain/urls.md) |
 | DB access | Mark with `@pytest.mark.django_db` (or fixtures that pull `db`) |
 
 ```mermaid
 flowchart TB
-    subgraph Unitish
-        V[validators/tests]
-        S[services/tests]
-        SEL[selectors/tests]
+    subgraph Unitish["Unit-ish"]
+        V["validators/tests"]
+        SEL["selectors/tests<br/>query correctness"]
+        S["services/tests<br/>business logic"]
     end
-    subgraph HTTP
-        A[apis/**/tests]
+    subgraph HTTP["Integration"]
+        A["apis/**/tests<br/>HTTP + wiring"]
     end
     V --> S
     SEL --> S
@@ -138,39 +143,55 @@ class BaseUserFactory(factory.django.DjangoModelFactory):
 | Sequence emails | Unique constraint friendly |
 | `start_domain_app` stubs | Commented factory template under `tests/<app>_factories.py` |
 
-Profile rows appear via the [user signal](../layers/signals.md) when the user is created.
+Profile rows appear via the [user signal](../domain/signals.md) when the user is created.
 
 ---
 
 ## 📂 Where to put tests
 
-| Layer | Path | Assert |
-|-------|------|--------|
-| Validators | `validators/tests/` | Codes + messages for bad inputs |
-| Selectors | `selectors/tests/` | Returned instances / queryset contents / URL shapes |
-| Services | `services/tests/` | Writes, domain `ValidationError`, integrity |
-| APIs | `apis/<url-segments…>/tests/` | HTTP status + envelope + auth/throttle behavior |
-| App smoke | `tests/test_app.py` | AppConfig importable (scaffold) |
-| Cross-cutting | e.g. `common/db/integrity/tests/` | Integrity mapping |
-| Config | `config/tests/` | Request ID middleware, etc. |
+| Layer | Path | Focus | Assert |
+|-------|------|-------|--------|
+| Validators | `validators/tests/` | Field / pure rules | Codes + messages for bad inputs |
+| Selectors | `selectors/tests/` | **Query correctness** | Right instances / QS contents / scoping / URL shapes |
+| Services | `services/tests/` | **Business logic** | Writes, domain `ValidationError`, integrity |
+| APIs | `apis/<url-segments…>/tests/` | **Integration** | HTTP status + envelope + auth/throttle + wiring |
+| App smoke | `tests/test_app.py` | Scaffold | AppConfig importable |
+| Cross-cutting | e.g. `common/db/integrity/tests/` | Shared helpers | Integrity mapping |
+| Config | `config/tests/` | Platform | Request ID middleware, etc. |
 
-`start_domain_app` creates placeholder tests when pytest is present — replace `assert True` stubs as features land.
+`start_domain_app` creates placeholder selector/service tests when pytest is present — replace `assert True` stubs as features land. Add API tests under the route leaf when the endpoint exists.
 
 ---
 
 ## ✍️ Example styles
 
-### Service
+### Selector (query correctness)
+
+```python
+@pytest.mark.django_db
+def test_get_profile_returns_existing_profile(user):
+    profile = get_profile(user=user)
+    assert profile.user_id == user.id
+```
+
+Call the selector directly — no `APIClient`. Assert which rows/values come back, not HTTP status.
+
+### Service (business logic)
 
 ```python
 @pytest.mark.django_db
 def test_change_password_rejects_wrong_current(user):
     with pytest.raises(ValidationError) as exc:
-        change_password(user=user, current_password="wrong", new_password="Password1!x")
+        change_password(
+            user=user,
+            data={"current_password": "wrong", "new_password": "Password1!x"},
+        )
     assert "current_password" in exc.value.message_dict
 ```
 
-### API (envelope)
+Call the service with a **TypedDict** literal — no HTTP. Assert side effects, domain errors, integrity mapping.
+
+### API (integration)
 
 ```python
 @pytest.mark.django_db
@@ -189,6 +210,8 @@ def test_profile_ok(auth_client):
     assert response.data["success"] is True
     assert "email" in response.data["result"]
 ```
+
+Hit the URLConf path: auth, serializers, envelope, and wiring to selector/service.
 
 ### Validator
 
@@ -219,7 +242,9 @@ def test_password_requires_number():
 | Anti-pattern | Fix |
 |--------------|-----|
 | One mega-`tests.py` for the whole app | Layer/feature folders |
-| Only testing serializers in isolation forever | Add service + API coverage for critical paths |
+| Proving every queryset nuance only via API tests | Selector tests for **query correctness**; API for **integration** |
+| HTTP/`APIClient` inside service or selector tests | Call functions directly — leave HTTP to API tests |
+| Only testing serializers in isolation forever | Add service (**business logic**) + API (**integration**) for critical paths |
 | Hard-coded `/api/v1/...` everywhere | `reverse("users:profile")` |
 | Ignoring `messages` / `code` in API asserts | Clients depend on codes |
 | Using production settings in pytest | Always `config.django.test` |
@@ -229,11 +254,12 @@ def test_password_requires_number():
 
 ## ✅ Checklist: new feature tests
 
-1. Validator/unit tests for new rules
-2. Service tests for writes + domain errors
-3. API tests: authz, validation envelope, happy path
-4. Factory updates if new models appear
-5. Coverage still meets threshold locally / CI
+1. Selector tests — **query correctness** (right rows / scoping / related loads)
+2. Service tests — **business logic** (writes + domain errors / integrity)
+3. API tests — **integration** (authz, validation envelope, happy path)
+4. Validator/unit tests when new field rules appear
+5. Factory updates if new models appear
+6. Coverage still meets threshold locally / CI
 
 ---
 
@@ -242,8 +268,8 @@ def test_password_requires_number():
 | Doc | Why |
 |-----|-----|
 | [Settings](settings.md) | `config.django.test` |
-| [Domain apps](../structure/domain-apps.md) | Scaffolded test stubs |
+| [Domain apps](../overview/domain-apps.md) | Scaffolded test stubs |
 | [API envelope](../http/api-envelope.md) | Assert shapes |
-| [Services](../layers/services.md) / [APIs](../layers/apis.md) | What to cover |
+| [Services](../domain/services.md) / [Selectors](../domain/selectors.md) / [Types](../domain/types.md) / [APIs](../domain/apis.md) | What each layer owns |
 | [Docker & production](docker-and-production.md) | CI/Compose runtime |
 | [Commands](commands.md) | `make test` and related entrypoints |

@@ -239,8 +239,8 @@ flowchart LR
 | Need | Doc |
 |------|-----|
 | Field choice enums | [Enums](enums.md) |
-| Error machine codes | [Validation & errors](../http/validation-and-errors.md) |
-| Env / deploy config | [Settings](../platform/settings.md) |
+| Error machine codes | [Validation](../domain/validation.md) |
+| Env / deploy config | [Settings](../ops/settings.md) |
 | Signal side effects | [Signals](signals.md) |
 | Swagger tag usage on views | [APIs](apis.md), [Swagger](../http/swagger.md) |
 

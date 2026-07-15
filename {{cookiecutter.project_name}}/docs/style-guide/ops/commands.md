@@ -89,7 +89,7 @@ python manage.py start_domain_app blogs --force
 python manage.py start_domain_app blogs --no-tests
 ```
 
-Scaffolds the style-guide layout (models/services/selectors/apis/…). Full guide: [Domain apps](../structure/domain-apps.md).
+Scaffolds the style-guide layout (models/types.py/services/selectors/apis/…). Full guide: [Domain apps](../overview/domain-apps.md).
 
 ---
 
@@ -113,7 +113,7 @@ Scaffolds the style-guide layout (models/services/selectors/apis/…). Full guid
 | http://localhost:8000/api/v1/ | API v1 |
 | http://localhost:8000/api/v1/health/ | Health check |
 
-Auth/register paths: [Authentication](../http/authentication.md), [URLs](../layers/urls.md).
+Auth/register paths: [Authentication](../http/authentication.md), [URLs](../domain/urls.md).
 
 ### Default superuser (`devserver`)
 
@@ -168,7 +168,7 @@ make test
 | Doc | Why |
 |-----|-----|
 | [Docker & production](docker-and-production.md) | Compose details |
-| [Domain apps](../structure/domain-apps.md) | `start_domain_app` |
+| [Domain apps](../overview/domain-apps.md) | `start_domain_app` |
 | [Code quality](code-quality.md) | Lint/format |
 | [Testing](testing.md) | pytest |
 | [Translations](translations.md) | i18n script |

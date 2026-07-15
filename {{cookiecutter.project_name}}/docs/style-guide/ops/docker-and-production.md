@@ -226,4 +226,4 @@ CI was not enabled at generation (`use_ci=n`). Add GitHub Actions or GitLab CI l
 | [Settings](settings.md) | `production` vs `local` |
 | [Logging](logging.md) | File / console logs |
 | [Throttling](../http/throttling.md) | Redis for shared limits |
-| [Project structure](../structure/project-structure.md) | Where `docker/` lives |
+| [Project structure](../overview/project-structure.md) | Where `docker/` lives |

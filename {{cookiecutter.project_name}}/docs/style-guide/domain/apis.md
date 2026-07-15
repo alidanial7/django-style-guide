@@ -120,7 +120,7 @@ users/apis/
 
 Do **not** create a root `apis/tests/` package — tests live only under each route leaf.
 
-List FilterSets live next to the list APIs as `*_search_filters.py` (see [Pagination & filtering](../http/pagination-and-filtering.md)).
+List FilterSets live next to the list APIs as `*_search_filters.py` (see [Filtering](../http/filtering.md)).
 
 ---
 
@@ -256,11 +256,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
         serializer.is_valid(raise_exception=True)
 
         profile = get_profile(user=request.user)
-        profile = profile_update(
-            profile=profile,
-            bio=serializer.validated_data.get("bio"),
-            avatar=serializer.validated_data.get("avatar"),
-        )
+        profile = profile_update(profile=profile, data=serializer.validated_data)
         return api_response(
             data=UsersProfileOutputSerializer(profile, context={"request": request}).data
         )
@@ -284,17 +280,35 @@ class UsersRegisterApi(APIView):
     def post(self, request):
         serializer = UsersRegisterInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = register(
-            email=serializer.validated_data.get("email"),
-            password=serializer.validated_data.get("password"),
-            bio=serializer.validated_data.get("bio"),
-            avatar=serializer.validated_data.get("avatar"),
-        )
+        # confirm_password is popped in serializer.validate — remaining keys match RegisterData
+        user = register(data=serializer.validated_data)
         return api_response(
             data=UsersRegisterOutputSerializer(user, context={"request": request}).data,
             http_status=status.HTTP_201_CREATED,
         )
 ```
+
+### Serializer → TypedDict `data=` → service (required)
+
+Serializers validate HTTP. Services take `data=` typed as **TypedDict** — not dataclass DTOs. Full rules: [Types](types.md).
+
+| ✅ Prefer | ❌ Avoid |
+|----------|---------|
+| `create_post(..., data=serializer.validated_data)` with `data: CreatePostData` | Dataclass `CreatePostDTO` / `dto=` |
+| PATCH: `"field" in data` inside the service | Field-by-field `.get(...)` in the view |
+| `serializer.is_valid` only | `serializer.save()` / business rules in the serializer |
+
+```python
+# ✅ PATCH
+serializer = PostUpdateInputSerializer(data=request.data, partial=True)
+serializer.is_valid(raise_exception=True)
+post = get_post(post_id=post_id)
+self.check_object_permissions(request, post)
+post = update_post(post=post, data=serializer.validated_data)
+return api_response(data=PostOutputSerializer(post).data)
+```
+
+Drop HTTP-only fields in InputSerializer (`confirm_password`) before passing `validated_data`.
 
 ### Non‑negotiable rules
 
@@ -309,6 +323,7 @@ class UsersRegisterApi(APIView):
 | `permission_classes = [AllowAny]` on public routes | Assuming new views are public (default is authenticated) |
 | Explicit `<Entity>Filter` when the list accepts filters | Raw query params / silent `filter_backends` on `APIView` |
 | `qs = list_*()` then `FilterSet(request.query_params, queryset=qs).qs` | Hiding FilterSet inside the selector / `query_params=` on `list_*` |
+| `service(..., data=validated_data)` TypedDict | Untyped dict / dataclass DTO / `serializer.save()` |
 
 ---
 
@@ -318,7 +333,7 @@ class UsersRegisterApi(APIView):
 |------|-----------|------|
 | `*InputSerializer` | Request body → Python | Validate shape; run field/cross-field rules |
 | `*OutputSerializer` | Domain → JSON | Expose only what clients may see |
-| `<Entity>Filter` (django-filter) | Query string → filtered QS | Defined under `apis/` as `*_search_filters.py`; applied in the list view — see [Pagination & filtering](../http/pagination-and-filtering.md) |
+| `<Entity>Filter` (django-filter) | Query string → filtered QS | Defined under `apis/` as `*_search_filters.py`; applied in the list view — see [Filtering](../http/filtering.md) |
 
 Do **not** reuse one `ModelSerializer` for both directions unless the shapes are truly identical and tiny (rare). Register input has `password` / `confirm_password`; output must never echo passwords.
 
@@ -348,6 +363,7 @@ class UsersRegisterInputSerializer(serializers.Serializer):
                 {"confirm_password": [_("confirm password is not equal to password")]},
                 code=UserErrorCode.PASSWORD_MISMATCH,
             )
+        data.pop("confirm_password", None)
         return data
 ```
 
@@ -356,9 +372,9 @@ class UsersRegisterInputSerializer(serializers.Serializer):
 | Field types / max_length | ✅ |
 | Domain `PASSWORD_VALIDATORS` | ✅ |
 | Cross-field confirm password | ✅ `validate()` |
-| Uniqueness of email | ❌ DB + [integrity](../http/validation-and-errors.md) |
+| Uniqueness of email | ❌ DB + [integrity](../domain/errors.md) |
 | “Is the user allowed to do this?” | ❌ [Permissions](../http/permissions.md) |
-| Create the user | ❌ [Services](services.md) |
+| Create the user / apply writes | ❌ [Services](services.md) + [Types](types.md) |
 
 Use **field-keyed** errors and platform vs domain codes correctly (`ErrorCode.REQUIRED` vs `UserErrorCode.PASSWORD_MISMATCH`).
 
@@ -371,7 +387,7 @@ qs = list_posts()
 qs = PostFilter(request.query_params, queryset=qs).qs
 ```
 
-Do not use a parallel `*QuerySerializer` style for the same list query params. Do not take `request` / `query_params` in the selector. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Pagination & filtering](../http/pagination-and-filtering.md).
+Do not use a parallel `*QuerySerializer` style for the same list query params. Do not take `request` / `query_params` in the selector. FK / related lookups use `field_name="author__email"` on the FilterSet. Full examples: [Filtering](../http/filtering.md).
 
 ### Output serializer rules
 
@@ -439,7 +455,7 @@ Clients then may send `multipart/form-data` (file + fields) or JSON (without fil
 
 ## 🧪 Testing APIs
 
-Place tests under the URL leaf: `apis/<…path…>/tests/`.
+Place tests under the URL leaf: `apis/<…path…>/tests/`. These are **integration** tests (HTTP + wiring to services/selectors). See [Testing](../ops/testing.md).
 
 | Assert | How |
 |--------|-----|
@@ -465,7 +481,7 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 | `views.py` at app root | `apis/` tree that mirrors URL segments |
 | Flat `apis/posts/` only while URLs are `/posts/…/wallet/…` | Nest folders to match the route |
 | List filters only inside `get` with raw query params | `*_search_filters.py` under `apis/` + apply FilterSet in the view |
-| `PostsListApi` / `PostDetailApi` for standard CRUD | `PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` |
+| Field-by-field `.get` / dataclass DTO | TypedDict + `"field" in data` for PATCH — see [Types](types.md) |
 
 ---
 
@@ -475,7 +491,7 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 2. Add Input + Output serializers (and `tests/`) in that leaf  
 3. Add `APIView` named per convention (`PostListCreateApiView` / `PostRetrieveUpdateDestroyApiView` / action `*ApiView`) with `@extend_schema` + tags from `constants.py` 
 4. Wire auth mixin and/or throttle
-5. Call selectors/service only
+5. Call selector/service only — pass `data=serializer.validated_data` (TypedDict)
 6. Return `api_response` (correct HTTP status: 200/201/…)
 7. Register path in `<app>/urls/` + `api/urls.py` if needed
 8. Add API tests
@@ -487,8 +503,11 @@ Prefer `reverse("users:profile")` over hard-coded paths — see [URLs](urls.md).
 | Doc | Why |
 |-----|-----|
 | [API envelope](../http/api-envelope.md) | Exact JSON contract |
-| [Validation & errors](../http/validation-and-errors.md) | Codes & validators used by serializers |
+| [Types](types.md) | Serializer → TypedDict `data=` → service |
+| [Validation](validation.md) | `is_*` / `*Validator` used by serializers |
+| [Errors](errors.md) | Codes & integrity mapping |
 | [Permissions](../http/permissions.md) | `ApiAuthMixin` |
 | [Swagger](../http/swagger.md) | Schema / UI |
-| [Pagination & filtering](../http/pagination-and-filtering.md) | List endpoints |
+| [Pagination](../http/pagination.md) | List page shape |
+| [Filtering](../http/filtering.md) | Optional list FilterSets |
 | [Throttling](../http/throttling.md) | Auth/register rates |

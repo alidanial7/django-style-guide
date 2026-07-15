@@ -94,7 +94,7 @@ class PostStatus(models.TextChoices):
 |-------|------------|
 | Member name | `UPPER_SNAKE` (`DRAFT`, `IN_REVIEW`) |
 | Stored value | lowercase string (or int for `IntegerChoices`) — stable API/DB contract |
-| Label | `_("lowercase words")` — same gettext recommendation as [Translations](../platform/translations.md) |
+| Label | `_("lowercase words")` — same gettext recommendation as [Translations](../ops/translations.md) |
 
 ```python
 # ✅
@@ -201,6 +201,6 @@ Do **not** put `TextChoices` in `constants.py` or `StrEnum` error codes in `enum
 |-----|-----|
 | [Models](models.md) | Fields that use `choices=` |
 | [Constants](constants.md) | Non-choice literals |
-| [Validation & errors](../http/validation-and-errors.md) | `errors/codes.py` StrEnums |
-| [Domain apps](../structure/domain-apps.md) | Scaffold includes `enums.py` |
-| [Translations](../platform/translations.md) | Lowercase gettext labels |
+| [Validation](../domain/validation.md) | `errors/codes.py` StrEnums |
+| [Domain apps](../overview/domain-apps.md) | Scaffold includes `enums.py` |
+| [Translations](../ops/translations.md) | Lowercase gettext labels |

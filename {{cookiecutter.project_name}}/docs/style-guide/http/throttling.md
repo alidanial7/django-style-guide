@@ -99,7 +99,7 @@ This project was generated **without Redis**. In multi-worker production, either
 2. Accept weaker per-process limits and put a reverse-proxy rate limit (nginx/traefik) in front
 {%- endif %}
 
-Also consider edge rate limits at the reverse proxy for extra defense — see [Docker & production](../platform/docker-and-production.md).
+Also consider edge rate limits at the reverse proxy for extra defense — see [Docker & production](../ops/docker-and-production.md).
 
 ---
 
@@ -165,7 +165,7 @@ class InviteAcceptApi(APIView):
 | Doc | Why |
 |-----|-----|
 | [Authentication](authentication.md) | Which routes are public |
-| [APIs](../layers/apis.md) | Where to set throttle attrs |
+| [APIs](../domain/apis.md) | Where to set throttle attrs |
 | [API envelope](api-envelope.md) | 429 body shape |
 | [Permissions](permissions.md) | Auth vs public |
-| [Docker & production](../platform/docker-and-production.md) | Redis / proxy |
+| [Docker & production](../ops/docker-and-production.md) | Redis / proxy |

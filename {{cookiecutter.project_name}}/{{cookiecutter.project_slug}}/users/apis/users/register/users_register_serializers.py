@@ -34,6 +34,7 @@ class UsersRegisterInputSerializer(serializers.Serializer):
                 {"confirm_password": [_("confirm password is not equal to password")]},
                 code=UserErrorCode.PASSWORD_MISMATCH,
             )
+        data.pop("confirm_password", None)
         return data
 
 

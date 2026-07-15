@@ -123,7 +123,7 @@ return Response(serializer.data)
 return Response({"data": serializer.data})
 ```
 
-Paginated lists still use this envelope; `result` holds pagination metadata — see [Pagination](pagination-and-filtering.md).
+Paginated lists still use this envelope; `result` holds pagination metadata — see [Pagination](pagination.md).
 
 ---
 
@@ -161,7 +161,7 @@ Each entry under a field is always a **list** of objects with:
 | Raiser omitted `code=` | `"invalid"` (`ErrorCode.INVALID`) |
 | Unexpected exception in a DRF view | `"server_error"` — **no traceback / internals in the body** |
 | `ApplicationError` | `"application_error"` on `non_field_errors` (+ optional `extra` fields) |
-| Integrity unique / not null / FK | `unique` / `not_null` / `invalid_reference` — see [Validation](validation-and-errors.md) |
+| Integrity unique / not null / FK | `unique` / `not_null` / `invalid_reference` — see [Validation](../domain/validation.md) |
 
 Non-field problems use the key `non_field_errors` (same as DRF convention).
 
@@ -260,7 +260,7 @@ Clients should branch on **`code`**, not on English `message` text (messages are
 }
 ```
 
-Produced by `api.pagination.LimitOffsetPagination.get_paginated_response` → `api_response`. Details: [Pagination & filtering](pagination-and-filtering.md).
+Produced by `api.pagination.LimitOffsetPagination.get_paginated_response` → `api_response`. Details: [Filtering](filtering.md).
 
 ---
 
@@ -281,8 +281,8 @@ Produced by `api.pagination.LimitOffsetPagination.get_paginated_response` → `a
 
 | Doc | Why |
 |-----|-----|
-| [Validation & errors](validation-and-errors.md) | Where codes and validators are defined |
-| [APIs](../layers/apis.md) | How views call `api_response` |
-| [Services](../layers/services.md) | Raising `ValidationError` from writes |
-| [Pagination & filtering](pagination-and-filtering.md) | List `result` shape |
-| [Logging](../platform/logging.md) | Unexpected errors are logged in the handler |
+| [Validation](../domain/validation.md) | Where codes and validators are defined |
+| [APIs](../domain/apis.md) | How views call `api_response` |
+| [Services](../domain/services.md) | Raising `ValidationError` from writes |
+| [Filtering](filtering.md) | List `result` shape |
+| [Logging](../ops/logging.md) | Unexpected errors are logged in the handler |

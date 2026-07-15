@@ -32,12 +32,7 @@ class UsersRegisterApi(APIView):
     def post(self, request):
         serializer = UsersRegisterInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = register(
-            email=serializer.validated_data.get("email"),
-            password=serializer.validated_data.get("password"),
-            bio=serializer.validated_data.get("bio"),
-            avatar=serializer.validated_data.get("avatar"),
-        )
+        user = register(data=serializer.validated_data)
 {%- if cookiecutter.use_jwt != "y" %}
         login(request, user)
 {%- endif %}

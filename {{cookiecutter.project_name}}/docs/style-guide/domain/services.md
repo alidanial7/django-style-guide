@@ -62,15 +62,15 @@ __all__ = ["change_password", "create_user", ...]
 - Raise Django `ValidationError` (field-keyed) for expected domain failures
 
 ```python
-def register(
-    *,
-    email: str,
-    password: str,
-    bio: str | None = None,
-    avatar=None,
-) -> BaseUser:
+def register(*, data: RegisterData) -> BaseUser:
+    ...
+
+
+def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
     ...
 ```
+
+Write payloads use **TypedDict** annotations — see [Types](types.md). Prefer `data=` for validated bodies; discrete kwargs for non-body inputs (`user=`, `post=`, `refresh_token=`).
 
 ---
 
@@ -150,16 +150,16 @@ Multi-step writes need atomicity so you don’t leave half-created state.
 
 ```python
 @transaction.atomic
-def register(*, email: str, password: str, bio: str | None = None, avatar=None) -> BaseUser:
-    user = create_user(email=email, password=password)
+def register(*, data: RegisterData) -> BaseUser:
+    user = create_user(email=data["email"], password=data["password"])
     profile = Profile.objects.get(user=user)  # created by signal
 
     update_fields: list[str] = []
-    if bio:
-        profile.bio = bio
+    if data.get("bio"):
+        profile.bio = data["bio"]
         update_fields.append("bio")
-    if avatar is not None:
-        profile.avatar = avatar
+    if data.get("avatar") is not None:
+        profile.avatar = data["avatar"]
         update_fields.append("avatar")
 
     if update_fields:
@@ -187,8 +187,8 @@ from django.utils.translation import gettext_lazy as _
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 
 
-def change_password(*, user: BaseUser, current_password: str, new_password: str) -> None:
-    if not user.check_password(current_password):
+def change_password(*, user: BaseUser, data: ChangePasswordData) -> None:
+    if not user.check_password(data["current_password"]):
         raise ValidationError(
             {
                 "current_password": ValidationError(
@@ -197,7 +197,7 @@ def change_password(*, user: BaseUser, current_password: str, new_password: str)
                 )
             }
         )
-    user.set_password(new_password)
+    user.set_password(data["new_password"])
     user.save(update_fields=["password"])
 ```
 
@@ -205,14 +205,14 @@ def change_password(*, user: BaseUser, current_password: str, new_password: str)
 |-------|---------|
 | Field-keyed dict errors | Bare string-only errors when a field is known |
 | Domain `UserErrorCode` / app codes | Random undocumented string codes |
-| Lowercase gettext messages (strong recommendation) | Hard-coded untranslated UI strings (see [Translations](translations.md)) |
+| Lowercase gettext messages (strong recommendation) | Hard-coded untranslated UI strings (see [Translations](../ops/translations.md)) |
 | Let unexpected bugs propagate / log | Swallow `IntegrityError` without mapping |
 
 Other real services in this repo:
 
 | Function | Behavior |
 |----------|----------|
-| `profile_update` | Patches bio/avatar via `model_save` |
+| `profile_update` | Patches bio/avatar from `ProfileUpdateData` (`"field" in data`) via `model_save` |
 {%- if cookiecutter.use_jwt == "y" %}
 | `logout` | Blacklists refresh token; invalid token → `UserErrorCode.INVALID_TOKEN` |
 {%- endif %}
@@ -244,17 +244,14 @@ if BaseUser.objects.filter(email=email).exists():
 
 ## 📞 How APIs call services
 
+Pass `serializer.validated_data` as `data=` annotated with a **TypedDict**. No dataclass DTOs. Details: [Types](types.md).
+
 ```python
 # users/apis/users/register/users_register_apis.py
 def post(self, request):
     serializer = UsersRegisterInputSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = register(
-        email=serializer.validated_data.get("email"),
-        password=serializer.validated_data.get("password"),
-        bio=serializer.validated_data.get("bio"),
-        avatar=serializer.validated_data.get("avatar"),
-    )
+    user = register(data=serializer.validated_data)
     return api_response(
         data=UsersRegisterOutputSerializer(user, context={"request": request}).data,
         http_status=status.HTTP_201_CREATED,
@@ -266,22 +263,24 @@ def post(self, request):
 def patch(self, request):
     serializer = UsersProfileUpdateInputSerializer(data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
-    profile = get_profile(user=request.user)  # selector
-    profile = profile_update(                 # service
-        profile=profile,
-        bio=serializer.validated_data.get("bio"),
-        avatar=serializer.validated_data.get("avatar"),
-    )
+    profile = get_profile(user=request.user)
+    profile = profile_update(profile=profile, data=serializer.validated_data)
     return api_response(data=UsersProfileOutputSerializer(profile, context={"request": request}).data)
 ```
 
-**APIs never call `Model.objects.create` / `.save()` directly for product writes.**
+```python
+# services — PATCH uses key presence (None ≠ missing)
+def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
+    if "bio" in data:
+        profile.bio = data["bio"]
+    ...
+```
 
----
+**APIs never call `Model.objects.create` / `.save()` directly for product writes. Prefer TypedDict over untyped `dict` / dataclass DTOs.**
 
 ## 🧪 Testing
 
-Tests live under `services/tests/`.
+Tests live under `services/tests/`. Focus on **business logic** (writes, domain rules, integrity) — not HTTP. See [Testing](../ops/testing.md).
 
 | Cover | Example |
 |-------|---------|
@@ -296,13 +295,14 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 
 ## ✅ Checklist: adding a service
 
-1. Add `def feature(*, ...) -> ...` in `<app>/services/<domain>_services.py`
-2. Use `model_*` or `map_integrity_error` on every write
-3. Wrap multi-step work in `@transaction.atomic`
-4. Raise field-keyed `ValidationError` with domain codes
-5. Re-export from `services/__init__.py`
-6. Call only from APIs / management commands / admin hooks — not from serializers
-7. Add `services/tests/…`
+1. Add `Create*Data` / `Update*Data` TypedDict to `<app>/types.py`  
+2. Add `def feature(*, data: …) -> …` in `<app>/services/<domain>_services.py`  
+3. Use `model_*` or `map_integrity_error` on every write  
+4. Wrap multi-step work in `@transaction.atomic`  
+5. Raise field-keyed `ValidationError` with domain codes  
+6. Re-export from `services/__init__.py`  
+7. Call only from APIs / management commands / admin hooks — not from serializers  
+8. Add `services/tests/…` with TypedDict literals  
 
 ### ❌ Anti-patterns
 
@@ -315,6 +315,7 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 | Silent `except IntegrityError: pass` | Always map or re-raise |
 | Mixing huge read/report queries into write services | Call a selector instead |
 | Module named `*_service.py` (singular) | Always `*_services.py` |
+| Untyped `dict` / dataclass DTO / field `.get` in the view | TypedDict + `data=validated_data`; PATCH uses `"field" in data` — [Types](types.md) |
 
 ---
 
@@ -323,8 +324,9 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 | Doc | Why |
 |-----|-----|
 | [Selectors](selectors.md) | Reads used before/after writes |
+| [Types](types.md) | TypedDict service inputs |
 | [Models](models.md) | Constraints the service relies on |
-| [Validation & errors](../http/validation-and-errors.md) | Codes + integrity details |
+| [Validation](../domain/validation.md) | Codes + integrity details |
 | [API envelope](../http/api-envelope.md) | How service errors become JSON |
 | [APIs](apis.md) | Thin callers |
 | [Signals](signals.md) | Mechanical creates vs service updates |

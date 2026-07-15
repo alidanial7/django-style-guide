@@ -12,7 +12,7 @@ Instructions for coding agents working in this generated project.
 
 | Rule | Detail |
 |------|--------|
-| Layers | APIs glue only; **selectors** read; **services** write — see [Architecture → Layer contracts](docs/style-guide/structure/architecture.md) |
+| Layers | APIs glue only; **serializers** = HTTP; **TypedDict** types service `data=`; **selectors** read; **services** write — see [Architecture](docs/style-guide/overview/architecture.md) / [Types](docs/style-guide/domain/types.md) |
 | APIs | Folders under `apis/` **mirror URL segments**; prefer `{Entity}ListCreateApiView` / `{Entity}RetrieveUpdateDestroyApiView`; action endpoints use descriptive `*ApiView` names |
 | Responses | Always `api_response` / pagination helpers — envelope `{success,status,result,messages}` |
 | Permissions | Default is **IsAuthenticated**; public views must set `AllowAny` |
@@ -20,13 +20,16 @@ Instructions for coding agents working in this generated project.
 | Lists | Selector (`list_<entities>`) → pagination; **no filters by default** |
 | Filters | When needed: `<Entity>Filter` in `apis/<route…>/<entity>_search_filters.py`, applied **in the list view** after `list_*()` — never inside the selector / never `request` on the selector |
 | Selectors | Package `selectors/`; `get_*` / `list_<entities>`; one optimized list selector (with related); second selector only for a **different job** (`list_post_ids`, …) |
-| Services | Package `services/`; modules always `*_services.py` (plural) — never `*_service.py` |
+| Services | Package `services/`; modules always `*_services.py` (plural) — never `*_service.py`; write inputs are **TypedDict** (`data: Create*Data`), never untyped `dict` / dataclass DTOs |
+| Types | `<app>/types.py` with `TypedDict` (`Create*Data` / `Update*Data`, `total=False` for PATCH) — see [Types](docs/style-guide/domain/types.md) |
 | URLs | Prefer multiple modules under `urls/`: `<prefix>_url.py` per public mount (`auth_url.py`, `users_url.py`, `pos_url.py`, …) |
 | Models | Class docstring `Model to declare …`; every field **both** `verbose_name=_("serial number")`-style **and** `help_text="…"`; every FK/O2O has explicit `related_name` (plural / role / `"+"`); `Meta.verbose_name(_plural)` |
 | Enums | `TextChoices` / `IntegerChoices` in `<app>/enums.py` — never nested on the model |
 | Keyword-only | Services/selectors use `def foo(*, …)` |
+| Service inputs | `service(..., data=serializer.validated_data)` typed as TypedDict; PATCH uses `"field" in data`; no `serializer.save()` / no dataclass DTOs |
+| Tests | Selectors = query correctness; services = business logic (TypedDict literals); APIs = integration — see [Testing](docs/style-guide/ops/testing.md) |
 | New apps | `python manage.py start_domain_app <plural>` — never Django `startapp` |
-| Strings | Prefer lowercase, space-separated gettext msgids for user-facing text (strong recommendation — see [Translations](docs/style-guide/platform/translations.md)) |
+| Strings | Prefer lowercase, space-separated gettext msgids for user-facing text (strong recommendation — see [Translations](docs/style-guide/ops/translations.md)) |
 | Secrets | Never commit `.env` secrets or log tokens/passwords |
 
 ## OpenAPI
@@ -35,15 +38,18 @@ Document success payloads with `envelope_serializer(...)` from `common.http.sche
 
 ## Out of scope unless asked
 
-Soft delete, multi-tenancy, full RBAC, outbox, idempotency keys — see [`docs/style-guide/structure/enterprise-extensions.md`](docs/style-guide/structure/enterprise-extensions.md).
+Soft delete, multi-tenancy, full RBAC, outbox, idempotency keys — see [`docs/style-guide/ops/enterprise-extensions.md`](docs/style-guide/ops/enterprise-extensions.md).
 
 ## Quick links
 
-- [Architecture](docs/style-guide/structure/architecture.md)
-- [APIs](docs/style-guide/layers/apis.md)
-- [Selectors](docs/style-guide/layers/selectors.md)
-- [Enums](docs/style-guide/layers/enums.md)
-- [Pagination & filtering](docs/style-guide/http/pagination-and-filtering.md)
+- [Architecture](docs/style-guide/overview/architecture.md)
+- [APIs](docs/style-guide/domain/apis.md)
+- [Types](docs/style-guide/domain/types.md)
+- [Selectors](docs/style-guide/domain/selectors.md)
+- [Enums](docs/style-guide/domain/enums.md)
+- [Pagination](docs/style-guide/http/pagination.md)
+- [Filtering](docs/style-guide/http/filtering.md)
 - [Security](docs/style-guide/http/security.md)
-- [Validation & errors](docs/style-guide/http/validation-and-errors.md)
-- [Domain apps](docs/style-guide/structure/domain-apps.md)
+- [Validation](docs/style-guide/domain/validation.md)
+- [Errors](docs/style-guide/domain/errors.md)
+- [Domain apps](docs/style-guide/overview/domain-apps.md)

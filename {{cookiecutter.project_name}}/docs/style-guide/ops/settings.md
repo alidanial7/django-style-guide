@@ -127,9 +127,9 @@ flowchart TD
 
 | Concern | Put in |
 |---------|--------|
-| OpenAPI tag `"users"` | [Constants](../layers/constants.md) |
-| `password_mismatch` code | [Validation & errors](../http/validation-and-errors.md) |
-| Business “can publish?” rule | [Services](../layers/services.md) |
+| OpenAPI tag `"users"` | [Constants](../domain/constants.md) |
+| `password_mismatch` code | [Validation](../domain/validation.md) |
+| Business “can publish?” rule | [Services](../domain/services.md) |
 
 ---
 
@@ -147,7 +147,7 @@ LOCAL_APPS = [
 ]
 ```
 
-Prefer full `AppConfig` paths. `start_domain_app --register` appends for you — see [Domain apps](../structure/domain-apps.md).
+Prefer full `AppConfig` paths. `start_domain_app --register` appends for you — see [Domain apps](../overview/domain-apps.md).
 
 ---
 
@@ -177,7 +177,7 @@ Use `env("NAME", default=...)`, `env.bool`, `env.int`, `env.db("DATABASE_URL")` 
 
 | Doc | Why |
 |-----|-----|
-| [Project structure](../structure/project-structure.md) | Where `config/` sits |
+| [Project structure](../overview/project-structure.md) | Where `config/` sits |
 | [Logging](logging.md) | Logging slice details |
 | [Authentication](../http/authentication.md) | JWT/session settings |
 | [Docker & production](docker-and-production.md) | Production env expectations |

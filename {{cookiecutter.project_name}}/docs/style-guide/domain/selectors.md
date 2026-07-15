@@ -65,7 +65,7 @@ Small apps may keep a single `<app>_selectors.py` (e.g. `users_selectors.py`). W
 | `<entity>_selectors.py` | `post_selectors.py`, `profile_selectors.py` | Default once you have clear entities |
 | `<app>_selectors.py` | `users_selectors.py` | Tiny app / single aggregate |
 
-List `FilterSet`s live under **`apis/`** as `*_search_filters.py` — not here. See [Pagination & filtering](../http/pagination-and-filtering.md).
+List `FilterSet`s live under **`apis/`** as `*_search_filters.py` — not here. See [Filtering](../http/filtering.md).
 
 Use **singular** entity names in the module (`post_`, not `posts_`).
 
@@ -112,7 +112,7 @@ def list_post_ids(*, status: str = "published") -> QuerySet[int]:
 | List API vs “only primary keys for Celery” | `list_posts` + `list_post_ids` |
 | List API vs sitemap URLs | `list_posts` + `list_posts_for_sitemap` |
 
-`select_related` / `prefetch` are for **output performance**, not for FilterSet FK filters. Related query filters use `field_name="author__email"` on the FilterSet — see [Pagination & filtering](../http/pagination-and-filtering.md).
+`select_related` / `prefetch` are for **output performance**, not for FilterSet FK filters. Related query filters use `field_name="author__email"` on the FilterSet — see [Filtering](../http/filtering.md).
 
 ---
 
@@ -133,7 +133,7 @@ Call sites become self-documenting: `get_profile(user=request.user)` — not `ge
 |----------|----------|
 | Model instance | `Response` / `api_response` |
 | `QuerySet` | DRF serializer instances |
-| `str` / `dict` / `bool` / DTO-like structures | Raised permission errors meant for views (usually) |
+| `str` / `dict` / `bool` / plain structures | Raised permission errors meant for views (usually) |
 
 Serialization stays in the API layer (`OutputSerializer`).
 
@@ -150,7 +150,7 @@ def list_posts() -> QuerySet[Post]:
 ```
 
 Do not leave N+1 fixes only inside one `APIView`.  
-Do **not** take `request`. Client query-string FilterSets live under `apis/` (`*_search_filters.py`) — see [Pagination & filtering](../http/pagination-and-filtering.md).
+Do **not** take `request`. Client query-string FilterSets live under `apis/` (`*_search_filters.py`) — see [Filtering](../http/filtering.md).
 
 ### 4. Type hints
 
@@ -244,7 +244,7 @@ Services **may call selectors** when a write needs a fresh read. Selectors must 
 
 ## 🧪 Testing
 
-Place tests under `selectors/tests/`.
+Place tests under `selectors/tests/`. Focus on **query correctness** (right rows, scoping, related loads) — not HTTP. See [Testing](../ops/testing.md).
 
 ```python
 @pytest.mark.django_db
@@ -283,7 +283,7 @@ qs = PostFilter(request.query_params, queryset=qs).qs
 return get_paginated_response_context(...)
 ```
 
-Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pagination-and-filtering.md).
+Full FilterSet examples (FK, dates, naming): [Filtering](../http/filtering.md).
 
 ---
 
@@ -321,5 +321,5 @@ Full FilterSet examples (FK, dates, naming): [Pagination & filtering](../http/pa
 | [Services](services.md) | Writes and when to call selectors |
 | [Models](models.md) | What you are querying |
 | [APIs](apis.md) | Where selectors are called |
-| [Pagination & filtering](../http/pagination-and-filtering.md) | List endpoints |
+| [Filtering](../http/filtering.md) | List endpoints |
 | [Constants](constants.md) | Static paths used in derived values |

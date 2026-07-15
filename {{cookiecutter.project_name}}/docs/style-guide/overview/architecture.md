@@ -4,7 +4,7 @@
 >
 > New code that breaks these boundaries will usually be rejected in review — even if it “works”.
 
-Inspired by the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide): **thin views**, **fat services**, **selectors for reads**.
+Inspired by the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide): **thin views**, **fat services**, **selectors for reads**, plus **TypedDict** on service `data=` (no dataclass DTOs; serializers stay HTTP-only).
 
 ---
 
@@ -45,6 +45,7 @@ flowchart TB
 
     subgraph Domain["Domain app"]
         SEL[selectors/ — reads]
+        TYP[types.py — TypedDict]
         SVC[services/ — writes + rules]
         VAL[validators/ + errors/]
         MOD[models/ + manager/]
@@ -61,7 +62,8 @@ flowchart TB
     V --> IN
     IN --> VAL
     V -->|read| SEL
-    V -->|write| SVC
+    IN -->|validated_data| SVC
+    TYP -.->|annotates data=| SVC
     SEL --> MOD
     SVC --> HELP
     SVC --> MOD
@@ -91,15 +93,15 @@ flowchart TB
 │  API (glue only)                                            │
 │  • optional ApiAuthMixin / throttle                         │
 │  • InputSerializer.is_valid(raise_exception=True)           │
-│  • call service / selector                                  │
+│  • call service(data=validated_data) / selector             │
 │  • OutputSerializer + api_response(...)                     │
 └────────────────────────────┬────────────────────────────────┘
                              │
               ┌──────────────┴──────────────┐
               ▼                             ▼
 ┌──────────────────────────┐   ┌──────────────────────────────┐
-│  selectors/  (READ)       │   │  services/  (WRITE)           │
-│  get_*, list_*, …        │   │  create_*, update_*, …       │
+│  selectors/  (READ)       │   │  services/ (WRITE)            │
+│  get_*, list_*, …        │   │  data: Create*/Update*Data   │
 │  QuerySet / derived vals │   │  rules + model_* / Integrity │
 └────────────┬─────────────┘   └──────────────┬───────────────┘
              │                                │
@@ -198,7 +200,7 @@ sequenceDiagram
     URL->>API: dispatch
     API->>SER: is_valid(raise_exception=True)
     Note over SER: field validators + confirm_password
-    API->>SVC: register(email=..., password=..., ...)
+    API->>SVC: register(data=validated_data)
     SVC->>DB: create_user / profile update
     alt IntegrityError (e.g. duplicate email)
         SVC-->>API: ValidationError (field-keyed)
@@ -216,8 +218,8 @@ sequenceDiagram
 1. **URL** — `path("register/", UsersRegisterApi.as_view(), ...)` under `/api/v1/users/`.
 2. **API** — sets parsers / throttle; does **not** create the user itself.
 3. **Input serializer** — shape + `PASSWORD_VALIDATORS` + confirm match (`UserErrorCode.PASSWORD_MISMATCH`).
-4. **Service** — `register(...)` creates the user (maps `IntegrityError`), updates profile fields via `model_save`.
-5. **Side effect** — `post_save` on `BaseUser` ensures a `Profile` exists (see [Signals](signals.md)).
+4. **Service** — `register(data=…)` creates the user (maps `IntegrityError`), updates profile fields via `model_save`.
+5. **Side effect** — `post_save` on `BaseUser` ensures a `Profile` exists (see [Signals](../domain/signals.md)).
 6. **Output serializer** — builds public fields (avatar URL{%- if cookiecutter.use_jwt == "y" %}, JWT tokens{%- endif %}).
 7. **Envelope** — `api_response(..., http_status=201)` → `{ success, status, result, messages }`.
 
@@ -229,7 +231,7 @@ class UsersRegisterApi(APIView):
     def post(self, request):
         serializer = UsersRegisterInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = register(**serializer.validated_data)  # service
+        user = register(data=serializer.validated_data)  # RegisterData
         return api_response(
             data=UsersRegisterOutputSerializer(user, context={"request": request}).data,
             http_status=status.HTTP_201_CREATED,
@@ -239,10 +241,10 @@ class UsersRegisterApi(APIView):
 ```python
 # services/user_services.py  — write + rules
 @transaction.atomic
-def register(*, email: str, password: str, bio: str | None = None, avatar=None) -> BaseUser:
-    user = create_user(email=email, password=password)  # maps IntegrityError
+def register(*, data: RegisterData) -> BaseUser:
+    user = create_user(email=data["email"], password=data["password"])  # maps IntegrityError
     profile = Profile.objects.get(user=user)
-    # ... model_save when bio/avatar present ...
+    # ... model_save from keys in data ...
     return user
 ```
 
@@ -278,10 +280,11 @@ flowchart TD
 | New REST endpoint | `<app>/apis/…` folders mirroring the URL + `<app>/urls/` + include in `api/urls.py` |
 | “List published posts for homepage” | `selectors/` |
 | “Publish post + notify + validate state machine” | `services/` |
-| Shared date range constraint example | `common.models` / DB constraints |
-| OpenAPI tag name `"users"` | `<app>/constants.py` — see [Constants](../layers/constants.md) |
-| Post status `draft` / `published` | `<app>/enums.py` — see [Enums](../layers/enums.md) |
-| Create related row when user is created | `signals/` — see [Signals](../layers/signals.md) |
+| Shared timestamps on every table | `common.models.BaseModel` |
+| Cross-field DB `CheckConstraint` | Domain model `Meta.constraints` — see [Models](../domain/models.md) |
+| OpenAPI tag name `"users"` | `<app>/constants.py` — see [Constants](../domain/constants.md) |
+| Post status `draft` / `published` | `<app>/enums.py` — see [Enums](../domain/enums.md) |
+| Create related row when user is created | `signals/` — see [Signals](../domain/signals.md) |
 
 ---
 
@@ -293,15 +296,16 @@ These are the style rules that make the codebase look like a large Django servic
 |-------|-----|----------|
 | `apis/` | Auth/throttle, Input/Output serializers, call selectors/service, `api_response` / pagination helpers, `@extend_schema` | ORM queries, business rules, uniqueness checks, building error envelopes by hand |
 | `selectors/` | Read ORM, `select_related` / `prefetch`, auth/ownership scoping, derived values | `.create()` / `.update()` / `.delete()`, calling write services, taking `request`, django-filter FilterSets |
-| `services/` | Writes, rules, `transaction.atomic`, `model_*` + integrity mapping, calling selectors for reads needed by a write | HTTP status codes, serializers, pagination, “list screens” querysets for unrelated UIs |
+| `services/` | Writes, rules, `transaction.atomic`, `model_*` + integrity mapping, **TypedDict `data=`**, calling selectors for reads needed by a write | HTTP status codes, serializers, untyped `dict`, dataclass DTOs, pagination, “list screens” querysets for unrelated UIs |
 | `models/` | Fields, constraints, managers, `__str__`, labels + **help_text on every field**, explicit **`related_name` on every FK/O2O** | HTTP, workflows, nested `TextChoices` (use `enums.py`), default `foo_set` reverses |
 | `enums.py` | `TextChoices` / `IntegerChoices` for fields | API error codes (`errors/codes.py`) / tags (`constants.py`) |
-| `serializers` | Shape + field/cross-field validation | Creating rows, permission decisions, raw ORM uniqueness as the only guard |
+| `serializers` | HTTP shape + field/cross-field input validation | Creating rows, business rules, `serializer.save()` |
+| `types.py` | `TypedDict` annotations for service `data=` | Runtime validation, dataclass DTOs |
 | `common/` | Envelope, integrity helpers, `BaseModel`, shared validators | Domain-specific business rules for one app |
 
 **List endpoints:** selector (`list_*`) → optional `FilterSet` in `apis/*_search_filters.py` applied in the view → pagination helper. Default is **no filters**. Never `Model.objects.filter(...)` for the base list in the view.
 
-**Keyword-only APIs:** `def register(*, email: str, …)` and `def list_posts(*, user=…)` when scoping is needed — no positional bags. FilterSets stay in the API layer.
+**Keyword-only APIs:** `def register(*, data: RegisterData)` / `def update_post(*, post, data: UpdatePostData)` and `def list_posts(*, user=…)` when scoping is needed — no positional bags. FilterSets stay in the API layer.
 
 ---
 
@@ -310,7 +314,8 @@ These are the style rules that make the codebase look like a large Django servic
 ### ✅ Do
 
 - Keep views under ~20–40 lines of real logic (parse → call → respond)
-- Use keyword-only args in services/selectors: `def register(*, email: str, ...)`
+- Use keyword-only args in services/selectors: `def register(*, data: RegisterData)`, `def get_profile(*, user: …)`
+- Pass `data=serializer.validated_data` typed as TypedDict; updates use `"field" in data`
 - Return `api_response` (or pagination helpers that wrap it)
 - Document OpenAPI success bodies with `envelope_serializer(...)`
 - Map every write path through `model_create` / `model_save` / `model_update` **or** explicit `map_integrity_error`
@@ -337,10 +342,12 @@ These are the style rules that make the codebase look like a large Django servic
 |-----------|-----|
 | [Project structure](project-structure.md) | Where folders live on disk |
 | [Domain apps](domain-apps.md) | How to scaffold `blogs`, `orders`, … |
-| [Services](../layers/services.md) | Write-path details |
-| [Selectors](../layers/selectors.md) | Read-path details |
-| [APIs](../layers/apis.md) | View + serializer conventions |
+| [Services](../domain/services.md) | Write-path details |
+| [Types](../domain/types.md) | TypedDict service inputs |
+| [Selectors](../domain/selectors.md) | Read-path details |
+| [APIs](../domain/apis.md) | View + serializer conventions |
 | [Security](../http/security.md) | Deny-by-default and hardening |
-| [Validation & errors](../http/validation-and-errors.md) | Codes, validators, integrity |
+| [Validation](../domain/validation.md) | `is_*` / `*Validator` |
+| [Errors](../domain/errors.md) | Codes, integrity mapping |
 | [API envelope](../http/api-envelope.md) | Exact JSON shapes |
-| [Enterprise extensions](enterprise-extensions.md) | Patterns not shipped by default |
+| [Enterprise extensions](../ops/enterprise-extensions.md) | Patterns not shipped by default |

@@ -13,11 +13,11 @@ Coding agents: start with **[`AGENTS.md`](AGENTS.md)**.
 | Start here | Topic |
 |------------|--------|
 | [Style guide index](docs/style-guide/README.md) | Full table of contents |
-| [Architecture](docs/style-guide/structure/architecture.md) | Layers & request flow |
+| [Architecture](docs/style-guide/overview/architecture.md) | Layers & request flow |
 | [Security](docs/style-guide/http/security.md) | Deny-by-default, secrets, DEBUG |
-| [Domain apps](docs/style-guide/structure/domain-apps.md) | `start_domain_app` |
-| [Validation & errors](docs/style-guide/http/validation-and-errors.md) | Codes, validators, integrity |
-| [Commands](docs/style-guide/platform/commands.md) | `make`, management commands, scripts |
+| [Domain apps](docs/style-guide/overview/domain-apps.md) | `start_domain_app` |
+| [Validation](docs/style-guide/domain/validation.md) · [Errors](docs/style-guide/domain/errors.md) | Validators, codes, integrity |
+| [Commands](docs/style-guide/ops/commands.md) | `make`, management commands, scripts |
 
 ## Stack
 
@@ -89,7 +89,7 @@ Defaults work with local Compose services. `devserver` runs migrations, creates 
 
 Use `./start-dev-services.sh --clean` to wipe volumes and start fresh.
 
-More detail: [Commands](docs/style-guide/platform/commands.md) · [Docker & production](docs/style-guide/platform/docker-and-production.md) · [Logging](docs/style-guide/platform/logging.md).
+More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & production](docs/style-guide/ops/docker-and-production.md) · [Logging](docs/style-guide/ops/logging.md).
 
 ## URLs (local, DEBUG)
 
@@ -113,7 +113,7 @@ python manage.py start_domain_app blogs
 python manage.py start_domain_app blogs --register
 ```
 
-Full layout and checklist: [Domain apps](docs/style-guide/structure/domain-apps.md).
+Full layout and checklist: [Domain apps](docs/style-guide/overview/domain-apps.md).
 
 ## Useful commands
 
@@ -129,7 +129,7 @@ Full layout and checklist: [Domain apps](docs/style-guide/structure/domain-apps.
 | `./scripts/update_translations.sh` | Update `.po` translation files |
 | `docker compose up --build -d` | Start production stack |
 
-See [Commands](docs/style-guide/platform/commands.md) for the full reference.
+See [Commands](docs/style-guide/ops/commands.md) for the full reference.
 
 ## Production
 
@@ -139,4 +139,4 @@ Self-hosted Compose — configure `.env` (`DJANGO_SETTINGS_MODULE=config.django.
 docker compose up --build -d
 ```
 
-Details: [Docker & production](docs/style-guide/platform/docker-and-production.md).
+Details: [Docker & production](docs/style-guide/ops/docker-and-production.md).

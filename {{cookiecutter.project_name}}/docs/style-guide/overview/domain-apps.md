@@ -13,7 +13,7 @@ A domain app owns one business area end-to-end:
 ```text
 HTTP  →  apis/ + urls/
 reads →  selectors/
-writes → services/
+writes → services/  (+ types.py TypedDicts for `data=`)
 shape →  models/ + manager/
 rules →  validators/ + errors/
 glue  →  constants.py, enums.py, signals/, utils/
@@ -25,14 +25,16 @@ flowchart TB
         URLs[urls/]
         APIs[apis/]
         SEL[selectors/]
+        TYP[types.py]
         SVC[services/]
         MOD[models/]
         VAL[validators/ + errors/]
     end
 
     Client --> URLs --> APIs
+    APIs -->|data= TypedDict| SVC
     APIs -->|read| SEL
-    APIs -->|write| SVC
+    TYP -.-> SVC
     SEL --> MOD
     SVC --> MOD
     APIs --> VAL
@@ -129,7 +131,8 @@ blogs/
 ├── models/                 # one module per model; export from __init__.py
 ├── manager/                # custom managers / querysets
 ├── selectors/              # READ queries (+ tests/) — no FilterSets here
-├── services/               # WRITE + business rules; modules = *_services.py (+ tests/)
+├── types.py                # Create*/Update* TypedDicts for service data= — see types.md
+├── services/               # WRITE + business rules; modules = *_services.py; take data: SomeData (+ tests/)
 ├── apis/                   # DRF views + serializers + optional *_search_filters.py; folders mirror URL routes (+ tests per leaf)
 ├── urls/
 │   └── blogs_url.py        # urlpatterns + app_name; split into more *_url.py modules as mounts grow
@@ -152,8 +155,9 @@ blogs/
 | `enums.py` | `TextChoices` / `IntegerChoices` for fields | Error codes / OpenAPI tags |
 | `manager/` | Reusable QuerySet/Manager methods | Call external APIs / send email as “business feature” |
 | `selectors/` | Reads, annotations, derived URLs, auth/ownership scoping on QS | `.create()` / `.save()` as the main job; taking `request`; django-filter FilterSets |
-| `services/` | Writes, transactions, domain rules; files named `*_services.py` | Parse `request.data` / return `Response`; singular `*_service.py` |
-| `apis/` | Auth, validate input, optional `*_search_filters.py`, call selector/service, `api_response`; **folders mirror URL routes**; tests per leaf | Fat ORM blocks; root `apis/tests/` |
+| `types.py` | `TypedDict` for service `data=` | Runtime validation, dataclass DTOs |
+| `services/` | Writes, transactions, domain rules; files named `*_services.py`; **TypedDict `data=`** | Parse `request.data` / return `Response`; singular `*_service.py`; untyped `dict` / dataclass DTOs |
+| `apis/` | Auth, validate input, pass `validated_data`, optional `*_search_filters.py`, call selector/service, `api_response`; **folders mirror URL routes**; tests per leaf | Fat ORM blocks; root `apis/tests/`; `serializer.save()` |
 | `urls/` | Path → view mapping; prefer **multiple** `<prefix>_url.py` modules | Business logic; one mega-`urls.py` for many mounts |
 | `validators/` | Field-level pure + raising checks | Cross-aggregate workflows |
 | `errors/codes.py` | Stable machine codes | `raise ValidationError` |
@@ -162,7 +166,7 @@ blogs/
 | `enums.py` | Field choice enums | `StrEnum` API codes — that is `errors/codes.py` |
 | `utils/` | Tiny pure helpers | Hidden second service layer |
 
-Deep dives: [Models](../layers/models.md), [Enums](../layers/enums.md), [Selectors](../layers/selectors.md), [Services](../layers/services.md), [APIs](../layers/apis.md), [Validation](../http/validation-and-errors.md), [Constants](../layers/constants.md), [Signals](../layers/signals.md).
+Deep dives: [Models](../domain/models.md), [Enums](../domain/enums.md), [Selectors](../domain/selectors.md), [Types](../domain/types.md), [Services](../domain/services.md), [APIs](../domain/apis.md), [Validation](../domain/validation.md), [Errors](../domain/errors.md), [Constants](../domain/constants.md), [Signals](../domain/signals.md).
 
 ---
 
@@ -204,7 +208,7 @@ urlpatterns = [
 ]
 ```
 
-Public base path becomes: `/api/v1/blogs/…` — details in [URLs](../layers/urls.md).
+Public base path becomes: `/api/v1/blogs/…` — details in [URLs](../domain/urls.md).
 
 ### 3. Add models and migrate
 
@@ -220,13 +224,13 @@ python manage.py migrate
 2. **Field enums** in `enums.py` when the model has `choices=`  
 3. **Error codes** in `errors/codes.py`  
 4. **Validators** if field rules need friendly API messages  
-5. **Services** for writes, **selectors** for reads  
+5. **Services** for writes (**TypedDict `data=`**), **selectors** for reads  
 6. **APIs + serializers** + `@extend_schema`  
 7. **Tests** next to each layer
 
 ### 5. Validation & integrity on every write
 
-Follow [Validation & errors](../http/validation-and-errors.md): domain codes, `is_*` / `*Validator`, and `model_create` / `map_integrity_error` on persistence.
+Follow [Validation](../domain/validation.md) and [Errors](../domain/errors.md): domain codes, `is_*` / `*Validator`, and `model_create` / `map_integrity_error` on persistence.
 
 Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`; authenticated ones use `ApiAuthMixin` — see [Permissions](../http/permissions.md) / [Security](../http/security.md).
 
@@ -234,7 +238,7 @@ Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`
 
 ## 🗂️ `apis/` folders mirror URL routes
 
-Folder names under `apis/` follow the **real path segments** (after the app mount). Nested actions and `/<id>/` segments become nested directories (`wallet/charge/init/`, `id/revoke/`). Full rules and POS-style tree: [APIs](../layers/apis.md).
+Folder names under `apis/` follow the **real path segments** (after the app mount). Nested actions and `/<id>/` segments become nested directories (`wallet/charge/init/`, `id/revoke/`). Full rules and POS-style tree: [APIs](../domain/apis.md).
 
 ### Reference: `users`
 
@@ -372,6 +376,6 @@ Write path (`POST` create) adds `services/` + validators + integrity mapping bef
 |-----|-----|
 | [Project structure](project-structure.md) | Where the package sits in the repo |
 | [Architecture](architecture.md) | Layer decision tree |
-| [URLs](../layers/urls.md) | How includes and versioning work |
-| [APIs](../layers/apis.md) | View/serializer rules |
+| [URLs](../domain/urls.md) | How includes and versioning work |
+| [APIs](../domain/apis.md) | View/serializer rules |
 | Living example | The real `{{cookiecutter.project_slug}}/users/` tree in this repo |

@@ -13,7 +13,7 @@
 | Never edit a migration that already shipped to shared envs | Breaks history for other developers/CI/prod |
 | Prefer expand → migrate → contract | Avoids locking / breaking old app versions mid-deploy |
 | Name constraints explicitly | Stable integrity mapping + clearer ops |
-| DB constraints remain source of truth | See [Models](../layers/models.md) / [Validation](../http/validation-and-errors.md) |
+| DB constraints remain source of truth | See [Models](../domain/models.md) / [Validation](../domain/validation.md) |
 
 ```mermaid
 flowchart LR
@@ -77,7 +77,7 @@ Tests use `config.django.test` (SQLite locally or Postgres in CI). Prefer Postgr
 
 | Doc | Why |
 |-----|-----|
-| [Models](../layers/models.md) | Constraints & `BaseModel` |
-| [Services](../layers/services.md) | Integrity mapping on writes |
+| [Models](../domain/models.md) | Constraints & `BaseModel` |
+| [Services](../domain/services.md) | Integrity mapping on writes |
 | [Docker & production](docker-and-production.md) | Migrate in deploy |
-| [Enterprise extensions](../structure/enterprise-extensions.md) | Soft delete / audit extras |
+| [Enterprise extensions](../ops/enterprise-extensions.md) | Soft delete / audit extras |

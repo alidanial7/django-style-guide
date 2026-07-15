@@ -75,6 +75,12 @@ serializers, filters, and services. Do not nest choice enums inside model classe
 #
 # __all__ = []
 """,
+    "types.py": '''"""App-level TypedDicts for __APP_NAME__ service inputs.
+
+Define Create*/Update* TypedDicts here. Serializers validate HTTP; services take data: SomeData.
+See docs/style-guide/domain/types.md.
+"""
+''',
     "services/__init__.py": """# from .__APP_NAME___services import ...
 #
 # __all__ = []
@@ -162,7 +168,7 @@ class Test__APP_CLASS__Selectors:
 class Command(BaseCommand):
     help = (
         "Create a domain app with this project's style-guide layout "
-        "(models/, enums.py, services/, selectors/, apis/, validators/, errors/, …). "
+        "(models/, enums.py, types.py, services/, selectors/, apis/, validators/, errors/, …). "
         "When testing is enabled (pytest.ini), also scaffolds base test stubs. "
         "Prefer this over Django's default startapp."
     )

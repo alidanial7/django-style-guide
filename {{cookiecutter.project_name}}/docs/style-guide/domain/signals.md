@@ -147,8 +147,8 @@ The signal only ensures the row exists. **Updating** bio/avatar stays in the ser
 ```python
 # users/services/user_services.py (sketch)
 @transaction.atomic
-def register(*, email: str, password: str, bio: str | None = None, avatar=None) -> BaseUser:
-    user = create_user(email=email, password=password)
+def register(*, data: RegisterData) -> BaseUser:
+    user = create_user(email=data["email"], password=data["password"])
     # Profile already exists thanks to the signal
     profile = Profile.objects.get(user=user)
     ...
@@ -276,5 +276,5 @@ def ready(self):
 | [Constants](constants.md) | Shared literals (separate concern — do not mix into signal modules) |
 | [Services](services.md) | Where real workflows belong |
 | [Models](models.md) | What emits `post_save` |
-| [Architecture](../structure/architecture.md) | Layer decision tree |
-| [Domain apps](../structure/domain-apps.md) | Empty `signals/` package in scaffold |
+| [Architecture](../overview/architecture.md) | Layer decision tree |
+| [Domain apps](../overview/domain-apps.md) | Empty `signals/` package in scaffold |

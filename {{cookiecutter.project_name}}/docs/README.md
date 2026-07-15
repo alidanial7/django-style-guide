@@ -4,10 +4,10 @@ Reference docs for this project. Start with the style guide; use the setup steps
 
 | Section | Contents |
 |---------|----------|
-| [Style guide](style-guide/README.md) | Architecture, layers, HTTP contract, platform ops |
-| [`structure/`](style-guide/structure/architecture.md) | Architecture, project layout, domain apps, extensions |
-| [`layers/`](style-guide/layers/apis.md) | Models, selectors, services, APIs, URLs, constants, signals |
-| [`http/`](style-guide/http/api-envelope.md) | Envelope, auth, permissions, security, Swagger, filters |
-| [`platform/`](style-guide/platform/settings.md) | Settings, logging, docker, testing, celery, commands |
+| [Style guide](style-guide/README.md) | Full index and principles |
+| [`overview/`](style-guide/overview/architecture.md) | Architecture, project layout, domain apps |
+| [`domain/`](style-guide/domain/apis.md) | Models, selectors, services, APIs, validation, errors |
+| [`http/`](style-guide/http/api-envelope.md) | Envelope, auth, pagination, filtering, Swagger |
+| [`ops/`](style-guide/ops/settings.md) | Settings, testing, docker, celery, commands |
 
 Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide).

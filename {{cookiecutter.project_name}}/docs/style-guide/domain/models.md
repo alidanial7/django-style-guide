@@ -79,7 +79,7 @@ Every concrete model should be labeled for **admin**, **integrity messages** (fi
 
 On every field you declare: set **`verbose_name`** and **`help_text`** together.
 
-Use `gettext_lazy as _` for import-time strings on model attributes — see [Translations](../platform/translations.md).
+Use `gettext_lazy as _` for import-time strings on model attributes — see [Translations](../ops/translations.md).
 
 ### Full pattern
 
@@ -398,14 +398,16 @@ flowchart TD
 | “User may publish only if …” | Service | state machine in `services/` |
 
 **Validators improve API messages; they are not a substitute for constraints.**
-Two concurrent requests can both pass a serializer “email unique” check and then one hits the DB — integrity mapping turns that into `messages.email` with code `unique`. See [Validation & errors](../http/validation-and-errors.md).
+Two concurrent requests can both pass a serializer “email unique” check and then one hits the DB — integrity mapping turns that into `messages.email` with code `unique`. See [Validation](../domain/validation.md).
 
-### Example: `CheckConstraint` (`common.models.RandomModel`)
+### Example: `CheckConstraint` (sketch)
+
+Use on a **domain** model when the database must enforce a cross-field rule (this is not a `common` model — keep platform abstracts like `BaseModel` only):
 
 ```python
-class RandomModel(BaseModel):
+class Booking(BaseModel):
     """
-    Model to declare random date range example
+    Model to declare booking date range
     """
 
     start_date = models.DateField(
@@ -414,15 +416,15 @@ class RandomModel(BaseModel):
     )
     end_date = models.DateField(
         verbose_name=_("end date"),
-        help_text="Exclusive-style end bound used by the check constraint.",
+        help_text="End bound of the range (must be after start_date).",
     )
 
     class Meta:
-        verbose_name = _("random model")
-        verbose_name_plural = _("random models")
+        verbose_name = _("booking")
+        verbose_name_plural = _("bookings")
         constraints = [
             models.CheckConstraint(
-                name="start_date_before_end_date",
+                name="booking_start_date_before_end_date",
                 condition=Q(start_date__lt=F("end_date")),
             )
         ]
@@ -595,6 +597,6 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 | [Selectors](selectors.md) | How to read models |
 | [Services](services.md) | How to write models safely |
 | [Enums](enums.md) | `TextChoices` / `IntegerChoices` for fields |
-| [Validation & errors](../http/validation-and-errors.md) | Constraints ↔ API messages |
+| [Validation](../domain/validation.md) | Constraints ↔ API messages |
 | [Signals](signals.md) | Related-row invariants |
-| [Domain apps](../structure/domain-apps.md) | Where `models/` sits in the scaffold |
+| [Domain apps](../overview/domain-apps.md) | Where `models/` sits in the scaffold |
