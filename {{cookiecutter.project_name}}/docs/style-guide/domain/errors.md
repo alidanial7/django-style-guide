@@ -113,17 +113,26 @@ class UserErrorCode(StrEnum):
 
 Every write path must:
 
-1. use `model_create` / `model_save` / `model_update`, **or**
+1. use `model_create` / `model_update` / `model_save`, **or**
 2. `except IntegrityError: map_integrity_error(...); raise`
 
 ```python
 from django.db import IntegrityError
 
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
-from {{cookiecutter.project_slug}}.common.services import model_create
+from {{cookiecutter.project_slug}}.common.services import model_create, model_update
 
+# create
 instance = model_create(model_class=MyModel, data={...})
 
+# update from TypedDict / validated_data
+instance, _changed = model_update(
+    instance=instance,
+    fields=["title", "body"],
+    data=data,
+)
+
+# only when a manager / special API cannot use model_*:
 try:
     return MyModel.objects.create(...)
 except IntegrityError as error:

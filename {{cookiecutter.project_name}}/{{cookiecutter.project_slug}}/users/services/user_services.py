@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 {%- endif %}
 
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
-from {{cookiecutter.project_slug}}.common.services import model_save
+from {{cookiecutter.project_slug}}.common.services import model_save, model_update
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 from {{cookiecutter.project_slug}}.users.models import BaseUser, Profile
 from {{cookiecutter.project_slug}}.users.types import ChangePasswordData, ProfileUpdateData, RegisterData
@@ -47,21 +47,13 @@ def register(*, data: RegisterData) -> BaseUser:
     return user
 
 
-@transaction.atomic
 def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
     """Apply only keys present in ``data`` — PATCH-safe; ``None`` ≠ missing."""
-    update_fields: list[str] = []
-
-    if "bio" in data:
-        profile.bio = data["bio"]
-        update_fields.append("bio")
-    if "avatar" in data:
-        profile.avatar = data["avatar"]
-        update_fields.append("avatar")
-
-    if update_fields:
-        model_save(instance=profile, update_fields=update_fields)
-
+    profile, _changed = model_update(
+        instance=profile,
+        fields=["bio", "avatar"],
+        data=data,
+    )
     return profile
 
 

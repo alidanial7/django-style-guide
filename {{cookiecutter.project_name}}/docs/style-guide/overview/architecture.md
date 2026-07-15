@@ -53,7 +53,7 @@ flowchart TB
 
     subgraph Platform["common/"]
         ENV[api_response / exception_handler]
-        HELP[model_create / model_save / integrity]
+        HELP[model_create / model_update / model_save]
     end
 
     DB[(PostgreSQL)]
@@ -102,7 +102,7 @@ flowchart TB
 ┌──────────────────────────┐   ┌──────────────────────────────┐
 │  selectors/  (READ)       │   │  services/ (WRITE)            │
 │  get_*, list_*, …        │   │  data: Create*/Update*Data   │
-│  QuerySet / derived vals │   │  rules + model_* / Integrity │
+│  QuerySet / derived vals │   │  create→model_create; patch→model_update │
 └────────────┬─────────────┘   └──────────────┬───────────────┘
              │                                │
              └──────────────┬─────────────────┘

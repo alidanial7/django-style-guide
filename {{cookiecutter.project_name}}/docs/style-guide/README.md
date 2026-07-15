@@ -29,7 +29,7 @@ docs/style-guide/
 6. **Platform vs domain** — shared infrastructure in `common/`; app-specific codes and validators in the app.
 7. **Deny by default** — APIs are `IsAuthenticated` unless a view sets `AllowAny`.
 8. **Lists** — selector + pagination by default; filters live in `apis/` as `*_search_filters.py` (FilterSet applied in the list view after `list_*()`).
-9. **TypedDict** — write services take `data: Create*Data` / `Update*Data`; no dataclass DTOs; serializers never `save()`.
+9. **TypedDict + `model_*`** — create services take `data: Create*Data` → `model_create`; update services take `data: Update*Data` → `model_update`; already-mutated instances → `model_save`; no dataclass DTOs; serializers never `save()`.
 
 ## Index
 
@@ -49,7 +49,7 @@ docs/style-guide/
 | [Enums](domain/enums.md) | `TextChoices` / `IntegerChoices` in `enums.py` |
 | [Selectors](domain/selectors.md) | Read queries, naming |
 | [Types](domain/types.md) | TypedDict service inputs (no dataclass DTOs) |
-| [Services](domain/services.md) | Writes, business rules, integrity |
+| [Services](domain/services.md) | Writes, `model_create` / `model_update` / `model_save`, integrity |
 | [APIs & serializers](domain/apis.md) | Route-mirrored `apis/` folders, views, serializers |
 | [URLs & routing](domain/urls.md) | Versioned API, per-app `urls/` |
 | [Validation](domain/validation.md) | Pure `is_*` checks and raising `*Validator` classes |

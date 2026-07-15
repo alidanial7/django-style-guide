@@ -20,13 +20,13 @@ Instructions for coding agents working in this generated project.
 | Lists | Selector (`list_<entities>`) → pagination; **no filters by default** |
 | Filters | When needed: `<Entity>Filter` in `apis/<route…>/<entity>_search_filters.py`, applied **in the list view** after `list_*()` — never inside the selector / never `request` on the selector |
 | Selectors | Package `selectors/`; `get_*` / `list_<entities>`; one optimized list selector (with related); second selector only for a **different job** (`list_post_ids`, …) |
-| Services | Package `services/`; modules always `*_services.py` (plural) — never `*_service.py`; write inputs are **TypedDict** (`data: Create*Data`), never untyped `dict` / dataclass DTOs |
+| Services | Package `services/`; modules always `*_services.py` (plural); TypedDict `data=`; persist with `model_create` (new row) / `model_update` (update from `data=`) / `model_save` (already-mutated instance) — or `map_integrity_error` when bypassing |
 | Types | `<app>/types.py` with `TypedDict` (`Create*Data` / `Update*Data`, `total=False` for PATCH) — see [Types](docs/style-guide/domain/types.md) |
 | URLs | Prefer multiple modules under `urls/`: `<prefix>_url.py` per public mount (`auth_url.py`, `users_url.py`, `pos_url.py`, …) |
 | Models | Class docstring `Model to declare …`; every field **both** `verbose_name=_("serial number")`-style **and** `help_text="…"`; every FK/O2O has explicit `related_name` (plural / role / `"+"`); `Meta.verbose_name(_plural)` |
 | Enums | `TextChoices` / `IntegerChoices` in `<app>/enums.py` — never nested on the model |
 | Keyword-only | Services/selectors use `def foo(*, …)` |
-| Service inputs | `service(..., data=serializer.validated_data)` typed as TypedDict; PATCH uses `"field" in data`; no `serializer.save()` / no dataclass DTOs |
+| Service inputs | `service(..., data=serializer.validated_data)` typed as TypedDict; create → `model_create`, update from `data=` → `model_update`; no `serializer.save()` / no dataclass DTOs |
 | Tests | Selectors = query correctness; services = business logic (TypedDict literals); APIs = integration — see [Testing](docs/style-guide/ops/testing.md) |
 | New apps | `python manage.py start_domain_app <plural>` — never Django `startapp` |
 | Strings | Prefer lowercase, space-separated gettext msgids for user-facing text (strong recommendation — see [Translations](docs/style-guide/ops/translations.md)) |

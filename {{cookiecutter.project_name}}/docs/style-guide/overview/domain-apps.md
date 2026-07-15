@@ -230,7 +230,7 @@ python manage.py migrate
 
 ### 5. Validation & integrity on every write
 
-Follow [Validation](../domain/validation.md) and [Errors](../domain/errors.md): domain codes, `is_*` / `*Validator`, and `model_create` / `map_integrity_error` on persistence.
+Follow [Validation](../domain/validation.md) and [Errors](../domain/errors.md): domain codes, `is_*` / `*Validator`, and persistence via `model_create` / `model_update` / `model_save` (or `map_integrity_error` when bypassing).
 
 Remember **deny-by-default**: public APIs need `permission_classes = [AllowAny]`; authenticated ones use `ApiAuthMixin` — see [Permissions](../http/permissions.md) / [Security](../http/security.md).
 

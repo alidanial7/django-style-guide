@@ -100,23 +100,31 @@ post = update_post(post=post, data=serializer.validated_data)
 No dataclass construction. No per-field `.get(...)` unpacking into kwargs.
 
 ```python
+from {{cookiecutter.project_slug}}.common.services import model_create, model_update
+
+
 def create_post(*, author: BaseUser, data: CreatePostData) -> Post:
-    ...
+    return model_create(
+        model_class=Post,
+        data={**data, "author": author},
+    )
 
 
 def update_post(*, post: Post, data: UpdatePostData) -> Post:
-    if "title" in data:
-        post.title = data["title"]
-    if "body" in data:
-        post.body = data["body"]
-    ...
+    # model_update applies only keys present in data (PATCH-safe; None ≠ missing)
+    post, _changed = model_update(
+        instance=post,
+        fields=["title", "body", "category_id"],
+        data=data,
+    )
+    return post
 ```
 
-| Client JSON | `"bio" in data` | Effect |
-|-------------|-----------------|--------|
-| `{}` | `False` | leave unchanged |
-| `{"bio": null}` | `True` | set / clear |
-| `{"bio": "x"}` | `True` | set |
+| Client JSON | Key in `data` | `model_update` effect |
+|-------------|---------------|------------------------|
+| `{}` | no | leave unchanged |
+| `{"bio": null}` | yes | set / clear |
+| `{"bio": "x"}` | yes | set |
 
 ---
 
@@ -145,7 +153,7 @@ post = update_post(post=post, data=data)
 | Field-by-field `.get` in the view | Pass `serializer.validated_data` |
 | `serializer.save()` | Validate → service(`data=…`) |
 | Business rules in InputSerializer | Service |
-| Treating missing like `None` on PATCH | `"field" in data` |
+| Treating missing like `None` on PATCH | Use `model_update` (or `"field" in data`) — see [Services](services.md) |
 
 ---
 
@@ -154,7 +162,7 @@ post = update_post(post=post, data=data)
 1. Add `Create*Data` / `Update*Data` to `<app>/types.py`  
 2. InputSerializer validates; pop HTTP-only keys  
 3. View: `service(..., data=serializer.validated_data)`  
-4. Service annotated with TypedDict; PATCH uses `"field" in data`  
+4. Service annotated with TypedDict; create → `model_create`, PATCH/update from `data=` → `model_update`  
 5. Service tests build TypedDict literals  
 
 ---

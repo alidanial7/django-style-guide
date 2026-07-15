@@ -76,31 +76,43 @@ Write payloads use **TypedDict** annotations — see [Types](types.md). Prefer `
 
 ## 🧱 Persistence helpers (`common.services`)
 
-Prefer these for ordinary model writes. They:
+Ordinary model writes go through these helpers. They:
 
 1. wrap work in `transaction.atomic()`
 2. call `full_clean()`
 3. catch `IntegrityError` and call `map_integrity_error`
 
-| Helper | Signature (conceptually) | Use when |
-|--------|--------------------------|----------|
-| `model_create` | `(*, model_class, data: dict) -> instance` | Creating from a field dict |
-| `model_save` | `(*, instance, update_fields=None) -> instance` | Saving an instance you already mutated |
-| `model_update` | `(*, instance, fields, data) -> (instance, has_updated)` | Patch only listed fields if values changed |
+### Which helper?
+
+| You are… | Use | Why |
+|----------|-----|-----|
+| Creating a new row from field values | `model_create` | Builds, cleans, saves, maps integrity |
+| Updating an existing row from TypedDict / `data=` (PATCH or PUT fields) | `model_update` | Applies only keys present in `data`, skips unchanged values, then saves |
+| Saving an instance you already mutated yourself | `model_save` | You set attributes (or a manager did); helper only cleans + saves + maps |
+| Using a custom manager / `set_password` / bulk ops | Bypass `model_*` | Then wrap with `map_integrity_error` yourself (below) |
 
 ```python
 from {{cookiecutter.project_slug}}.common.services import model_create, model_save, model_update
 
-post = model_create(model_class=Post, data={"title": title, "author": author})
+# Create — new row from a field dict
+post = model_create(
+    model_class=Post,
+    data={"title": data["title"], "body": data["body"], "author": author},
+)
 
-model_save(instance=profile, update_fields=["bio", "avatar"])
-
+# Update from TypedDict — default for profile_update / update_post / similar
 profile, changed = model_update(
     instance=profile,
     fields=["bio", "avatar"],
-    data={"bio": bio, "avatar": avatar},
+    data=data,  # ProfileUpdateData / Update*Data; missing keys are left alone
 )
+
+# Save after you mutated the instance (conditional logic, computed fields, …)
+profile.bio = data["bio"]
+model_save(instance=profile, update_fields=["bio"])
 ```
+
+`model_update` already implements the PATCH rule `"field" in data` and only calls `model_save` when something changed. Do not hand-roll `if "x" in data: instance.x = …; model_save(...)` for ordinary field patches — that is what `model_update` is for. Reference: `users/services/user_services.py` → `profile_update`.
 
 ### When you bypass `model_*` (managers, `set_password`, …)
 
@@ -212,7 +224,7 @@ Other real services in this repo:
 
 | Function | Behavior |
 |----------|----------|
-| `profile_update` | Patches bio/avatar from `ProfileUpdateData` (`"field" in data`) via `model_save` |
+| `profile_update` | Patches bio/avatar from `ProfileUpdateData` via `model_update` |
 {%- if cookiecutter.use_jwt == "y" %}
 | `logout` | Blacklists refresh token; invalid token → `UserErrorCode.INVALID_TOKEN` |
 {%- endif %}
@@ -269,14 +281,17 @@ def patch(self, request):
 ```
 
 ```python
-# services — PATCH uses key presence (None ≠ missing)
+# services — PATCH from TypedDict via model_update (None ≠ missing)
 def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
-    if "bio" in data:
-        profile.bio = data["bio"]
-    ...
+    profile, _changed = model_update(
+        instance=profile,
+        fields=["bio", "avatar"],
+        data=data,
+    )
+    return profile
 ```
 
-**APIs never call `Model.objects.create` / `.save()` directly for product writes. Prefer TypedDict over untyped `dict` / dataclass DTOs.**
+**APIs never call `Model.objects.create` / `.save()` directly for product writes.** Creates → `model_create`; updates from `data=` → `model_update`. Prefer TypedDict over untyped `dict` / dataclass DTOs.
 
 ## 🧪 Testing
 
@@ -297,7 +312,7 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 
 1. Add `Create*Data` / `Update*Data` TypedDict to `<app>/types.py`  
 2. Add `def feature(*, data: …) -> …` in `<app>/services/<domain>_services.py`  
-3. Use `model_*` or `map_integrity_error` on every write  
+3. Persist with the matching helper: create → `model_create`; update from `data=` → `model_update`; already-mutated instance → `model_save`; else `map_integrity_error`  
 4. Wrap multi-step work in `@transaction.atomic`  
 5. Raise field-keyed `ValidationError` with domain codes  
 6. Re-export from `services/__init__.py`  
@@ -310,12 +325,14 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 |--------------|-----|
 | Fat `APIView.post` with ORM writes | Move to service |
 | `objects.create()` without integrity mapping | `model_create` or `map_integrity_error` |
+| PATCH with hand-rolled `if "field" in data` + `model_save` | `model_update(instance=…, fields=[…], data=data)` |
+| `instance.save()` / bare `.update()` in a service | `model_save` / `model_update` (or map integrity) |
 | Business rules only in serializer | Service + DB constraints |
 | Service returns `Response` | Return models; API builds envelope |
 | Silent `except IntegrityError: pass` | Always map or re-raise |
 | Mixing huge read/report queries into write services | Call a selector instead |
 | Module named `*_service.py` (singular) | Always `*_services.py` |
-| Untyped `dict` / dataclass DTO / field `.get` in the view | TypedDict + `data=validated_data`; PATCH uses `"field" in data` — [Types](types.md) |
+| Untyped `dict` / dataclass DTO / field `.get` in the view | TypedDict + `data=validated_data`; PATCH via `model_update` — [Types](types.md) |
 
 ---
 
@@ -326,7 +343,8 @@ Use factories from `users/tests/user_factories.py` (or app factories from `start
 | [Selectors](selectors.md) | Reads used before/after writes |
 | [Types](types.md) | TypedDict service inputs |
 | [Models](models.md) | Constraints the service relies on |
-| [Validation](../domain/validation.md) | Codes + integrity details |
+| [Errors](errors.md) | Integrity mapping / codes |
+| [Validation](validation.md) | Field validators used before persist |
 | [API envelope](../http/api-envelope.md) | How service errors become JSON |
 | [APIs](apis.md) | Thin callers |
 | [Signals](signals.md) | Mechanical creates vs service updates |
