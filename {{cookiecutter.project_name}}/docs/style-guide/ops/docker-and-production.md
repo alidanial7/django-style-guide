@@ -59,6 +59,8 @@ Typical published ports (defaults):
 | pgAdmin | http://localhost:5050 |
 {%- endif %}
 
+Container names are prefixed with `{{cookiecutter.project_slug}}_` (e.g. `{{cookiecutter.project_slug}}_redis`) so two generated projects on the same machine do not collide. Host ports above are still shared — only one project can bind `5432` / `6379` at a time unless you change the left-hand port mappings.
+
 Then on the host:
 
 ```bash

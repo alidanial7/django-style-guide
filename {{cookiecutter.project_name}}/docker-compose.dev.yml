@@ -2,7 +2,7 @@ services:
 
   db:
     image: postgres:{{cookiecutter.postgres_version}}
-    container_name: postgres
+    container_name: {{cookiecutter.project_slug}}_postgres
     ports:
       - 5432:5432
     environment:
@@ -19,7 +19,7 @@ services:
 
 {%- if cookiecutter.use_pgadmin == "y" %}
   pgadmin:
-    container_name: pgadmin4_container
+    container_name: {{cookiecutter.project_slug}}_pgadmin
     image: dpage/pgadmin4
     restart: always
     environment:
@@ -32,7 +32,7 @@ services:
 {%- if cookiecutter.use_rabbitmq == "y" %}
   rabbitmq:
     image: "rabbitmq:alpine"
-    container_name: rabbitmq
+    container_name: {{cookiecutter.project_slug}}_rabbitmq
     ports:
       - 5672:5672
     healthcheck:
@@ -45,7 +45,7 @@ services:
 {%- if cookiecutter.use_redis == "y" %}
   redis:
     image: redis:7.4.9
-    container_name: redis
+    container_name: {{cookiecutter.project_slug}}_redis
     ports:
       - 6379:6379
     volumes:
