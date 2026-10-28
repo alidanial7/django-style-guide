@@ -282,15 +282,28 @@ Business workflows still belong in [services](services.md) — the docstring onl
 
 ## 🧱 `BaseModel` (`common.models`)
 
-Abstract base with timestamps — prefer it for domain entities that need audit fields:
+Abstract base with a **UUID v4 primary key** and timestamps. Domain entities inherit it so IDs are random and not enumerable:
 
 ```python
 # common/models.py
+import uuid
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+
 class BaseModel(models.Model):
     """
-    Model to declare shared timestamp fields
+    Model to declare shared UUID primary key and timestamp fields
     """
 
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        verbose_name=_("id"),
+        help_text="Random UUID v4 primary key. Not sequential and not guessable.",
+    )
     created_at = models.DateTimeField(
         db_index=True,
         default=timezone.now,
@@ -372,7 +385,7 @@ class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _("users")
 ```
 
-`Profile` in this template does **not** subclass `BaseModel` (it is a thin 1:1 extension). That is fine — use `BaseModel` when timestamps matter for the entity itself.
+`Profile` subclasses `BaseModel` like other domain entities (UUID PK + timestamps).
 
 ---
 
@@ -561,7 +574,7 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 
 1. Create `<app>/models/<name>.py` with a short class docstring (`Model to declare …`)
 2. Export it from `models/__init__.py`
-3. Inherit `BaseModel` if timestamps are needed
+3. Inherit `BaseModel` (UUID v4 PK + timestamps) — required for domain entities
 4. On every declared field: both `verbose_name=_("serial number")`-style **and** `help_text="…"`  
 5. On every `ForeignKey` / `OneToOneField`: explicit `related_name` (plural / role-prefixed / singular O2O, or `"+"`)  
 6. Set `Meta.verbose_name` / `verbose_name_plural` with lowercase `_()`  
@@ -577,6 +590,7 @@ After adding `unique=True` or a constraint, ensure write paths use `model_*` hel
 | Anti-pattern | Prefer |
 |--------------|--------|
 | Giant `models.py` with many models | Package + one file per model |
+| Sequential integer primary keys | Inherit `BaseModel` (UUID v4 PK) |
 | Nested `TextChoices` on the model class | `<app>/enums.py` — see [Enums](enums.md) |
 | Fields without `verbose_name` | `_("field label")` with spaces, lowercase, on every declared field |
 | Fields without `help_text` | Short English sentence on every declared field |

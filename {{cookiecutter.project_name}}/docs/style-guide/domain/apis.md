@@ -43,6 +43,7 @@ Dirs: apis/pos/wallet/charge/init/
 | Rule | Detail |
 |------|--------|
 | One path segment → one folder | `pos/` → `wallet/` → `balance/` |
+| Client / surface scopes | Scoped URL segments (e.g. `/site/`, `/admin/`) mirror into `apis/site/`, `apis/admin/` with matching prefixes in classes (`Site*`), files (`site_*_apis.py`), and Swagger components |
 | Collection / CRUD at that segment | `*_apis.py` + `*_serializers.py` (+ `tests/`) in **that** folder |
 | Nested action | Deeper folder: `…/charge/init/`, `…/id/revoke/` |
 | Path param segment | Use a stable folder name such as `id/` for `/…/<id>/…` |
@@ -122,6 +123,25 @@ Do **not** create a root `apis/tests/` package — tests live only under each ro
 
 List FilterSets live next to the list APIs as `*_search_filters.py` (see [Filtering](../http/filtering.md)).
 
+### Client / surface-scoped APIs (e.g. `/api/v1/site/…`)
+
+When routes are scoped to a specific front-end client surface (e.g. the public website at `/api/v1/site/…`, a client admin portal, or an end-user app):
+
+1. **Folder mirroring**: The subfolder under `apis/` directly mirrors the client prefix:
+   ```text
+   /api/v1/site/contact-infos/cities/ → {{cookiecutter.project_slug}}/contactinfo/apis/site/cities/
+   /api/v1/site/demos/requests/      → {{cookiecutter.project_slug}}/demos/apis/site/requests/
+   ```
+2. **File naming**: The file names carry the scope prefix:
+   - `site_cities_apis.py`
+   - `site_cities_serializers.py`
+   - `tests/test_site_cities_apis.py`
+3. **Class naming**: Prefix views, serializers, and envelopes with the scope in PascalCase:
+   - `SiteCityListApiView`, `SiteCityOutputSerializer`, `SiteCityListEnvelope`
+   - `SiteDemoRequestCreateApiView`, `SiteDemoRequestCreateInputSerializer`
+4. **OpenAPI component isolation**: Serializers for client surfaces **must** use `@extend_schema_serializer(component_name="Site…")` so generated TypeScript SDKs / codegen clients receive clean, isolated typings without collisions with admin or core serializers.
+5. **URL configuration**: Client routes are isolated in dedicated URL files (`site_<app>_url.py`) and mounted under `{{cookiecutter.project_slug}}/api/site_urls.py`, leaving core `/api/v1/…` routes untouched.
+
 ---
 
 ## 🏷️ `APIView` class naming
@@ -148,17 +168,20 @@ class PostListCreateApiView(ApiAuthMixin, APIView):
         ...  # create service
 
 
+from uuid import UUID
+
+
 class PostRetrieveUpdateDestroyApiView(ApiAuthMixin, APIView):
-    def get(self, request, post_id: int):
+    def get(self, request, post_id: UUID):
         ...
 
-    def put(self, request, post_id: int):
+    def put(self, request, post_id: UUID):
         ...
 
-    def patch(self, request, post_id: int):
+    def patch(self, request, post_id: UUID):
         ...
 
-    def delete(self, request, post_id: int):
+    def delete(self, request, post_id: UUID):
         ...
 ```
 
@@ -166,7 +189,7 @@ class PostRetrieveUpdateDestroyApiView(ApiAuthMixin, APIView):
 # blogs/urls/blogs_url.py
 urlpatterns = [
     path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
-    path("posts/<int:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
+    path("posts/<uuid:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
 ]
 ```
 

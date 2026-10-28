@@ -1,37 +1,106 @@
 {
   "project_name": "MyProject",
   "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '_') }}",
-
   "first_name": "author",
   "last_name": "author lastname",
-
-  "license": ["MIT", "BEER", "None"],
-
+  "license": [
+    "MIT",
+    "BEER",
+    "None"
+  ],
   "postgres_user": "user",
   "postgres_password": "password",
-  "postgres_version": ["17.10", "16.8", "15.12", "14.17"],
-
-  "use_jwt": ["y", "n"],
-  "use_sentry": ["n", "y"],
-  "use_vscode": ["n", "y"],
-  "use_pgadmin": ["n", "y"],
-  "use_redis": ["n", "y"],
-  "use_rabbitmq": ["n", "y"],
-  "use_celery": ["n", "y"],
-  "celery_broker": ["redis", "rabbitmq"],
-  "use_asgi": ["n", "y"],
-  "use_websockets": ["n", "y"],
-  "reverse_proxy": ["none", "nginx", "traefik"],
-  "use_code_style": ["y", "n"],
-  "use_testing": ["y", "n"],
-  "use_ci": ["n", "y"],
-  "ci_provider": ["github", "gitlab"],
-  "precommit_base": ["y", "n"],
-  "precommit_pyupgrade": ["y", "n"],
-  "precommit_ruff": ["y", "n"],
-  "precommit_pydoclint": ["y", "n"],
-  "precommit_translation_lint": ["y", "n"],
-
+  "postgres_version": [
+    "17.10",
+    "16.8",
+    "15.12",
+    "14.17"
+  ],
+  "use_jwt": [
+    "y",
+    "n"
+  ],
+  "use_uuid_pk": [
+    "y",
+    "n"
+  ],
+  "use_sentry": [
+    "n",
+    "y"
+  ],
+  "use_vscode": [
+    "n",
+    "y"
+  ],
+  "use_pgadmin": [
+    "n",
+    "y"
+  ],
+  "use_redis": [
+    "n",
+    "y"
+  ],
+  "use_rabbitmq": [
+    "n",
+    "y"
+  ],
+  "use_celery": [
+    "n",
+    "y"
+  ],
+  "celery_broker": [
+    "redis",
+    "rabbitmq"
+  ],
+  "use_asgi": [
+    "n",
+    "y"
+  ],
+  "use_websockets": [
+    "n",
+    "y"
+  ],
+  "reverse_proxy": [
+    "none",
+    "nginx",
+    "traefik"
+  ],
+  "use_code_style": [
+    "y",
+    "n"
+  ],
+  "use_testing": [
+    "y",
+    "n"
+  ],
+  "use_ci": [
+    "n",
+    "y"
+  ],
+  "ci_provider": [
+    "github",
+    "gitlab"
+  ],
+  "precommit_base": [
+    "y",
+    "n"
+  ],
+  "precommit_pyupgrade": [
+    "y",
+    "n"
+  ],
+  "precommit_ruff": [
+    "y",
+    "n"
+  ],
+  "precommit_pydoclint": [
+    "y",
+    "n"
+  ],
+  "precommit_translation_lint": [
+    "y",
+    "n"
+  ],
   "__prompts__": {
     "project_name": "Project name",
     "project_slug": "Project slug (Python package; Enter = auto from name)",
@@ -152,8 +221,12 @@
       "__prompt__": "Pre-commit: django-translation-lint?",
       "y": "Yes",
       "n": "No"
+    },
+    "use_uuid_pk": {
+      "__prompt__": "Use UUID as Primary Key for models?",
+      "y": "Yes (UUIDv4)",
+      "n": "No (BigAutoField)"
     }
   },
-
   "_copy_without_render": []
 }

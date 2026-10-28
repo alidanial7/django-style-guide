@@ -53,6 +53,7 @@ def base_answers(**overrides: str) -> dict[str, str]:
         "postgres_password": "password",
         "postgres_version": "17.10",
         "use_jwt": "y",
+        "use_uuid_pk": "y",
         "use_sentry": "n",
         "use_vscode": "n",
         "use_pgadmin": "n",

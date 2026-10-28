@@ -46,6 +46,7 @@ COLORS = _Colors()
 
 FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_jwt", "JWT authentication (off = session auth)"),
+    ("use_uuid_pk", "UUID primary keys for models (off = BigAutoField)"),
     ("use_sentry", "Sentry monitoring"),
     ("use_vscode", "VS Code configuration"),
     ("use_pgadmin", "pgAdmin (dev)"),
@@ -60,7 +61,7 @@ FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
 )
 
 DEFAULT_FEATURES: frozenset[str] = frozenset(
-    {"use_jwt", "use_testing", "use_code_style"}
+    {"use_jwt", "use_uuid_pk", "use_testing", "use_code_style"}
 )
 
 PRE_COMMIT_OPTIONS: tuple[tuple[str, str], ...] = (
@@ -89,6 +90,7 @@ CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
     "license": ("MIT", "BEER", "None"),
     "postgres_version": ("17.10", "16.8", "15.12", "14.17"),
     "use_jwt": ("y", "n"),
+    "use_uuid_pk": ("y", "n"),
     "use_sentry": ("y", "n"),
     "use_vscode": ("y", "n"),
     "use_pgadmin": ("y", "n"),
@@ -371,6 +373,7 @@ def collect_answers() -> dict[str, str] | None:
     )
 
     use_jwt = yn(selected_features, "use_jwt")
+    use_uuid_pk = yn(selected_features, "use_uuid_pk")
     use_sentry = yn(selected_features, "use_sentry")
     use_vscode = yn(selected_features, "use_vscode")
     use_pgadmin = yn(selected_features, "use_pgadmin")
@@ -480,6 +483,8 @@ def collect_answers() -> dict[str, str] | None:
     if use_celery == "y":
         print(f"  {c.bold}Celery{c.reset}      broker={celery_broker}")
     print(f"  {c.bold}Proxy{c.reset}       {reverse_proxy}")
+    pk_type = "UUID" if use_uuid_pk == "y" else "BigAutoField"
+    print(f"  {c.bold}Primary Key{c.reset} {pk_type}")
     auth_mode = "JWT" if use_jwt == "y" else "session"
     print(f"  {c.bold}Auth{c.reset}        {auth_mode}")
     if use_ci == "y":
@@ -506,6 +511,7 @@ def collect_answers() -> dict[str, str] | None:
         "postgres_password": postgres_password,
         "postgres_version": postgres_version,
         "use_jwt": use_jwt,
+        "use_uuid_pk": use_uuid_pk,
         "use_sentry": use_sentry,
         "use_vscode": use_vscode,
         "use_pgadmin": use_pgadmin,

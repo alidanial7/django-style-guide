@@ -198,7 +198,7 @@ app_name = "blogs"
 
 urlpatterns = [
     # path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
-    # path("posts/<int:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
+    # path("posts/<uuid:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
 ]
 ```
 
@@ -291,13 +291,26 @@ reverse("auth:login")      # → /api/v1/auth/jwt/login/ or .../session/login/
 | Prefix | Owns |
 |--------|------|
 | `/api/v1/auth/` | Authentication & password flows |
-| `/api/v1/users/` | User resource (register, profile) |
+| `/api/v1/users/` | User resource (me, admin CRUD) |
 | `/api/v1/health/` | System health (core) |
 | `/api/v1/<app>/` | That domain app’s public surface |
 
 Do not hang unrelated routes under `users/` just because the view imports a user model — put them under their own domain prefix.
 
-### 5. Don’t put verbs in paths when the HTTP method is enough
+### 5. Plural nouns for resource collections and endpoints
+
+Resource names in URLs **must always be plural nouns** (both for collections and single-item operations). Never use singular nouns for REST resources.
+
+| ✅ Correct (Plural) | ❌ Incorrect (Singular) | Explanation |
+|----------------------|-------------------------|-------------|
+| `/api/v1/users/` | `/api/v1/user/` | Collection list/create |
+| `/api/v1/users/<uuid:user_id>/` | `/api/v1/user/<uuid:user_id>/` | Detail / update / delete by id |
+| `/api/v1/site/contact-infos/cities/` | `/api/v1/site/contactinfo/cities/` | Multi-word collection (kebab-case + plural) |
+| `/api/v1/site/contact-infos/provinces/` | `/api/v1/site/contactinfo/province/` | Plural resource segment |
+
+**Rule:** Every resource noun segment in URL paths must be plural. When a resource noun consists of multiple words, use kebab-case with plural form (e.g., `contact-infos`, `store-items`). Singular is reserved only for true singletons (such as `me/`).
+
+### 6. Don’t put verbs in paths when the HTTP method is enough
 
 | ✅ Prefer | ❌ Usually avoid |
 |----------|-----------------|

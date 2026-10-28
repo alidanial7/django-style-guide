@@ -1,10 +1,11 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from {{cookiecutter.project_slug}}.common.models import BaseModel
 from {{cookiecutter.project_slug}}.users.models.base_user import BaseUser
 
 
-class Profile(models.Model):
+class Profile(BaseModel):
     """
     Model to declare profile
     """

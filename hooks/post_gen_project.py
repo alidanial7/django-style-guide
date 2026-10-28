@@ -52,6 +52,8 @@ if celery == "n":
     delete_resource("config/settings/celery.py")
     delete_resource("docker/celery_entrypoint.sh")
     delete_resource("docker/beats_entrypoint.sh")
+    delete_resource("scripts/run_celery_worker.sh")
+    delete_resource("scripts/run_celery_beat.sh")
 if use_websockets != "y":
     delete_resource("config/settings/channels.py")
     delete_resource(f"{project_slug}/core/routing.py")
