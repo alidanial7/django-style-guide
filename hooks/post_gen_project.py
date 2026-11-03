@@ -33,9 +33,11 @@ if license_choice == "None":
 if jwt == "n":
     delete_resource(f"{project_slug}/users/apis/auth/auth_jwt_apis.py")
     delete_resource(f"{project_slug}/users/apis/auth/auth_logout_apis.py")
+    delete_resource(f"{project_slug}/users/apis/auth/tests/test_auth_jwt.py")
     delete_resource("config/settings/jwt.py")
 else:
     delete_resource(f"{project_slug}/users/apis/auth/auth_session_apis.py")
+    delete_resource(f"{project_slug}/users/apis/auth/tests/test_auth_session.py")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
 if vscode == "n":
@@ -43,8 +45,9 @@ if vscode == "n":
 if code_style == "n":
     delete_resource("pyproject.toml")
     delete_resource(".pre-commit-config.yaml")
-    delete_resource(".flake8")
+    delete_resource("setup.cfg")
 else:
+    delete_resource(".flake8")
     delete_resource("setup.cfg")
 if celery == "n":
     delete_resource("config/celery.py")

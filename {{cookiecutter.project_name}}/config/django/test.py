@@ -1,3 +1,7 @@
+import os
+
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-local-testing-only")
+
 from .base import *  # noqa
 
 from config.env import env
@@ -5,6 +9,7 @@ from config.env import env
 # Based on https://www.hacksoft.io/blog/optimize-django-build-to-run-faster-on-github-actions
 
 DEBUG = False
+ALLOWED_HOSTS = ["*"]
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Quiet logging in tests: console WARNING+, no file handlers, no SQL noise.
@@ -38,7 +43,7 @@ LOGGING = {
 }
 
 {%- if cookiecutter.use_celery == "y" %}
-CELERY_BROKER_BACKEND = "memory"
+CELERY_BROKER_URL = "memory://"
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 {%- endif %}
@@ -58,14 +63,18 @@ STORAGES = {
     },
 }
 
-# Prefer Postgres when DATABASE_URL is set (CI). Fall back to SQLite for quick local runs.
-_database_url = env.str("DATABASE_URL", default="")
-if _database_url:
+# Prefer Postgres in CI (GitHub Actions / GitLab CI) or when TEST_DATABASE_URL is set.
+# Fall back to SQLite (:memory:) for quick local test runs without external services.
+_ci = bool(os.environ.get("GITHUB_WORKFLOW") or os.environ.get("GITLAB_CI"))
+_test_db_url = os.environ.get("TEST_DATABASE_URL")
+if _test_db_url:
+    DATABASES = {"default": env.db("TEST_DATABASE_URL", default=_test_db_url)}
+elif _ci and env.str("DATABASE_URL", default=""):
     DATABASES = {"default": env.db("DATABASE_URL")}
 else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": "db.sqlite3",
+            "NAME": ":memory:",
         }
     }

@@ -10,11 +10,13 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="amqp://guest:guest@localho
 CELERY_RESULT_BACKEND = "django-db"
 
 CELERY_TIMEZONE = "UTC"
+CELERY_TASK_DEFAULT_QUEUE = "default"
 
 CELERY_TASK_SOFT_TIME_LIMIT = 20  # seconds
 CELERY_TASK_TIME_LIMIT = 30  # seconds
 CELERY_TASK_MAX_RETRIES = 3
 
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULE = {
     "notify_customers": {
         "task": "config.tasks.notify_customers",

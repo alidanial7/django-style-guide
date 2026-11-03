@@ -1,0 +1,55 @@
+.git
+.gitignore
+.github
+.gitlab-ci.yml
+.vscode
+.idea
+
+# Python bytecode & environments
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & quality caches
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov/
+.mypy_cache
+.dmypy.json
+dmypy.json
+
+# Docs & logs
+docs/
+*.log
+logs/
+
+# Sensitive files & local artifacts
+.env
+.env.*
+!.env.example
+media/
+staticfiles/
+db.sqlite3
+db.sqlite3-journal

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+import select
 import sys
 import termios
 import tty
@@ -132,8 +133,12 @@ def _read_key() -> str:
     try:
         tty.setraw(fd)
         key = sys.stdin.read(1)
+        if key == "\x03":
+            raise KeyboardInterrupt
         if key == "\x1b":
-            key += sys.stdin.read(2)
+            r, _, _ = select.select([sys.stdin], [], [], 0.05)
+            if r:
+                key += sys.stdin.read(2)
         return key
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
@@ -331,7 +336,7 @@ def print_section(title: str) -> None:
     print()
 
 
-def collect_answers() -> dict[str, str] | None:
+def _collect_answers_impl() -> dict[str, str] | None:
     """Run the interactive wizard. Returns None when the user cancels."""
     print_banner()
 
@@ -536,6 +541,15 @@ def collect_answers() -> dict[str, str] | None:
             precommit_translation_lint if use_code_style == "y" else "n"
         ),
     }
+
+
+def collect_answers() -> dict[str, str] | None:
+    """Run the interactive wizard with graceful cancellation on Ctrl+C."""
+    try:
+        return _collect_answers_impl()
+    except KeyboardInterrupt:
+        print(f"\n  {COLORS.dim}Cancelled.{COLORS.reset}")
+        return None
 
 
 def validate_choice_answers(answers: dict[str, str]) -> dict[str, str]:

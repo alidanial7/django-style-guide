@@ -13,10 +13,26 @@ from __future__ import annotations
 
 import os
 import signal
+import subprocess
 import sys
 from pathlib import Path
 
 SKIP_ENV = "DSG_COOKIECUTTER_SKIP_PROMPT_UI"
+
+
+def _parent_has_no_input() -> bool:
+    try:
+        proc_cmd = Path(f"/proc/{os.getppid()}/cmdline")
+        if proc_cmd.exists():
+            return "--no-input" in proc_cmd.read_text()
+        cmd = subprocess.check_output(
+            ["ps", "-o", "args=", "-p", str(os.getppid())],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        return "--no-input" in cmd
+    except Exception:
+        return False
 
 
 def _stop_outer_cookiecutter_run() -> None:
@@ -29,25 +45,27 @@ def _stop_outer_cookiecutter_run() -> None:
     sys.stdout.flush()
     sys.stderr.flush()
     try:
-        os.kill(os.getppid(), signal.SIGTERM)
-    except OSError:
+        os.kill(os.getppid(), getattr(signal, "SIGTERM", 15))
+    except (OSError, AttributeError):
         pass
     os._exit(0)
 
 
 def main() -> None:
-    if os.environ.get(SKIP_ENV):
+    if os.environ.get(SKIP_ENV) or _parent_has_no_input():
         return
 
     if not sys.stdin.isatty():
         return
 
-    repo_dir = str(Path.cwd())
-    output_dir = os.environ.get("PWD") or "."
-
     hooks_dir = Path(__file__).resolve().parent
     if str(hooks_dir) not in sys.path:
         sys.path.insert(0, str(hooks_dir))
+
+    repo_dir = str(hooks_dir.parent)
+    output_dir = os.environ.get("PWD")
+    if not output_dir or not Path(output_dir).is_dir():
+        output_dir = "."
 
     from interactive_prompts import collect_answers, generate_project
 

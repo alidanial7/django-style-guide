@@ -7,6 +7,10 @@ SECRET_KEY = env("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
+# Database connection pooling & liveness checks
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ORIGIN_WHITELIST = env.list("CORS_ORIGIN_WHITELIST", default=[])

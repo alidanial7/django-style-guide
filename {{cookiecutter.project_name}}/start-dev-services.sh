@@ -69,7 +69,7 @@ fi
 
 echo
 echo "Development services are running:"
-echo "  Postgres   localhost:5432  (PostgreSQL 17.10)"
+echo "  Postgres   localhost:5432  (PostgreSQL {{cookiecutter.postgres_version}})"
 {%- if cookiecutter.use_redis == "y" %}
 echo "  Redis      localhost:6379  (Redis 7.4.9)"
 {%- endif %}
