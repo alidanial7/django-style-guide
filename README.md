@@ -1,55 +1,60 @@
-# Django Style Guide Cookiecutter
+# Django Style Guide
 
-A [Cookiecutter](https://github.com/cookiecutter/cookiecutter) template for Django REST API projects, based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide).
+**Ship a production-ready Django REST API in minutes** — HackSoft layers, Docker Compose, OpenAPI, and Cursor-ready agent rules baked in.
 
-Template version: see [`VERSION`](VERSION). Production deployment uses **Docker Compose on your own server** — not Heroku or other third-party PaaS.
+[![Version](https://img.shields.io/badge/template-1.2.0-0B5FFF?style=flat-square)](VERSION)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.2-092E20?style=flat-square&logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
-> **Repository:** [github.com/alidanial7/django-style-guide](https://github.com/alidanial7/django-style-guide)
->
-> Template contributors: start with [`AGENTS.md`](AGENTS.md) and `.cursor/rules/`.
+A [Cookiecutter](https://github.com/cookiecutter/cookiecutter) template for Django APIs, inspired by the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide).  
+You pick the pieces (JWT, Celery, WebSockets, Unfold admin, file manager…). Unused code is pruned — what you generate is what you run.
 
-## Features
+> Self-hosted with **Docker Compose** on your own server. Not a Heroku / PaaS template.
 
-- Modular `config/settings/` layout (thin `config/django/base.py` aggregator)
-- Django REST Framework + drf-spectacular (OpenAPI; Swagger only when `DEBUG=True`)
-- Docker Compose for local infrastructure and production deployment
-- Optional reverse proxy: **Nginx** or **Traefik**
-- Auth: **JWT** or **session** (users app always included)
-- Optional Celery with broker choice: **Redis** or **RabbitMQ**
-- Optional ASGI (Uvicorn) and Django Channels / WebSockets
-- Optional Sentry, Redis, RabbitMQ, pgAdmin, VS Code, Ruff/pre-commit, pytest, CI
-- `python manage.py start_domain_app` — HackSoft-style domain scaffolding
-- `python manage.py devserver` — migrate, create superuser, runserver, optional Celery
-- Generated [`docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/README.md) — deep conventions (open one page at a time)
-- Generated [`AGENTS.md`]({{cookiecutter.project_name}}/AGENTS.md) + [`.cursor/rules/`]({{cookiecutter.project_name}}/.cursor/rules/) — slim agent index and glob-scoped rules (feature rules omitted when options are off)
+---
 
-## Prerequisites
+## Why this template
 
-- Python 3.12
-- [Cookiecutter](https://cookiecutter.readthedocs.io/)
-- [Docker](https://www.docker.com/) (for Postgres and optional services)
+| | |
+|---|---|
+| **Opinionated architecture** | Services / selectors / TypedDicts / HTTP envelope — not a flat “apps + serializers” dump |
+| **Toggle features, keep the tree lean** | Celery, Channels, CI, admin theme, uploads… enabled options stay; the rest is deleted |
+| **Agent-ready out of the box** | Slim `AGENTS.md` + glob-scoped `.cursor/rules/` matched to what you enabled |
+| **Docs that match the code** | Generated `docs/style-guide/` explains *this* project’s conventions, not a generic tutorial |
+| **One command to develop** | `manage.py devserver` — migrate, superuser, runserver (optional Celery) |
+
+---
+
+## Quick start
+
+**1. Install Cookiecutter** (once)
 
 ```bash
 pip install "cookiecutter>=2.4"
 ```
 
-## Generate a project
-
-### Interactive (recommended)
+**2. Generate a project**
 
 ```bash
 cookiecutter https://github.com/alidanial7/django-style-guide.git
 ```
 
-Requires [cookiecutter 2.4+](https://cookiecutter.readthedocs.io/) (for the `pre_prompt` hook).
+On a TTY you get a checklist UI (↑/↓, Space, Enter). Defaults are sensible: JWT, UUID PKs, pytest, Ruff.
 
-On a TTY, the checklist UI runs automatically (↑/↓, Space, Enter). After generation the process may exit with code **143** — that is normal (the outer cookiecutter is stopped so you are not prompted twice).
+<details>
+<summary>Prefer a local clone?</summary>
 
-You can also clone and run `./init.sh` for the same UI.
+```bash
+git clone https://github.com/alidanial7/django-style-guide.git
+cd django-style-guide
+./init.sh
+```
 
-### Minimal preset (recommended defaults)
+</details>
 
-Interactive UI already defaults to JWT + UUID PK + testing + Ruff. Equivalent `--no-input`:
+<details>
+<summary>Non-interactive / CI preset</summary>
 
 ```bash
 cookiecutter https://github.com/alidanial7/django-style-guide.git --no-input \
@@ -64,98 +69,144 @@ cookiecutter https://github.com/alidanial7/django-style-guide.git --no-input \
   reverse_proxy=none
 ```
 
-### Non-interactive
+With `--no-input`, set Celery / WebSockets / CI dependencies yourself or `pre_gen` will reject the combo.
 
-Prefer the checklist UI (`cookiecutter …` on a TTY or `./init.sh`). Plain `--no-input` still accepts every flag — set Celery/WS/CI deps yourself or `pre_gen` will fail:
+</details>
+
+**3. Run it**
 
 ```bash
-cookiecutter https://github.com/alidanial7/django-style-guide.git --no-input \
-  project_name="My Project" \
-  use_jwt=y \
-  use_redis=y \
-  use_celery=y \
-  celery_broker=redis \
-  reverse_proxy=nginx \
-  postgres_version=17.10 \
-  use_asgi=n \
-  use_websockets=n \
-  use_ci=y \
-  ci_provider=github \
-  precommit_base=y \
-  precommit_ruff=y
+cd MyProject                         # = your project_name
+python3.12 -m venv venv && source venv/bin/activate
+pip install -r requirements_dev.txt
+cp .env.example .env
+./start-dev-services.sh              # Postgres (+ Redis / … if selected)
+python manage.py devserver
 ```
+
+Open the API docs when `DEBUG=True` (Swagger via drf-spectacular). Full setup notes live in the **generated** project’s `README.md`.
+
+> **Note:** After the interactive UI finishes, the process may exit with code **143**. That is expected — Cookiecutter is stopped so you are not prompted twice.
+
+---
+
+## What you get
+
+```text
+MyProject/
+├── config/                 # modular settings (thin base.py aggregator)
+├── <project_slug>/
+│   ├── api/                # URL router only
+│   ├── users/              # reference domain (auth + profile)
+│   ├── common/             # envelope, BaseModel, integrity helpers
+│   ├── commands/           # start_domain_app, devserver, …
+│   └── …                   # optional: file_manager, administration, …
+├── docs/style-guide/       # living conventions for this project
+├── AGENTS.md               # agent index
+├── .cursor/rules/          # glob-scoped rules (feature-gated)
+├── docker-compose*.yml
+└── …
+```
+
+**Always on**
+
+- Django REST Framework + OpenAPI (Swagger only when `DEBUG=True`)
+- Modular `config/settings/`
+- Docker Compose for local infra and production
+- `users` app (JWT **or** session)
+- `start_domain_app` — HackSoft-style domain scaffolding
+
+**Optional (flags)**
+
+| Area | Options |
+|------|---------|
+| Auth & models | JWT / session · UUID / BigAutoField PKs · portal permission stubs |
+| Domains | Scoped `/api/v1/site/…` sample · `ManagedFile` uploads · Unfold admin |
+| Async & cache | Redis · RabbitMQ · Celery (Redis or Rabbit broker) · ASGI · Channels |
+| Ops | Nginx / Traefik · Sentry · pgAdmin · GitHub or GitLab CI |
+| Quality | Ruff + pre-commit · pytest suite · VS Code settings |
+
+---
 
 ## Configuration options
 
+Grouped for scanning. Defaults match the interactive UI.
+
+### Project
+
 | Option | Default | Description |
 |--------|---------|-------------|
-| `project_name` | MyProject | Human-readable project name (output directory) |
-| `project_slug` | auto | Python package name (from name; spaces/hyphens/dots → `_`) |
-| `first_name` / `last_name` | author / … | Author metadata for LICENSE |
-| `license` | MIT | MIT, BEER, or None |
-| `postgres_user` / `postgres_password` | user / password | Local Postgres credentials |
-| `postgres_version` | 17.10 | Docker Postgres image tag |
-| `use_jwt` | y | `y` → JWT; `n` → session auth (users app always kept) |
-| `use_uuid_pk` | y | `y` → UUID PK on `BaseModel`; `n` → default `BigAutoField` |
-| `use_sentry` | n | Sentry SDK (activates when `SENTRY_DSN` is set) |
+| `project_name` | MyProject | Human-readable name (output directory) |
+| `project_slug` | auto | Python package (`spaces` / `-` / `.` → `_`) |
+| `first_name` / `last_name` | author / … | LICENSE metadata |
+| `license` | MIT | `MIT`, `BEER`, or `None` |
+| `postgres_user` / `postgres_password` | user / password | Local Postgres |
+| `postgres_version` | 17.10 | Docker image tag (`17.10` … `14.17`) |
+
+### Features
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `use_jwt` | y | `y` → JWT · `n` → session |
+| `use_uuid_pk` | y | UUID PK on `BaseModel` |
+| `use_scoped_apis` | n | Sample site mount + per-client schema helper |
+| `use_file_manager` | n | `ManagedFile` uploads app |
+| `use_unfold_admin` | n | Django Unfold + `administration/` |
+| `use_portal_permissions` | n | `IsAdmin` / `IsCustomer` stubs |
+| `infra_repo_name` | _(empty)_ | Named infra repo in deploy-alert text |
+| `use_sentry` | n | Sentry when `SENTRY_DSN` is set |
 | `use_vscode` | n | VS Code settings |
 | `use_pgadmin` | n | pgAdmin in dev Compose (`:5050`) |
-| `use_redis` | n | Redis cache (+ required for Redis Celery / WebSockets) |
+| `use_redis` | n | Redis cache (+ Celery Redis / WebSockets) |
 | `use_rabbitmq` | n | RabbitMQ broker |
-| `use_celery` | n | Celery worker + beat |
-| `celery_broker` | redis | `redis` or `rabbitmq` (when Celery is on) |
+| `use_celery` | n | Worker + beat |
+| `celery_broker` | redis | `redis` or `rabbitmq` |
 | `use_asgi` | n | Uvicorn instead of Gunicorn |
-| `use_websockets` | n | Django Channels (requires ASGI + Redis) |
-| `reverse_proxy` | none | `none`, `nginx`, or `traefik` |
+| `use_websockets` | n | Django Channels (needs ASGI + Redis) |
+| `reverse_proxy` | none | `none` · `nginx` · `traefik` |
 | `use_code_style` | y | Ruff + pre-commit |
-| `precommit_base` | y | File hygiene hooks (when code style is on) |
-| `precommit_pyupgrade` | y | pyupgrade hook |
-| `precommit_ruff` | y | Ruff lint/format hooks |
-| `precommit_pydoclint` | y | pydoclint hook |
-| `precommit_translation_lint` | y | django-translation-lint hook |
+| `precommit_*` | y | Hygiene / pyupgrade / Ruff / pydoclint / translation lint |
 | `use_testing` | y | pytest + default tests |
 | `use_ci` | n | CI pipeline |
 | `ci_provider` | github | `github` or `gitlab` |
 
-### Dependencies between options
+### Option dependencies
 
-- **Celery → broker**: Redis broker requires `use_redis=y`; RabbitMQ broker requires `use_rabbitmq=y`.
-- **WebSockets → ASGI + Redis**.
-- **CI → provider**: `github` or `gitlab` when `use_ci=y`.
-- **Code style → hooks**: with `use_code_style=y`, enable at least one `precommit_*=y` (interactive UI defaults all on if you pick none).
+- **Celery → broker**: Redis broker needs `use_redis=y`; RabbitMQ broker needs `use_rabbitmq=y`
+- **WebSockets →** `use_asgi=y` **and** `use_redis=y`
+- **CI →** pick `ci_provider` when `use_ci=y`
+- **Code style →** enable at least one `precommit_*=y` (UI turns all on if you leave them empty)
+
+---
 
 ## After generation
 
-See the generated project's `README.md` for setup.
+| Audience | Start here |
+|----------|------------|
+| Day-to-day setup | Generated project `README.md` |
+| Architecture & conventions | [`docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/README.md) |
+| Coding agents | Generated `AGENTS.md` + `.cursor/rules/` |
 
-Coding conventions and architecture live in the generated project's style guide:
+Template source for the style guide lives under [`{{cookiecutter.project_name}}/docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/).
 
-- [`docs/style-guide/README.md`]({{cookiecutter.project_name}}/docs/style-guide/README.md) — index
-- Template source in this repo: [`{{cookiecutter.project_name}}/docs/style-guide/`]({{cookiecutter.project_name}}/docs/style-guide/)
+---
 
-Quick start (directory name = `project_name`, e.g. `MyProject`):
+## Template contributors
 
-```bash
-cd MyProject
-python3.12 -m venv venv && source venv/bin/activate
-pip install -r requirements_dev.txt
-cp .env.example .env
-./start-dev-services.sh
-python manage.py devserver
-```
-
-## Template CI & local smoke
-
-GitHub Actions: `scripts/smoke_generate.sh` (option/agent-surface asserts) then a generate+pytest matrix (JWT, int PK, session+Celery, RabbitMQ, ASGI+WS, no-testing/GitLab, flake8-only).
+Working on **this** repo (not a generated app):
 
 ```bash
-make choices   # cookiecutter.json ↔ UI maps
-make smoke     # needs cookiecutter + ripgrep; writes _gen_smoke/
+make choices   # cookiecutter.json ↔ interactive UI maps
+make smoke     # option matrices + agent-surface asserts → _gen_smoke/
 ```
+
+See [`AGENTS.md`](AGENTS.md) and `.cursor/rules/` for how hooks, prompts, and prune logic fit together.
+
+---
 
 ## Contributing
 
-Issues and pull requests are welcome on [GitHub](https://github.com/alidanial7/django-style-guide).
+Issues and PRs welcome → [github.com/alidanial7/django-style-guide](https://github.com/alidanial7/django-style-guide)
 
 ## License
 

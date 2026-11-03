@@ -3,7 +3,7 @@ from config.env import env
 # https://docs.celeryproject.org/en/stable/userguide/configuration.html
 
 {%- if cookiecutter.celery_broker == "redis" %}
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/3")
 {%- else %}
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="amqp://guest:guest@localhost:5672//")
 {%- endif %}

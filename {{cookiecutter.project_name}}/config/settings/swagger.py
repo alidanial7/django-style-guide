@@ -2,6 +2,12 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "{{cookiecutter.project_name}} API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # Split request/response components (e.g. FileField binary on request, URI on response).
+    "COMPONENT_SPLIT_REQUEST": True,
+    # Stable enum component names for OpenAPI codegen — extend as domain enums grow.
+    "ENUM_NAME_OVERRIDES": {
+        # "ExampleStatusEnum": "{{cookiecutter.project_slug}}.example.enums.ExampleStatus",
+    },
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "persistAuthorization": True,

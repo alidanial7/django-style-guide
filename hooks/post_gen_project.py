@@ -13,6 +13,10 @@ use_ci = "{{cookiecutter.use_ci}}"
 ci_provider = "{{cookiecutter.ci_provider}}"
 use_websockets = "{{cookiecutter.use_websockets}}"
 use_pgadmin = "{{cookiecutter.use_pgadmin}}"
+use_scoped_apis = "{{cookiecutter.use_scoped_apis}}"
+use_file_manager = "{{cookiecutter.use_file_manager}}"
+use_unfold_admin = "{{cookiecutter.use_unfold_admin}}"
+use_portal_permissions = "{{cookiecutter.use_portal_permissions}}"
 reverse_proxy = "{{cookiecutter.reverse_proxy}}"
 project_slug = "{{cookiecutter.project_slug}}"
 
@@ -89,6 +93,27 @@ if testing == "n":
         if path.is_file():
             delete_resource(str(path))
 
+if use_scoped_apis != "y":
+    delete_resource(f"{project_slug}/api/site_urls.py")
+    delete_resource(f"{project_slug}/core/urls/site_core_url.py")
+    delete_resource(f"{project_slug}/core/apis/site")
+
+if use_file_manager != "y":
+    delete_resource(f"{project_slug}/file_manager")
+    delete_resource(f"{project_slug}/users/migrations/0002_profile_avatar_managed.py")
+    delete_resource("docs/style-guide/domain/file-manager.md")
+    delete_resource(".cursor/rules/file-manager.mdc")
+
+if use_unfold_admin != "y":
+    delete_resource("config/settings/unfold.py")
+    delete_resource(f"{project_slug}/administration")
+    delete_resource("docs/style-guide/ops/admin-unfold.md")
+    delete_resource(".cursor/rules/unfold-admin.mdc")
+
+if use_portal_permissions != "y":
+    delete_resource(f"{project_slug}/users/permissions.py")
+    delete_resource(".cursor/rules/portal-permissions.mdc")
+
 if use_ci != "y":
     delete_resource(".github")
     delete_resource(".gitlab-ci.yml")
@@ -97,7 +122,6 @@ elif ci_provider == "github":
 elif ci_provider == "gitlab":
     delete_resource(".github")
 else:
-    # Unknown provider — drop both rather than leave the wrong one.
     delete_resource(".github")
     delete_resource(".gitlab-ci.yml")
 

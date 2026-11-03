@@ -8,7 +8,8 @@ alwaysApply: false
 
 - Selectors: package `selectors/`; `get_*` / `list_<entities>`; one optimized list selector.
 - Services: `*_services.py`; `data: Create*Data | Update*Data` (`total=False` for PATCH).
-- Use `model_create` / `model_update` / `model_save` — no dataclass DTOs, no `serializer.save()`.
+- Use `model_create` / `model_update` / `model_save` / `model_delete` — no dataclass DTOs, no `serializer.save()`.
+- Selectors: `get_*` / `list_*`; cardinality clear (one vs many); no business writes.
 - Validation: `is_*` + `*Validator` + domain `*ErrorCode` in `<app>/errors/`.
 - Filters: FilterSet in `apis/…/*_search_filters.py`; apply in list view **after** `list_*()` — never inside selector.
 - Lists: pagination by default; no filters unless needed.

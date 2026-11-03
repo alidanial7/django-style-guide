@@ -54,6 +54,10 @@ COLORS = _Colors()
 FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_jwt", "JWT authentication (off = session auth)"),
     ("use_uuid_pk", "UUID primary keys for models (off = BigAutoField)"),
+    ("use_scoped_apis", "Scoped API sample (/api/v1/site/…)"),
+    ("use_file_manager", "ManagedFile file_manager app"),
+    ("use_unfold_admin", "Django Unfold admin UI"),
+    ("use_portal_permissions", "Portal permission stubs (IsAdmin / IsCustomer)"),
     ("use_sentry", "Sentry monitoring"),
     ("use_vscode", "VS Code configuration"),
     ("use_pgadmin", "pgAdmin (dev)"),
@@ -98,6 +102,10 @@ CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
     "postgres_version": ("17.10", "16.8", "15.12", "14.17"),
     "use_jwt": ("y", "n"),
     "use_uuid_pk": ("y", "n"),
+    "use_scoped_apis": ("y", "n"),
+    "use_file_manager": ("y", "n"),
+    "use_unfold_admin": ("y", "n"),
+    "use_portal_permissions": ("y", "n"),
     "use_sentry": ("y", "n"),
     "use_vscode": ("y", "n"),
     "use_pgadmin": ("y", "n"),
@@ -379,6 +387,10 @@ def _collect_answers_impl() -> dict[str, str] | None:
 
     use_jwt = yn(selected_features, "use_jwt")
     use_uuid_pk = yn(selected_features, "use_uuid_pk")
+    use_scoped_apis = yn(selected_features, "use_scoped_apis")
+    use_file_manager = yn(selected_features, "use_file_manager")
+    use_unfold_admin = yn(selected_features, "use_unfold_admin")
+    use_portal_permissions = yn(selected_features, "use_portal_permissions")
     use_sentry = yn(selected_features, "use_sentry")
     use_vscode = yn(selected_features, "use_vscode")
     use_pgadmin = yn(selected_features, "use_pgadmin")
@@ -390,6 +402,12 @@ def _collect_answers_impl() -> dict[str, str] | None:
     use_code_style = yn(selected_features, "use_code_style")
     use_testing = yn(selected_features, "use_testing")
     use_ci = yn(selected_features, "use_ci")
+
+    print_section("Infra alerts")
+    infra_repo_name = prompt_text(
+        "Infra repo name (optional)",
+        "",
+    ).strip()
 
     celery_broker = "redis"
     if use_celery == "y":
@@ -517,6 +535,11 @@ def _collect_answers_impl() -> dict[str, str] | None:
         "postgres_version": postgres_version,
         "use_jwt": use_jwt,
         "use_uuid_pk": use_uuid_pk,
+        "use_scoped_apis": use_scoped_apis,
+        "use_file_manager": use_file_manager,
+        "use_unfold_admin": use_unfold_admin,
+        "use_portal_permissions": use_portal_permissions,
+        "infra_repo_name": infra_repo_name,
         "use_sentry": use_sentry,
         "use_vscode": use_vscode,
         "use_pgadmin": use_pgadmin,

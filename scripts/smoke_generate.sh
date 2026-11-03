@@ -78,6 +78,8 @@ gen JwtDefaults \
 assert_file "$OUT/JwtDefaults/.python-version"
 assert_file "$OUT/JwtDefaults/.cursor/rules/core.mdc"
 assert_file "$OUT/JwtDefaults/.cursor/rules/testing.mdc"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/users/migrations/0002_profile_avatar_managed.py"
+assert_grep 'models.ImageField' "$OUT/JwtDefaults/jwtdefaults/users/models/profile.py"
 assert_file "$OUT/JwtDefaults/.cursor/rules/auth.mdc"
 assert_absent "$OUT/JwtDefaults/.cursor/rules/celery.mdc"
 assert_absent "$OUT/JwtDefaults/docs/style-guide/ops/celery.md"
@@ -91,6 +93,15 @@ assert_grep 'UUID PK' "$OUT/JwtDefaults/AGENTS.md"
 assert_not_grep 'Celery / tasks' "$OUT/JwtDefaults/AGENTS.md"
 assert_file "$OUT/JwtDefaults/jwtdefaults/api/urls.py"
 assert_absent "$OUT/JwtDefaults/jwtdefaults/api/apps.py"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/file_manager"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/api/site_urls.py"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/administration"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/users/permissions.py"
+assert_grep 'model_delete' "$OUT/JwtDefaults/jwtdefaults/common/services.py"
+assert_grep 'paginated_envelope_serializer' "$OUT/JwtDefaults/jwtdefaults/common/http/schema.py"
+assert_grep 'ENUM_NAME_OVERRIDES' "$OUT/JwtDefaults/config/settings/swagger.py"
+assert_file "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/seed_demo_data.py"
+assert_file "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/initial_system.py"
 
 gen IntPk \
   use_uuid_pk=n use_jwt=y use_celery=n use_testing=y use_code_style=y use_ci=n
@@ -107,6 +118,8 @@ assert_file "$OUT/SessionCelery/docker/nginx"
 assert_grep 'session' "$OUT/SessionCelery/.cursor/rules/auth.mdc"
 assert_grep 'CELERY_BEAT_SCHEDULE = {}' "$OUT/SessionCelery/config/settings/celery.py"
 assert_not_grep 'notify_customers' "$OUT/SessionCelery/config/settings/celery.py"
+assert_grep 'redis://localhost:6379/3' "$OUT/SessionCelery/config/settings/celery.py"
+assert_grep 'redis://localhost:6379/0' "$OUT/SessionCelery/config/settings/cache.py"
 
 gen RabbitCelery \
   use_jwt=y use_rabbitmq=y use_redis=n use_celery=y celery_broker=rabbitmq \
@@ -144,6 +157,28 @@ assert_file "$OUT/WithSentryPg/.cursor/rules/pgadmin.mdc"
 gen "My-App" \
   use_celery=n use_testing=n use_code_style=y use_ci=n
 assert_file "$OUT/My-App/my_app"
+
+gen JoytoLike \
+  use_scoped_apis=y use_file_manager=y use_unfold_admin=y use_portal_permissions=y \
+  infra_repo_name=my-infra-repo \
+  use_redis=y use_celery=n use_testing=y use_code_style=y use_ci=n
+assert_file "$OUT/JoytoLike/joytolike/api/site_urls.py"
+assert_file "$OUT/JoytoLike/joytolike/core/apis/site/health/site_health_apis.py"
+assert_file "$OUT/JoytoLike/joytolike/file_manager/models/file.py"
+assert_file "$OUT/JoytoLike/joytolike/users/migrations/0002_profile_avatar_managed.py"
+assert_grep 'file_manager.ManagedFile' "$OUT/JoytoLike/joytolike/users/models/profile.py"
+assert_grep 'create_managed_file' "$OUT/JoytoLike/joytolike/users/services/user_services.py"
+assert_file "$OUT/JoytoLike/.cursor/rules/file-manager.mdc"
+assert_file "$OUT/JoytoLike/docs/style-guide/domain/file-manager.md"
+assert_grep 'file_manager/' "$OUT/JoytoLike/docs/style-guide/overview/project-structure.md"
+assert_file "$OUT/JoytoLike/joytolike/administration/apps.py"
+assert_file "$OUT/JoytoLike/config/settings/unfold.py"
+assert_file "$OUT/JoytoLike/.cursor/rules/unfold-admin.mdc"
+assert_file "$OUT/JoytoLike/joytolike/users/permissions.py"
+assert_file "$OUT/JoytoLike/.cursor/rules/portal-permissions.mdc"
+assert_grep 'my-infra-repo' "$OUT/JoytoLike/AGENTS.md"
+assert_grep 'django-unfold' "$OUT/JoytoLike/requirements/base.txt"
+assert_grep 'SiteSchemaGenerator' "$OUT/JoytoLike/config/urls.py"
 
 echo
 echo "Smoke results: $pass passed, $fail failed"

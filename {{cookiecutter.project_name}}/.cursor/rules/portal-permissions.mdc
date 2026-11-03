@@ -1,0 +1,14 @@
+---
+description: Portal permission stubs (IsAdmin / IsCustomer)
+globs: "**/permissions.py,**/apis/**/*.py"
+alwaysApply: false
+---
+
+# Portal permissions
+
+- Default remains **IsAuthenticated** via `ApiAuthMixin`.
+- Use `users.permissions.IsAdmin` / `IsCustomer` only when the view is portal-scoped.
+- Prefer explicit flags on `BaseUser` (e.g. `is_admin`) over inventing parallel auth stacks.
+- Do not treat staff flags as a substitute for object-level checks.
+
+Deep: `docs/style-guide/http/permissions.md`

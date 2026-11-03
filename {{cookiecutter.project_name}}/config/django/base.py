@@ -29,3 +29,6 @@ from config.settings.channels import *  # noqa
 {%- if cookiecutter.use_sentry == "y" %}
 from config.settings.sentry import *  # noqa
 {%- endif %}
+{%- if cookiecutter.use_unfold_admin == "y" %}
+from config.settings.unfold import *  # noqa
+{%- endif %}

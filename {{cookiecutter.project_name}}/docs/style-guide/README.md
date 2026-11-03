@@ -51,6 +51,9 @@ docs/style-guide/
 | [Errors](domain/errors.md) | Codes, integrity |
 | [Constants](domain/constants.md) | App literals |
 | [Signals](domain/signals.md) | Mechanical side effects |
+{%- if cookiecutter.use_file_manager == "y" %}
+| [File manager](domain/file-manager.md) | Managed uploads, FK pattern |
+{%- endif %}
 
 ### `http/`
 
@@ -77,12 +80,15 @@ docs/style-guide/
 | [Migrations](ops/migrations.md) | Expand/contract |
 | [Translations](ops/translations.md) | gettext msgids |
 | [Code quality](ops/code-quality.md) | {%- if cookiecutter.use_code_style == "y" %}Ruff / pre-commit{%- else %}flake8 / mypy{%- endif %} |
-| [Commands](ops/commands.md) | `make`, scripts |
+| [Commands](ops/commands.md) | `make`, scripts, seeds |
 | [Docker & production](ops/docker-and-production.md) | Compose |
 {%- if cookiecutter.use_celery == "y" %}
 | [Celery](ops/celery.md) | Background tasks (broker: {{cookiecutter.celery_broker}}) |
 {%- endif %}
 {%- if cookiecutter.use_websockets == "y" %}
 | [WebSockets](ops/websockets.md) | Channels |
+{%- endif %}
+{%- if cookiecutter.use_unfold_admin == "y" %}
+| [Admin / Unfold](ops/admin-unfold.md) | Unfold UI + `administration/` |
 {%- endif %}
 | [Enterprise extensions](ops/enterprise-extensions.md) | Not shipped — only if asked |

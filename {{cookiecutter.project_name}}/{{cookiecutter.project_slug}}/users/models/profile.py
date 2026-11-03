@@ -24,6 +24,17 @@ class Profile(BaseModel):
         verbose_name=_("bio"),
         help_text="Optional short biography shown on the profile.",
     )
+{%- if cookiecutter.use_file_manager == "y" %}
+    avatar = models.ForeignKey(
+        "file_manager.ManagedFile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="user_profiles",
+        verbose_name=_("avatar"),
+        help_text="Optional profile image managed by file_manager.",
+    )
+{%- else %}
     avatar = models.ImageField(
         upload_to="profiles/avatars/",
         blank=True,
@@ -31,6 +42,7 @@ class Profile(BaseModel):
         verbose_name=_("avatar"),
         help_text="Optional profile image.",
     )
+{%- endif %}
 
     class Meta:
         verbose_name = _("profile")

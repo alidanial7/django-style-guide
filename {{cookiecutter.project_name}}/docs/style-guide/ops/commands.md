@@ -91,6 +91,27 @@ python manage.py start_domain_app blogs --no-tests
 
 Scaffolds the style-guide layout (models/types.py/services/selectors/apis/…). Full guide: [Domain apps](../overview/domain-apps.md).
 
+### `seed_demo_data` / `initial_system`
+
+```bash
+python manage.py seed_demo_data
+python manage.py seed_demo_data --dry-run
+python manage.py initial_system
+```
+
+| Command | Role |
+|---------|------|
+| `seed_demo_data` | Local/demo rows — keep idempotent; ask before inventing seeds |
+| `initial_system` | Required bootstrap (groups/flags/catalog roots) |
+
+When a schema change needs seed updates, extend these commands in the **same** change.
+
+### Management command style
+
+- Prefer `BaseCommand`; print clear phases (starting / success / skip / error).
+- Wrap risky work in `try/except` with `self.stderr` + non-zero exit on hard failure.
+- Use `@transaction.atomic` for multi-row writes; support `--dry-run` when mutating data.
+
 ---
 
 ## 📜 Scripts

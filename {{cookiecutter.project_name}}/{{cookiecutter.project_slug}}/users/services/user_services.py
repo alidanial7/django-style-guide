@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ValidationError
+{%- if cookiecutter.use_file_manager == "y" %}
+from django.core.files.uploadedfile import UploadedFile
+{%- endif %}
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.utils.encoding import force_bytes, force_str
@@ -9,6 +12,10 @@ from django.utils.translation import gettext_lazy as _
 {%- if cookiecutter.use_jwt == "y" %}
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+{%- endif %}
+{%- if cookiecutter.use_file_manager == "y" %}
+
+from {{cookiecutter.project_slug}}.file_manager.services.file_services import create_managed_file
 {%- endif %}
 
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
@@ -27,6 +34,20 @@ def create_user(*, email: str, password: str) -> BaseUser:
         map_integrity_error(error, model=BaseUser)
         raise  # map_integrity_error never returns; keep type-checkers happy
 
+{% if cookiecutter.use_file_manager == "y" %}
+
+def _resolve_avatar(*, user: BaseUser, avatar: UploadedFile | None):
+    if avatar is None:
+        return None
+    return create_managed_file(
+        user=user,
+        file_obj=avatar,
+        title=f"{user.email} avatar",
+        category="avatar",
+        is_public=True,
+    )
+
+{% endif %}
 
 @transaction.atomic
 def register(*, data: RegisterData) -> BaseUser:
@@ -38,7 +59,11 @@ def register(*, data: RegisterData) -> BaseUser:
         profile.bio = data["bio"]
         update_fields.append("bio")
     if data.get("avatar") is not None:
+{%- if cookiecutter.use_file_manager == "y" %}
+        profile.avatar = _resolve_avatar(user=user, avatar=data["avatar"])
+{%- else %}
         profile.avatar = data["avatar"]
+{%- endif %}
         update_fields.append("avatar")
 
     if update_fields:
@@ -49,11 +74,22 @@ def register(*, data: RegisterData) -> BaseUser:
 
 def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
     """Apply only keys present in ``data`` — PATCH-safe; ``None`` ≠ missing."""
+{%- if cookiecutter.use_file_manager == "y" %}
+    payload = dict(data)
+    if "avatar" in payload and isinstance(payload["avatar"], UploadedFile):
+        payload["avatar"] = _resolve_avatar(user=profile.user, avatar=payload["avatar"])
+    profile, _changed = model_update(
+        instance=profile,
+        fields=["bio", "avatar"],
+        data=payload,
+    )
+{%- else %}
     profile, _changed = model_update(
         instance=profile,
         fields=["bio", "avatar"],
         data=data,
     )
+{%- endif %}
     return profile
 
 

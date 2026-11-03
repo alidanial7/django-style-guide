@@ -54,6 +54,11 @@ def base_answers(**overrides: str) -> dict[str, str]:
         "postgres_version": "17.10",
         "use_jwt": "y",
         "use_uuid_pk": "y",
+        "use_scoped_apis": "n",
+        "use_file_manager": "n",
+        "use_unfold_admin": "n",
+        "use_portal_permissions": "n",
+        "infra_repo_name": "",
         "use_sentry": "n",
         "use_vscode": "n",
         "use_pgadmin": "n",
@@ -160,6 +165,7 @@ def main() -> int:
                 "last_name": answers["last_name"],
                 "postgres_user": answers["postgres_user"],
                 "postgres_password": answers["postgres_password"],
+                "infra_repo_name": answers.get("infra_repo_name", ""),
             }
         )
         apply_overwrites_to_context(context, answers)

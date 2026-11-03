@@ -9,7 +9,7 @@ alwaysApply: true
 - Never `git commit` / `git push`. Never open a browser unless asked.
 - Never commit secrets or log tokens/passwords.
 - New apps: `python manage.py start_domain_app <plural>` only.
-- Layers: APIs glue; serializers = HTTP; TypedDict = service `data=`; selectors read; services write.
+- Layers: APIs glue; serializers = HTTP; TypedDict = service `data=`; selectors read; services write (`model_*` incl. delete).
 - Envelope: `api_response` → `{success,status,result,messages}`. Default **IsAuthenticated**.
-- Infra/env/Docker/broker changes → reply section `### ⚠️ Infrastructure & Deployment Action Required`.
+- Infra/env/Docker/broker changes → reply section `### ⚠️ Infrastructure & Deployment Action Required`{% if cookiecutter.infra_repo_name %} (update `{{cookiecutter.infra_repo_name}}`){% endif %}.
 - Deep detail: open **one** page from `AGENTS.md` table — never bulk-read `docs/style-guide/`.

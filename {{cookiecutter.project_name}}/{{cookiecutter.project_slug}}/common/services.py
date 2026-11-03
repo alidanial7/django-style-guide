@@ -54,3 +54,13 @@ def model_update(*, instance: DjangoModelType, fields: list[str], data: dict[str
         model_save(instance=instance, update_fields=fields)
 
     return instance, has_updated
+
+
+def model_delete(*, instance: DjangoModelType) -> None:
+    """Generic atomic delete helper with integrity error mapping."""
+    try:
+        with transaction.atomic():
+            instance.delete()
+    except IntegrityError as error:
+        map_integrity_error(error, model=instance.__class__)
+        raise

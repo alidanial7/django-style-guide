@@ -10,6 +10,7 @@ alwaysApply: false
 - Default **IsAuthenticated** (`ApiAuthMixin`); public endpoints set `AllowAny` explicitly.
 - Pagination helpers wrap list payloads inside the envelope.
 - Optional filters: django-filter FilterSet under `apis/`; wire query params in the list view + OpenAPI.
-- Schema: `envelope_serializer(...)` from `common.http.schema` so Swagger matches runtime.
+- Schema: `envelope_serializer(...)` / `paginated_envelope_serializer(...)` so Swagger matches runtime.
+- OpenAPI: Input/Output split; `request=None` for bodiless POST; document DELETE responses; extend `ENUM_NAME_OVERRIDES` for domain enums.
 
 Deep: `docs/style-guide/http/api-envelope.md` · `docs/style-guide/http/permissions.md` · `docs/style-guide/http/pagination.md` · `docs/style-guide/http/filtering.md` · `docs/style-guide/http/swagger.md`

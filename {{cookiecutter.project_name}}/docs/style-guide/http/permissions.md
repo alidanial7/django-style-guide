@@ -127,13 +127,24 @@ Browser session clients must send CSRF on `POST`/`PATCH`/`PUT`/`DELETE`.
 
 ---
 
+{%- if cookiecutter.use_portal_permissions == "y" %}
+## Portal stubs (`users.permissions`)
+
+| Class | Gate |
+|-------|------|
+| `IsAdmin` | `user.is_admin` |
+| `IsCustomer` | authenticated and **not** `is_admin` |
+
+Attach on portal-scoped views only; object-level checks still belong in services/selectors.
+
+{%- endif %}
 ## ❌ Anti-patterns
 
 | Anti-pattern | Fix |
 |--------------|-----|
 | Assuming new views are public | Default is authenticated — set `AllowAny` only when intentional |
 | Permission checks only inside serializers | Permission classes |
-| Staff flags implying API access | Explicit `IsAdminUser` / custom class |
+| Staff flags implying API access | Explicit `IsAdmin` / custom class |
 
 ---
 

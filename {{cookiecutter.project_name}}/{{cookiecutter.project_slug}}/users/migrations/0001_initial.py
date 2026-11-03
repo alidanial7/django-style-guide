@@ -185,6 +185,7 @@ class Migration(migrations.Migration):
                         verbose_name=_("bio"),
                     ),
                 ),
+{%- if cookiecutter.use_file_manager != "y" %}
                 (
                     "avatar",
                     models.ImageField(
@@ -195,6 +196,7 @@ class Migration(migrations.Migration):
                         verbose_name=_("avatar"),
                     ),
                 ),
+{%- endif %}
                 (
                     "user",
                     models.OneToOneField(

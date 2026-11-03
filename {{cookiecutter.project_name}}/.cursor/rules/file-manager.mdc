@@ -1,0 +1,16 @@
+---
+description: Managed uploads — FK to ManagedFile, no ad-hoc FileFields
+globs: "**/file_manager/**/*.py"
+alwaysApply: false
+---
+
+# File manager
+
+- All uploads go through `create_managed_file` (`data: CreateManagedFileData` or `file_obj=`).
+- Domain models **FK / O2O to `ManagedFile`** — never add ad-hoc `FileField` / `ImageField` for product files.
+- Categories only in `enums.FileCategory` (`avatar`, `image`, `document`, `other`); rules in `constants.CATEGORY_FILE_RULES`.
+- User-owned only (`owner`); no clinic/org scope in this scaffold.
+- Delete via `delete_managed_file`; disk cleanup is the `post_delete` signal.
+- Download: `serve_managed_file_securely` (FileResponse in DEBUG).
+
+Deep: `docs/style-guide/domain/file-manager.md`

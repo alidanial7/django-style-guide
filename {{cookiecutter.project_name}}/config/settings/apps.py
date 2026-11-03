@@ -3,6 +3,12 @@ LOCAL_APPS = [
     "{{cookiecutter.project_slug}}.common.apps.CommonConfig",
     "{{cookiecutter.project_slug}}.commands.apps.CommandsConfig",
     "{{cookiecutter.project_slug}}.users.apps.UsersConfig",
+{%- if cookiecutter.use_file_manager == "y" %}
+    "{{cookiecutter.project_slug}}.file_manager.apps.FileManagerConfig",
+{%- endif %}
+{%- if cookiecutter.use_unfold_admin == "y" %}
+    "{{cookiecutter.project_slug}}.administration.apps.AdministrationConfig",
+{%- endif %}
 ]
 
 THIRD_PARTY_APPS = [
@@ -24,6 +30,12 @@ THIRD_PARTY_APPS = [
 ]
 
 INSTALLED_APPS = [
+{%- if cookiecutter.use_unfold_admin == "y" %}
+    # Unfold must precede django.contrib.admin
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+{%- endif %}
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

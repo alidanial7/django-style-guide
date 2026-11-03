@@ -1,0 +1,15 @@
+---
+description: Unfold Django admin conventions
+globs: "**/admin.py,**/administration/**,config/settings/unfold.py"
+alwaysApply: false
+---
+
+# Unfold admin
+
+- Use `unfold.admin.ModelAdmin` (not plain `django.contrib.admin.ModelAdmin`) for registered models.
+- Shared widgets, mixins, templates, and static live in `{{cookiecutter.project_slug}}/administration/` — not scattered ad hoc.
+- Never hardcode admin URLs (`/admin/...`); use `reverse` / `reverse_lazy` and named admin routes.
+- When a model is created or changed, sync its `<app>/admin.py` (`list_display`, filters, search, readonly).
+- Admin mount path comes from `config/urls.py` (default `/admin/`); do not assume a custom path in links or docs.
+
+Deep: `docs/style-guide/ops/admin-unfold.md`

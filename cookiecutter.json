@@ -24,6 +24,23 @@
     "y",
     "n"
   ],
+  "use_scoped_apis": [
+    "n",
+    "y"
+  ],
+  "use_file_manager": [
+    "n",
+    "y"
+  ],
+  "use_unfold_admin": [
+    "n",
+    "y"
+  ],
+  "use_portal_permissions": [
+    "n",
+    "y"
+  ],
+  "infra_repo_name": "",
   "use_sentry": [
     "n",
     "y"
@@ -81,6 +98,7 @@
     "github",
     "gitlab"
   ],
+
   "precommit_base": [
     "y",
     "n"
@@ -226,7 +244,28 @@
       "__prompt__": "Use UUID as Primary Key for models?",
       "y": "Yes (UUIDv4)",
       "n": "No (BigAutoField)"
-    }
+    },
+    "use_scoped_apis": {
+      "__prompt__": "Include scoped API sample (/api/v1/site/…)?",
+      "n": "No",
+      "y": "Yes"
+    },
+    "use_file_manager": {
+      "__prompt__": "Include ManagedFile file_manager app?",
+      "n": "No",
+      "y": "Yes"
+    },
+    "use_unfold_admin": {
+      "__prompt__": "Include Django Unfold admin UI?",
+      "n": "No",
+      "y": "Yes"
+    },
+    "use_portal_permissions": {
+      "__prompt__": "Include portal permission stubs (IsAdmin / IsCustomer)?",
+      "n": "No",
+      "y": "Yes"
+    },
+    "infra_repo_name": "Separate infra repo name for deploy alerts (empty = generic)"
   },
   "_copy_without_render": []
 }

@@ -73,6 +73,9 @@ flowchart LR
 │   ├── common/                 # platform: http envelope, integrity, BaseModel, helpers
 │   ├── commands/               # management commands (devserver, start_domain_app)
 │   ├── users/                  # identity domain (reference app)
+{%- if cookiecutter.use_file_manager == "y" %}
+│   ├── file_manager/           # ManagedFile uploads (FK target for domains)
+{%- endif %}
 │   ├── utils/                  # thin shared helpers / test bases (keep small)
 │   └── conftest.py             # pytest root fixtures (if testing enabled)
 │
