@@ -1,13 +1,8 @@
 # Documentation
 
-Reference docs for this project. Start with the style guide; use the setup steps in the root [README](../README.md) to run the app locally. Coding agents: [AGENTS.md](../AGENTS.md).
-
-| Section | Contents |
-|---------|----------|
-| [Style guide](style-guide/README.md) | Full index and principles |
-| [`overview/`](style-guide/overview/architecture.md) | Architecture, project layout, domain apps |
-| [`domain/`](style-guide/domain/apis.md) | Models, selectors, services, APIs, validation, errors |
-| [`http/`](style-guide/http/api-envelope.md) | Envelope, auth, pagination, filtering, Swagger |
-| [`ops/`](style-guide/ops/settings.md) | Settings, testing, docker, celery, commands |
-
-Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django-Styleguide).
+| Start | Use when |
+|-------|----------|
+| [`AGENTS.md`](../AGENTS.md) | Always — agent index |
+| [`.cursor/rules/`](../.cursor/rules/) | Auto by glob / pull by description |
+| [Style guide](style-guide/README.md) | One deep page when a rule is not enough |
+| [Root README](../README.md) | Local setup / run |

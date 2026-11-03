@@ -1,0 +1,14 @@
+---
+description: Celery tasks, beat, worker conventions
+globs: "**/tasks.py,config/celery.py,config/settings/celery.py,scripts/run_celery*.sh,docker/celery*,docker/beats*"
+alwaysApply: false
+---
+
+# Celery
+
+- Broker: **{{cookiecutter.celery_broker}}**. App: `config/celery.py`; settings: `config/settings/celery.py`.
+- Tasks stay thin: load IDs → call **services** → map errors; use `@shared_task` with retries only for transient failures.
+- Autodiscover app `tasks.py` modules. Prefer logging + structured failure over silent swallow.
+- Local: `devserver` may start a worker; prod: compose worker + beat entrypoints.
+
+Deep: `docs/style-guide/ops/celery.md`

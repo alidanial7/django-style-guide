@@ -12,6 +12,7 @@ celery = "{{cookiecutter.use_celery}}"
 use_ci = "{{cookiecutter.use_ci}}"
 ci_provider = "{{cookiecutter.ci_provider}}"
 use_websockets = "{{cookiecutter.use_websockets}}"
+use_pgadmin = "{{cookiecutter.use_pgadmin}}"
 reverse_proxy = "{{cookiecutter.reverse_proxy}}"
 project_slug = "{{cookiecutter.project_slug}}"
 
@@ -40,12 +41,16 @@ else:
     delete_resource(f"{project_slug}/users/apis/auth/tests/test_auth_session.py")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
+    delete_resource(".cursor/rules/sentry.mdc")
+if use_pgadmin != "y":
+    delete_resource(".cursor/rules/pgadmin.mdc")
 if vscode == "n":
     delete_resource(".vscode")
 if code_style == "n":
     delete_resource("pyproject.toml")
     delete_resource(".pre-commit-config.yaml")
     delete_resource("setup.cfg")
+    delete_resource(".cursor/rules/code-quality.mdc")
 else:
     delete_resource(".flake8")
     delete_resource("setup.cfg")
@@ -57,9 +62,13 @@ if celery == "n":
     delete_resource("docker/beats_entrypoint.sh")
     delete_resource("scripts/run_celery_worker.sh")
     delete_resource("scripts/run_celery_beat.sh")
+    delete_resource("docs/style-guide/ops/celery.md")
+    delete_resource(".cursor/rules/celery.mdc")
 if use_websockets != "y":
     delete_resource("config/settings/channels.py")
     delete_resource(f"{project_slug}/core/routing.py")
+    delete_resource("docs/style-guide/ops/websockets.md")
+    delete_resource(".cursor/rules/websockets.mdc")
 if reverse_proxy != "nginx":
     delete_resource("docker/nginx")
 if reverse_proxy != "traefik":
@@ -68,6 +77,8 @@ if testing == "n":
     delete_resource("pytest.ini")
     delete_resource("config/django/test.py")
     delete_resource(f"{project_slug}/conftest.py")
+    delete_resource("docs/style-guide/ops/testing.md")
+    delete_resource(".cursor/rules/testing.mdc")
     root = Path(".")
     for path in root.rglob("conftest.py"):
         delete_resource(str(path))

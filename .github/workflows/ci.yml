@@ -10,19 +10,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  smoke-generate:
+    name: Smoke generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install "cookiecutter>=2.4"
+          sudo apt-get update -qq && sudo apt-get install -y -qq ripgrep
+
+      - name: Smoke generate matrices
+        env:
+          DSG_COOKIECUTTER_SKIP_PROMPT_UI: "1"
+          SMOKE_OUT: ${{ runner.temp }}/dsg_smoke
+        run: ./scripts/smoke_generate.sh
+
   generate-and-test:
     name: Generate (${{ matrix.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: smoke-generate
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: jwt-defaults
             project_dir: JwtDefaults
+            run_pytest: "y"
             extra: >-
               project_name=JwtDefaults
               use_jwt=y
+              use_uuid_pk=y
               use_redis=n
               use_rabbitmq=n
               use_celery=n
@@ -32,8 +61,24 @@ jobs:
               use_code_style=y
               use_testing=y
               use_ci=n
+          - name: int-pk
+            project_dir: IntPk
+            run_pytest: "y"
+            extra: >-
+              project_name=IntPk
+              use_jwt=y
+              use_uuid_pk=n
+              use_redis=n
+              use_celery=n
+              use_asgi=n
+              use_websockets=n
+              reverse_proxy=none
+              use_code_style=y
+              use_testing=y
+              use_ci=n
           - name: session-redis-celery
             project_dir: SessionCelery
+            run_pytest: "y"
             extra: >-
               project_name=SessionCelery
               use_jwt=n
@@ -47,8 +92,25 @@ jobs:
               use_code_style=y
               use_testing=y
               use_ci=n
+          - name: rabbitmq-celery
+            project_dir: RabbitCelery
+            run_pytest: "y"
+            extra: >-
+              project_name=RabbitCelery
+              use_jwt=y
+              use_redis=n
+              use_rabbitmq=y
+              use_celery=y
+              celery_broker=rabbitmq
+              use_asgi=n
+              use_websockets=n
+              reverse_proxy=none
+              use_code_style=y
+              use_testing=y
+              use_ci=n
           - name: asgi-websockets
             project_dir: AsgiWs
+            run_pytest: "y"
             extra: >-
               project_name=AsgiWs
               use_jwt=y
@@ -59,6 +121,35 @@ jobs:
               use_websockets=y
               reverse_proxy=traefik
               use_code_style=y
+              use_testing=y
+              use_ci=n
+          - name: no-testing-gitlab
+            project_dir: NoTest
+            run_pytest: "n"
+            extra: >-
+              project_name=NoTest
+              use_jwt=y
+              use_redis=n
+              use_celery=n
+              use_asgi=n
+              use_websockets=n
+              reverse_proxy=none
+              use_code_style=y
+              use_testing=n
+              use_ci=y
+              ci_provider=gitlab
+          - name: flake8-only
+            project_dir: FlakeOnly
+            run_pytest: "y"
+            extra: >-
+              project_name=FlakeOnly
+              use_jwt=y
+              use_redis=n
+              use_celery=n
+              use_asgi=n
+              use_websockets=n
+              reverse_proxy=none
+              use_code_style=n
               use_testing=y
               use_ci=n
 
@@ -92,9 +183,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install "cookiecutter>=2.4"
 
-      - name: Validate choice context matrix
-        run: python hooks/test_choice_context.py
-
       - name: Generate project
         env:
           DSG_COOKIECUTTER_SKIP_PROMPT_UI: "1"
@@ -103,9 +191,7 @@ jobs:
             ${{ matrix.extra }} \
             postgres_user=user \
             postgres_password=password \
-            postgres_version=17.10 \
-            ci_provider=github \
-            celery_broker=redis
+            postgres_version=17.10
 
       - name: Install generated project deps
         working-directory: ${{ matrix.project_dir }}
@@ -115,12 +201,13 @@ jobs:
       - name: Django check
         working-directory: ${{ matrix.project_dir }}
         env:
-          DJANGO_SETTINGS_MODULE: config.django.test
+          DJANGO_SETTINGS_MODULE: ${{ matrix.run_pytest == 'y' && 'config.django.test' || 'config.django.local' }}
           SECRET_KEY: ci-secret-key-not-for-production
-          DATABASE_URL: psql://user:password@127.0.0.1:5432/test_db
+          DATABASE_URL: ${{ matrix.run_pytest == 'y' && 'psql://user:password@127.0.0.1:5432/test_db' || 'sqlite:///ci.sqlite3' }}
         run: python manage.py check
 
       - name: Pytest
+        if: matrix.run_pytest == 'y'
         working-directory: ${{ matrix.project_dir }}
         env:
           DJANGO_SETTINGS_MODULE: config.django.test

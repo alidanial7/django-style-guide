@@ -1,0 +1,18 @@
+---
+description: Domain layer contracts — use when designing or crossing API/serializer/service/selector boundaries
+alwaysApply: false
+---
+
+# Layers
+
+| Layer | Role | Must not |
+|-------|------|----------|
+| API | HTTP glue, permissions, call service/selector, envelope | Business rules, ORM writes |
+| Serializer | Validate/shape HTTP in/out | `save()`, services, queries |
+| Selector | Reads (`get_*` / `list_*`) | Writes, HTTP |
+| Service | Writes (`data=` TypedDict → `model_create`/`update`/`save`) | HTTP, serializer.save() |
+| Validator | `is_*` pure + `*Validator` raisers | ORM side effects beyond checks |
+
+- Keyword-only: `def foo(*, …)`.
+- Uniqueness: DB constraint + `map_integrity_error` — not serializer-only.
+- Deep: `docs/style-guide/overview/architecture.md`

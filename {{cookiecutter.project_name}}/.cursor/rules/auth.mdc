@@ -1,0 +1,23 @@
+---
+description: Auth endpoints and users auth flows
+globs: "**/users/apis/auth/**/*.py,**/users/urls/auth*.py,**/config/settings/auth.py,**/config/settings/drf.py,**/config/settings/sessions.py{% if cookiecutter.use_jwt == 'y' %},**/config/settings/jwt.py{% endif %}"
+alwaysApply: false
+---
+
+# Auth
+{%- if cookiecutter.use_jwt == "y" %}
+
+- Mode: **JWT** (simplejwt + blacklist). Do not add session-login APIs.
+- Endpoints under `users/apis/auth/` + `users/urls/auth_url.py` (`jwt/login|refresh|verify|logout`).
+- Clients: `Authorization: Bearer <access>`; rotate via refresh.
+{%- else %}
+
+- Mode: **session**. Do not add JWT login/refresh APIs.
+- Endpoints under `users/apis/auth/` + `users/urls/auth_url.py` (`session/login|logout`).
+- Unsafe methods need CSRF (`CSRF_USE_SESSIONS` may be on).
+{%- endif %}
+
+- Register / profile / password flows stay in `users` — follow existing files.
+- Throttle auth routes; keep public auth views `AllowAny`.
+
+Deep: `docs/style-guide/http/authentication.md` · `docs/style-guide/http/throttling.md` · `docs/style-guide/http/security.md`

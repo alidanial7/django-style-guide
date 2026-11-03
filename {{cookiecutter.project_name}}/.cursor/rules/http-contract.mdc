@@ -1,0 +1,15 @@
+---
+description: API envelope, permissions, pagination, filtering, OpenAPI
+globs: "**/apis/**/*.py,**/common/http/**/*.py,**/common/**/exceptions*.py"
+alwaysApply: false
+---
+
+# HTTP contract
+
+- Success/error shape: `{success, status, result, messages}` via `api_response` helpers.
+- Default **IsAuthenticated** (`ApiAuthMixin`); public endpoints set `AllowAny` explicitly.
+- Pagination helpers wrap list payloads inside the envelope.
+- Optional filters: django-filter FilterSet under `apis/`; wire query params in the list view + OpenAPI.
+- Schema: `envelope_serializer(...)` from `common.http.schema` so Swagger matches runtime.
+
+Deep: `docs/style-guide/http/api-envelope.md` · `docs/style-guide/http/permissions.md` · `docs/style-guide/http/pagination.md` · `docs/style-guide/http/filtering.md` · `docs/style-guide/http/swagger.md`

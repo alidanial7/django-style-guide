@@ -12,6 +12,12 @@ use_websockets = "{{ cookiecutter.use_websockets }}"
 reverse_proxy = "{{ cookiecutter.reverse_proxy }}"
 postgres_version = "{{ cookiecutter.postgres_version }}"
 project_slug = "{{ cookiecutter.project_slug }}"
+use_code_style = "{{ cookiecutter.use_code_style }}"
+precommit_base = "{{ cookiecutter.precommit_base }}"
+precommit_pyupgrade = "{{ cookiecutter.precommit_pyupgrade }}"
+precommit_ruff = "{{ cookiecutter.precommit_ruff }}"
+precommit_pydoclint = "{{ cookiecutter.precommit_pydoclint }}"
+precommit_translation_lint = "{{ cookiecutter.precommit_translation_lint }}"
 
 
 def fail(message: str) -> None:
@@ -21,10 +27,20 @@ def fail(message: str) -> None:
     sys.exit(1)
 
 
+def slugify(value: str) -> str:
+    # Keep in sync with hooks/slugify.py (this file runs from a temp path).
+    slug = value.lower()
+    slug = re.sub(r"[^a-z0-9]+", "_", slug)
+    return slug.strip("_")
+
+
 if not re.match(r"^[_a-zA-Z][_a-zA-Z0-9]+$", project_slug):
+    suggested = slugify(project_slug) or slugify("{{ cookiecutter.project_name }}")
+    hint = f" Suggested: '{suggested}'." if suggested else ""
     fail(
         f"project_slug '{project_slug}' is invalid. "
         "Use a valid Python package name (letters, numbers, underscore)."
+        + hint
     )
 
 if not re.match(r"^\d+(\.\d+)*$", postgres_version):
@@ -52,3 +68,17 @@ if celery == "y":
         fail("Celery broker is RabbitMQ but use_rabbitmq=n. Enable RabbitMQ.")
     if celery_broker == "redis" and redis != "y":
         fail("Celery broker is Redis but use_redis=n. Enable Redis.")
+
+if use_code_style == "y":
+    precommit_hooks = (
+        precommit_base,
+        precommit_pyupgrade,
+        precommit_ruff,
+        precommit_pydoclint,
+        precommit_translation_lint,
+    )
+    if all(flag == "n" for flag in precommit_hooks):
+        fail(
+            "Code style is enabled but no pre-commit hooks are selected. "
+            "Set at least one precommit_*=y, or set use_code_style=n."
+        )

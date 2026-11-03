@@ -1,0 +1,13 @@
+---
+description: Sentry error monitoring wiring
+globs: "**/config/settings/sentry.py,**/.env*"
+alwaysApply: false
+---
+
+# Sentry
+
+- Settings: `config/settings/sentry.py` — activates when `SENTRY_DSN` is set.
+- Keep DSN out of git; document in `.env.example` only as empty/placeholder.
+- Prefer scrubbing PII in `before_send` if you expand sampling.
+
+Deep: `docs/style-guide/ops/settings.md` · `docs/style-guide/http/security.md`

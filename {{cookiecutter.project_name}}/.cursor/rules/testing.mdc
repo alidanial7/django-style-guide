@@ -1,0 +1,17 @@
+---
+description: Pytest layering and co-located tests
+globs: "**/tests/**/*.py,**/conftest.py,**/*_factories.py,pytest.ini"
+alwaysApply: false
+---
+
+# Testing
+
+- Selectors = query correctness; services = business logic (TypedDict literals); APIs = integration (envelope/status/auth).
+- Co-locate: `services/tests/`, `selectors/tests/`, `apis/<leaf>/tests/` — never a root `apis/tests/`.
+- Prefer factories; `@pytest.mark.django_db`; `reverse()` for URLs.
+- Assert envelope keys: `success`, `status`, `result`, `messages`.
+{%- if cookiecutter.use_celery == "y" %}
+- Celery: eager/memory broker in test settings — assert task → service behavior, not worker process.
+{%- endif %}
+
+Deep: `docs/style-guide/ops/testing.md`

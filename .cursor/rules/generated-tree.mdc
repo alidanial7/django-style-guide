@@ -1,0 +1,13 @@
+---
+description: Edits inside the Django project template tree
+globs: "{{cookiecutter.project_name}}/**"
+alwaysApply: false
+---
+
+# Generated tree
+
+- Jinja must stay valid for all option combos; prefer `{%- if cookiecutter.… %}` over dead stubs.
+- Agent UX: `AGENTS.md` = router; `.cursor/rules/*.mdc` = actionable; `docs/style-guide/` = deep.
+- Feature-gated files removed in `post_gen`: Celery/WS/testing/code-quality rules + matching ops docs.
+- Dual auth files coexist until `post_gen` prunes JWT **or** session — do not assume both ship.
+- Mirror conventions in `users/` when adding scaffold examples.

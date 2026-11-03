@@ -1,0 +1,14 @@
+---
+description: Django Channels / WebSocket consumers and routing
+globs: "**/routing.py,**/consumers/**/*.py,config/settings/channels.py,config/asgi.py"
+alwaysApply: false
+---
+
+# WebSockets
+
+- Requires ASGI + Redis channel layer (`config/settings/channels.py`).
+- Routes: `{{cookiecutter.project_slug}}/core/routing.py` → `websocket_urlpatterns`.
+- Authenticate before joining groups; keep consumers thin — business rules in services.
+- Do not mix WS auth casually with HTTP auth helpers without reading existing patterns.
+
+Deep: `docs/style-guide/ops/websockets.md`

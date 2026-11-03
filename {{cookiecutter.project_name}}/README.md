@@ -6,18 +6,17 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 
 ## Documentation
 
-Conventions, architecture, and how to write code live under **[`docs/style-guide/`](docs/style-guide/README.md)** (source of truth for humans and agents).
+| Audience | Start |
+|----------|--------|
+| Coding agents | [`AGENTS.md`](AGENTS.md) → [`.cursor/rules/`](.cursor/rules/) (glob-scoped; feature rules only if enabled) |
+| Humans / deep detail | [`docs/style-guide/`](docs/style-guide/README.md) — open one page at a time |
 
-Coding agents: start with **[`AGENTS.md`](AGENTS.md)**.
-
-| Start here | Topic |
-|------------|--------|
-| [Style guide index](docs/style-guide/README.md) | Full table of contents |
-| [Architecture](docs/style-guide/overview/architecture.md) | Layers & request flow |
-| [Security](docs/style-guide/http/security.md) | Deny-by-default, secrets, DEBUG |
-| [Domain apps](docs/style-guide/overview/domain-apps.md) | `start_domain_app` |
-| [Validation](docs/style-guide/domain/validation.md) · [Errors](docs/style-guide/domain/errors.md) | Validators, codes, integrity |
-| [Commands](docs/style-guide/ops/commands.md) | `make`, management commands, scripts |
+| Topic | Doc |
+|-------|-----|
+| Architecture | [overview/architecture](docs/style-guide/overview/architecture.md) |
+| Domain apps | [overview/domain-apps](docs/style-guide/overview/domain-apps.md) |
+| Security | [http/security](docs/style-guide/http/security.md) |
+| Commands | [ops/commands](docs/style-guide/ops/commands.md) |
 
 ## Stack
 

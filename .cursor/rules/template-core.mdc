@@ -1,0 +1,11 @@
+---
+description: Cookiecutter template maintenance — always on
+alwaysApply: true
+---
+
+# Template core
+
+- Output tree: `{{cookiecutter.project_name}}/`. Hooks: `pre_prompt` → UI, `pre_gen` validate, `post_gen` prune.
+- New cookiecutter option → update `cookiecutter.json`, prompts UI, `pre_gen` if deps, `post_gen` if files to delete, root `README.md`, and generated `AGENTS.md` / rules / docs index when relevant.
+- Keep generated agent files **short**; feature rules/docs must disappear when the feature is off.
+- Never commit/push unless asked. Run `python hooks/test_choice_context.py` after choice-map edits.

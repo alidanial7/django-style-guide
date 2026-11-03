@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import os
-import re
 import select
 import sys
 import termios
 import tty
 from collections.abc import Sequence
+from pathlib import Path
+
+_HOOKS_DIR = Path(__file__).resolve().parent
+if str(_HOOKS_DIR) not in sys.path:
+    sys.path.insert(0, str(_HOOKS_DIR))
+
+from slugify import slugify  # noqa: E402
 
 
 class _Colors:
@@ -112,12 +118,6 @@ CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
     "precommit_pydoclint": ("y", "n"),
     "precommit_translation_lint": ("y", "n"),
 }
-
-
-def slugify(value: str) -> str:
-    slug = value.lower()
-    slug = re.sub(r"[^a-z0-9]+", "_", slug)
-    return slug.strip("_")
 
 
 def _cursor_up(lines: int) -> None:

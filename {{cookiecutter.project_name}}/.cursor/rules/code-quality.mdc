@@ -1,0 +1,14 @@
+---
+description: Ruff, pre-commit, docstring expectations
+globs: "pyproject.toml,.pre-commit-config.yaml,**/ruff.toml"
+alwaysApply: false
+---
+
+# Code quality
+
+- Ruff + pre-commit enabled. After install: `pre-commit install`.
+- Prefer lowercase, space-separated gettext msgids for user-facing strings.
+- API classes: short docstring + `@extend_schema`. If Google-style docstrings: types in `(Type):` / `Raises:` must match.
+- Do not disable hooks to land broken formatting — fix or ask the user.
+
+Deep: `docs/style-guide/ops/code-quality.md` · `docs/style-guide/ops/translations.md`

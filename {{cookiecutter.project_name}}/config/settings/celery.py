@@ -17,10 +17,5 @@ CELERY_TASK_TIME_LIMIT = 30  # seconds
 CELERY_TASK_MAX_RETRIES = 3
 
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-CELERY_BEAT_SCHEDULE = {
-    "notify_customers": {
-        "task": "config.tasks.notify_customers",
-        "schedule": 500,
-        "args": ["Hello World"],
-    }
-}
+# Add periodic tasks here or via django-celery-beat admin. Keep empty by default.
+CELERY_BEAT_SCHEDULE = {}

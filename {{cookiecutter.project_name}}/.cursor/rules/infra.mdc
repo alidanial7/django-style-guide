@@ -1,0 +1,22 @@
+---
+description: Docker, compose, env, entrypoints, production deploy
+globs: "docker-compose*.yml,Dockerfile*,docker/**,.env*,start-dev-services.sh,Makefile,scripts/**/*.sh"
+alwaysApply: false
+---
+
+# Infra
+
+- Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`.
+- Prod: `docker-compose.yml` + entrypoints under `docker/`.
+- New/changed env → update `.env.example` and document production defaults.
+- Broker/cache/DB/port/volume/healthcheck changes → developer alert section required (see `core` rule).
+{%- if cookiecutter.use_celery == "y" %}
+- Celery worker/beat: compose services + `scripts/run_celery_*.sh` / entrypoints.
+{%- endif %}
+{%- if cookiecutter.reverse_proxy == "nginx" %}
+- Reverse proxy: Nginx (`docker/nginx/`).
+{%- elif cookiecutter.reverse_proxy == "traefik" %}
+- Reverse proxy: Traefik (`docker/traefik/`).
+{%- endif %}
+
+Deep: `docs/style-guide/ops/docker-and-production.md` · `docs/style-guide/ops/settings.md` · `docs/style-guide/ops/commands.md`

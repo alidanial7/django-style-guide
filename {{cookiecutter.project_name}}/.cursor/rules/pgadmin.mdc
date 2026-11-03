@@ -1,0 +1,13 @@
+---
+description: pgAdmin in local docker-compose.dev
+globs: "docker-compose.dev.yml,start-dev-services.sh"
+alwaysApply: false
+---
+
+# pgAdmin
+
+- Enabled in `docker-compose.dev.yml` (port **5050** by default).
+- Start with `./start-dev-services.sh`. Credentials come from compose / `.env`.
+- Dev-only — do not expose pgAdmin in production compose.
+
+Deep: `docs/style-guide/ops/docker-and-production.md`

@@ -198,7 +198,11 @@ app_name = "blogs"
 
 urlpatterns = [
     # path("posts/", PostListCreateApiView.as_view(), name="posts-list-create"),
+{%- if cookiecutter.use_uuid_pk == "y" %}
     # path("posts/<uuid:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
+{%- else %}
+    # path("posts/<int:post_id>/", PostRetrieveUpdateDestroyApiView.as_view(), name="posts-detail"),
+{%- endif %}
 ]
 ```
 
@@ -304,7 +308,11 @@ Resource names in URLs **must always be plural nouns** (both for collections and
 | ✅ Correct (Plural) | ❌ Incorrect (Singular) | Explanation |
 |----------------------|-------------------------|-------------|
 | `/api/v1/users/` | `/api/v1/user/` | Collection list/create |
+{%- if cookiecutter.use_uuid_pk == "y" %}
 | `/api/v1/users/<uuid:user_id>/` | `/api/v1/user/<uuid:user_id>/` | Detail / update / delete by id |
+{%- else %}
+| `/api/v1/users/<int:user_id>/` | `/api/v1/user/<int:user_id>/` | Detail / update / delete by id |
+{%- endif %}
 | `/api/v1/site/contact-infos/cities/` | `/api/v1/site/contactinfo/cities/` | Multi-word collection (kebab-case + plural) |
 | `/api/v1/site/contact-infos/provinces/` | `/api/v1/site/contactinfo/province/` | Plural resource segment |
 

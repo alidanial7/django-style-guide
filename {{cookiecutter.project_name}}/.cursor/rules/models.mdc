@@ -1,0 +1,19 @@
+---
+description: Domain models, BaseModel, admin sync, enums
+globs: "**/models/**/*.py,**/models.py,**/enums.py,**/admin.py"
+alwaysApply: false
+---
+
+# Models
+
+- Inherit `BaseModel`. Docstring: `Model to declare …`.
+- Every field: `verbose_name` + `help_text`. Every FK/O2O: explicit `related_name`.
+- Choices live in `<app>/enums.py` — never nested on the model.
+- Model create/change → update `<app>/admin.py` (`list_display`, filters, search, readonly).
+{%- if cookiecutter.use_uuid_pk == "y" %}
+- PK: UUID v4 on `BaseModel` — do not switch to sequential ints on domain entities.
+{%- else %}
+- PK: project default `BigAutoField` unless a model declares otherwise.
+{%- endif %}
+
+Deep: `docs/style-guide/domain/models.md` · `docs/style-guide/domain/enums.md`

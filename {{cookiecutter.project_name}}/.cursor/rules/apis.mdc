@@ -1,0 +1,26 @@
+---
+description: API views, serializers, URL mirroring, scoped surfaces
+globs: "**/apis/**/*.py,**/urls/**/*.py,**/api/**/*.py"
+alwaysApply: false
+---
+
+# APIs & URLs
+
+- Folders under `apis/` mirror URL segments. Classes: `{Entity}ListCreate` / `RetrieveUpdateDestroy`; actions → `*ApiView`.
+- Mount via `urls/<prefix>_url.py`; plural resource nouns.
+{%- if cookiecutter.use_uuid_pk == "y" %}
+- Path ids: `<uuid:entity_id>`.
+{%- else %}
+- Path ids: `<int:entity_id>`.
+{%- endif %}
+- Always `api_response` / pagination helpers. Public → `AllowAny`.
+- OpenAPI: `envelope_serializer(...)`; document FilterSet query params on filtered lists.
+
+## Scoped `/api/v1/<scope>/…`
+
+- `apis/<scope>/<resource>/` (+ `id/` for detail). Never root `apis/` for scoped routes.
+- Leaf `tests/` next to each collection **and** `id/` leaf (when testing enabled).
+- Dedicated `<Scope>*` serializers + `@extend_schema_serializer(component_name="…")`.
+- URLs: `urls/<scope>_<app>_url.py` → `api/<scope>_urls.py`.
+
+Deep: `docs/style-guide/domain/apis.md` · `docs/style-guide/domain/urls.md`

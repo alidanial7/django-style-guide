@@ -68,7 +68,7 @@ flowchart LR
 │   └── tasks.py
 │
 ├── {{cookiecutter.project_slug}}/          # installable Django apps live here
-│   ├── api/                    # /api/v1/ router, ApiAuthMixin, pagination helpers
+│   ├── api/                    # URL package only (not in INSTALLED_APPS): router, mixins, pagination
 │   ├── core/                   # health, ApplicationError, channels routing hooks
 │   ├── common/                 # platform: http envelope, integrity, BaseModel, helpers
 │   ├── commands/               # management commands (devserver, start_domain_app)
