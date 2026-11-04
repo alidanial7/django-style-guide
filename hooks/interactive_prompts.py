@@ -7,7 +7,8 @@ import select
 import sys
 import termios
 import tty
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 
 _HOOKS_DIR = Path(__file__).resolve().parent
@@ -135,31 +136,56 @@ def _cursor_up(lines: int) -> None:
     sys.stdout.flush()
 
 
-def _read_escape_sequence(first: str = "\x1b") -> str:
-    """Read a full CSI/SS3 sequence after ESC (arrows, etc.).
+@contextmanager
+def _cbreak_terminal() -> Iterator[int]:
+    """Keep stdin in cbreak for the whole prompt so IDE terminals don't steal ↑↓.
 
-    Handles both normal (``\\x1b[A``) and application-cursor (``\\x1bOA``) modes,
-    and longer CSI forms some terminals emit.
+    Toggling cooked mode after every key lets Cursor/VS Code bind arrows to
+    scrollback. ``setcbreak`` (not ``setraw``) still delivers keys immediately
+    but keeps output post-processing so ``print()`` newlines render correctly.
+    Prefer ``os.read`` over ``sys.stdin.read`` so ``select`` matches the fd.
     """
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)
+        # Application cursor keys: ↑↓ → ESC O A / ESC O B (in addition to CSI).
+        sys.stdout.write("\033[?1h")
+        sys.stdout.flush()
+        yield fd
+    finally:
+        sys.stdout.write("\033[?1l")
+        sys.stdout.flush()
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
+def _read_byte(fd: int) -> str:
+    data = os.read(fd, 1)
+    if not data:
+        return ""
+    return data.decode("latin-1")
+
+
+def _read_escape_sequence(fd: int, first: str = "\x1b") -> str:
+    """Read a full CSI/SS3 sequence after ESC (arrows, etc.)."""
     key = first
-    # Cursor / IDE terminals can buffer slowly — 50ms was dropping arrow bytes.
-    r, _, _ = select.select([sys.stdin], [], [], 0.2)
+    # IDE PTYs sometimes deliver follow-up bytes slowly.
+    r, _, _ = select.select([fd], [], [], 0.35)
     if not r:
         return key
 
-    second = sys.stdin.read(1)
-    key += second
-    if second not in ("[", "O"):
-        return key
-
     while True:
-        r, _, _ = select.select([sys.stdin], [], [], 0.05)
-        if not r:
+        ch = _read_byte(fd)
+        if not ch:
             break
-        ch = sys.stdin.read(1)
         key += ch
-        # Final byte of CSI/SS3 is in @–~ (arrows end with A/B/C/D, etc.).
-        if "@" <= ch <= "~":
+        if len(key) == 2 and ch not in ("[", "O"):
+            break
+        # CSI/SS3 final byte is in the @–~ range (arrows end with A/B/C/D).
+        if len(key) >= 3 and "@" <= ch <= "~":
+            break
+        r, _, _ = select.select([fd], [], [], 0.05)
+        if not r:
             break
 
     return key
@@ -167,15 +193,15 @@ def _read_escape_sequence(first: str = "\x1b") -> str:
 
 def _normalize_nav_key(key: str) -> str:
     """Map raw terminal bytes to stable nav tokens: up/down/space/enter/other."""
-    if key in ("\x1b[A", "\x1bOA", "k", "K"):
+    if key in ("\x1b[A", "\x1bOA", "k", "K", "w", "W"):
         return "up"
-    if key in ("\x1b[B", "\x1bOB", "j", "J"):
+    if key in ("\x1b[B", "\x1bOB", "j", "J", "s", "S"):
         return "down"
     if key == " ":
         return "space"
     if key in ("\r", "\n"):
         return "enter"
-    # Modified arrows: ESC [ 1 ; 2 A  → still ends with A/B.
+    # Modified / extended arrows still end with A/B.
     if len(key) >= 3 and key.startswith("\x1b") and key[-1] == "A":
         return "up"
     if len(key) >= 3 and key.startswith("\x1b") and key[-1] == "B":
@@ -183,19 +209,17 @@ def _normalize_nav_key(key: str) -> str:
     return key
 
 
-def _read_key() -> str:
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setraw(fd)
-        key = sys.stdin.read(1)
-        if key == "\x03":
-            raise KeyboardInterrupt
-        if key == "\x1b":
-            key = _read_escape_sequence(key)
-        return _normalize_nav_key(key)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+def _read_key(fd: int) -> str:
+    key = _read_byte(fd)
+    if key == "\x03":
+        raise KeyboardInterrupt
+    if key == "\x1b":
+        key = _read_escape_sequence(fd, key)
+    normalized = _normalize_nav_key(key)
+    if os.environ.get("DSG_DEBUG_KEYS"):
+        sys.stderr.write(f"[dsg-keys] raw={key!r} -> {normalized!r}\n")
+        sys.stderr.flush()
+    return normalized
 
 
 def prompt_radio(
@@ -215,35 +239,36 @@ def prompt_radio(
     sys.stdout.flush()
 
     try:
-        while True:
-            if redraw:
-                _cursor_up(block_lines)
+        with _cbreak_terminal() as fd:
+            while True:
+                if redraw:
+                    _cursor_up(block_lines)
 
-            print(f"  {COLORS.bold}{title}{COLORS.reset}")
-            if help_text:
-                print(f"  {COLORS.dim}{help_text}{COLORS.reset}")
-            print()
+                print(f"  {COLORS.bold}{title}{COLORS.reset}")
+                if help_text:
+                    print(f"  {COLORS.dim}{help_text}{COLORS.reset}")
+                print()
 
-            for index, (_, label) in enumerate(options):
-                marker = "•" if index == selected else " "
-                pointer = "›" if index == focus else " "
-                style = f"{COLORS.bold}{COLORS.green}" if index == focus else ""
-                print(f"  {pointer} {style}({marker}) {label}{COLORS.reset}")
+                for index, (_, label) in enumerate(options):
+                    marker = "•" if index == selected else " "
+                    pointer = "›" if index == focus else " "
+                    style = f"{COLORS.bold}{COLORS.green}" if index == focus else ""
+                    print(f"  {pointer} {style}({marker}) {label}{COLORS.reset}")
 
-            print()
-            print(COLORS.radio_hint)
+                print()
+                print(COLORS.radio_hint)
 
-            redraw = True
-            key = _read_key()
+                redraw = True
+                key = _read_key(fd)
 
-            if key == "up":
-                focus = max(0, focus - 1)
-            elif key == "down":
-                focus = min(count - 1, focus + 1)
-            elif key == "space":
-                selected = focus
-            elif key == "enter":
-                break
+                if key == "up":
+                    focus = max(0, focus - 1)
+                elif key == "down":
+                    focus = min(count - 1, focus + 1)
+                elif key == "space":
+                    selected = focus
+                elif key == "enter":
+                    break
     finally:
         sys.stdout.write(COLORS.show_cursor)
         sys.stdout.flush()
@@ -269,39 +294,40 @@ def prompt_multiselect(
     sys.stdout.flush()
 
     try:
-        while True:
-            if redraw:
-                _cursor_up(block_lines)
+        with _cbreak_terminal() as fd:
+            while True:
+                if redraw:
+                    _cursor_up(block_lines)
 
-            print(f"  {COLORS.bold}{title}{COLORS.reset}")
-            if help_text:
-                print(f"  {COLORS.dim}{help_text}{COLORS.reset}")
-            print()
+                print(f"  {COLORS.bold}{title}{COLORS.reset}")
+                if help_text:
+                    print(f"  {COLORS.dim}{help_text}{COLORS.reset}")
+                print()
 
-            for index, (key, label) in enumerate(options):
-                marker = "•" if key in selected else " "
-                pointer = "›" if index == focus else " "
-                style = f"{COLORS.bold}{COLORS.green}" if index == focus else ""
-                print(f"  {pointer} {style}({marker}) {label}{COLORS.reset}")
+                for index, (key, label) in enumerate(options):
+                    marker = "•" if key in selected else " "
+                    pointer = "›" if index == focus else " "
+                    style = f"{COLORS.bold}{COLORS.green}" if index == focus else ""
+                    print(f"  {pointer} {style}({marker}) {label}{COLORS.reset}")
 
-            print()
-            print(COLORS.multiselect_hint)
+                print()
+                print(COLORS.multiselect_hint)
 
-            redraw = True
-            key = _read_key()
+                redraw = True
+                key = _read_key(fd)
 
-            if key == "up":
-                focus = max(0, focus - 1)
-            elif key == "down":
-                focus = min(count - 1, focus + 1)
-            elif key == "space":
-                option_key = options[focus][0]
-                if option_key in selected:
-                    selected.remove(option_key)
-                else:
-                    selected.add(option_key)
-            elif key == "enter":
-                break
+                if key == "up":
+                    focus = max(0, focus - 1)
+                elif key == "down":
+                    focus = min(count - 1, focus + 1)
+                elif key == "space":
+                    option_key = options[focus][0]
+                    if option_key in selected:
+                        selected.remove(option_key)
+                    else:
+                        selected.add(option_key)
+                elif key == "enter":
+                    break
     finally:
         sys.stdout.write(COLORS.show_cursor)
         sys.stdout.flush()
