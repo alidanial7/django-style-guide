@@ -60,7 +60,7 @@ pip install "cookiecutter>=2.4"
 cookiecutter https://github.com/alidanial7/django-style-guide.git
 ```
 
-On a TTY you get a checklist UI (`↑` `↓` · `Space` · `Enter`).  
+On a TTY you get a checklist UI (`↑` `↓` or `j` `k` · `Space` · `Enter`).  
 Defaults are sensible: **JWT** · **UUID PKs** · **pytest** · **Ruff**.
 
 <details>

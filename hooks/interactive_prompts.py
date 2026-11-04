@@ -42,10 +42,10 @@ class _Colors:
             self.show_cursor = ""
 
         self.radio_hint = (
-            f"{self.dim}  ↑↓ move  ·  space select  ·  enter confirm{self.reset}"
+            f"{self.dim}  ↑↓ / jk move  ·  space select  ·  enter confirm{self.reset}"
         )
         self.multiselect_hint = (
-            f"{self.dim}  ↑↓ move  ·  space toggle  ·  enter confirm{self.reset}"
+            f"{self.dim}  ↑↓ / jk move  ·  space toggle  ·  enter confirm{self.reset}"
         )
 
 
@@ -135,6 +135,54 @@ def _cursor_up(lines: int) -> None:
     sys.stdout.flush()
 
 
+def _read_escape_sequence(first: str = "\x1b") -> str:
+    """Read a full CSI/SS3 sequence after ESC (arrows, etc.).
+
+    Handles both normal (``\\x1b[A``) and application-cursor (``\\x1bOA``) modes,
+    and longer CSI forms some terminals emit.
+    """
+    key = first
+    # Cursor / IDE terminals can buffer slowly — 50ms was dropping arrow bytes.
+    r, _, _ = select.select([sys.stdin], [], [], 0.2)
+    if not r:
+        return key
+
+    second = sys.stdin.read(1)
+    key += second
+    if second not in ("[", "O"):
+        return key
+
+    while True:
+        r, _, _ = select.select([sys.stdin], [], [], 0.05)
+        if not r:
+            break
+        ch = sys.stdin.read(1)
+        key += ch
+        # Final byte of CSI/SS3 is in @–~ (arrows end with A/B/C/D, etc.).
+        if "@" <= ch <= "~":
+            break
+
+    return key
+
+
+def _normalize_nav_key(key: str) -> str:
+    """Map raw terminal bytes to stable nav tokens: up/down/space/enter/other."""
+    if key in ("\x1b[A", "\x1bOA", "k", "K"):
+        return "up"
+    if key in ("\x1b[B", "\x1bOB", "j", "J"):
+        return "down"
+    if key == " ":
+        return "space"
+    if key in ("\r", "\n"):
+        return "enter"
+    # Modified arrows: ESC [ 1 ; 2 A  → still ends with A/B.
+    if len(key) >= 3 and key.startswith("\x1b") and key[-1] == "A":
+        return "up"
+    if len(key) >= 3 and key.startswith("\x1b") and key[-1] == "B":
+        return "down"
+    return key
+
+
 def _read_key() -> str:
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -144,10 +192,8 @@ def _read_key() -> str:
         if key == "\x03":
             raise KeyboardInterrupt
         if key == "\x1b":
-            r, _, _ = select.select([sys.stdin], [], [], 0.05)
-            if r:
-                key += sys.stdin.read(2)
-        return key
+            key = _read_escape_sequence(key)
+        return _normalize_nav_key(key)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
@@ -190,13 +236,13 @@ def prompt_radio(
             redraw = True
             key = _read_key()
 
-            if key == "\x1b[A":
+            if key == "up":
                 focus = max(0, focus - 1)
-            elif key == "\x1b[B":
+            elif key == "down":
                 focus = min(count - 1, focus + 1)
-            elif key == " ":
+            elif key == "space":
                 selected = focus
-            elif key in ("\r", "\n"):
+            elif key == "enter":
                 break
     finally:
         sys.stdout.write(COLORS.show_cursor)
@@ -244,17 +290,17 @@ def prompt_multiselect(
             redraw = True
             key = _read_key()
 
-            if key == "\x1b[A":
+            if key == "up":
                 focus = max(0, focus - 1)
-            elif key == "\x1b[B":
+            elif key == "down":
                 focus = min(count - 1, focus + 1)
-            elif key == " ":
+            elif key == "space":
                 option_key = options[focus][0]
                 if option_key in selected:
                     selected.remove(option_key)
                 else:
                     selected.add(option_key)
-            elif key in ("\r", "\n"):
+            elif key == "enter":
                 break
     finally:
         sys.stdout.write(COLORS.show_cursor)
