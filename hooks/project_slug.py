@@ -1,4 +1,8 @@
-"""Shared project_slug normalization for prompts and pre_gen validation."""
+"""Shared project_slug normalization for prompts and pre_gen validation.
+
+Named ``project_slug`` (not ``slugify``) so it does not shadow the
+``python-slugify`` package Cookiecutter loads as a Jinja extension.
+"""
 
 from __future__ import annotations
 

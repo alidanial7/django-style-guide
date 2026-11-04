@@ -28,7 +28,7 @@ def fail(message: str) -> None:
 
 
 def slugify(value: str) -> str:
-    # Keep in sync with hooks/slugify.py (this file runs from a temp path).
+    # Keep in sync with hooks/project_slug.py (this file runs from a temp path).
     slug = value.lower()
     slug = re.sub(r"[^a-z0-9]+", "_", slug)
     return slug.strip("_")

@@ -15,7 +15,7 @@ _HOOKS_DIR = Path(__file__).resolve().parent
 if str(_HOOKS_DIR) not in sys.path:
     sys.path.insert(0, str(_HOOKS_DIR))
 
-from slugify import slugify  # noqa: E402
+from project_slug import slugify  # noqa: E402
 
 
 class _Colors:
