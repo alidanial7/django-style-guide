@@ -15,7 +15,7 @@ usage() {
     echo "the terminal stops and removes the compose services (volumes kept unless --clean)."
     echo
     echo "  --detach, -d  Start in the background and exit (containers keep running)"
-    echo "  --clean       Stop containers and remove named volumes (fresh database state)"
+    echo "  --clean       Stop containers and wipe ./volumes/* bind mounts (fresh DB)"
     echo "  -h, --help    Show this help"
 }
 
@@ -66,17 +66,28 @@ if [ "$DETACH" = false ]; then
 fi
 
 if [ "$CLEAN" = true ]; then
-    echo "Cleaning development containers and volumes..."
+    echo "Cleaning development containers and bind-mount volumes..."
     docker compose -f "$COMPOSE_FILE" down -v --remove-orphans || true
+    # Compose uses bind mounts under ./volumes/ — `down -v` does not wipe those.
+    # Clear them so Postgres re-runs init and creates POSTGRES_DB.
+    if [ -d volumes ]; then
+        for svc_dir in volumes/*/; do
+            [ -d "$svc_dir" ] || continue
+            find "$svc_dir" -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+        done
+        echo "Wiped ./volumes/*/ (kept .gitkeep placeholders)."
+    fi
 fi
 
 echo "Starting development containers..."
 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
-echo "Waiting for Postgres..."
+echo "Waiting for Postgres (database {{cookiecutter.project_slug}})..."
 POSTGRES_READY=false
 for _ in $(seq 1 30); do
-    if docker compose -f "$COMPOSE_FILE" exec -T db pg_isready -U "{{cookiecutter.postgres_user}}" -d "{{cookiecutter.project_slug}}" >/dev/null 2>&1; then
+    # Require the app DB to exist — pg_isready alone can pass before init finishes.
+    if docker compose -f "$COMPOSE_FILE" exec -T db \
+        psql -U "{{cookiecutter.postgres_user}}" -d "{{cookiecutter.project_slug}}" -c 'SELECT 1' >/dev/null 2>&1; then
         POSTGRES_READY=true
         break
     fi
@@ -84,9 +95,11 @@ for _ in $(seq 1 30); do
 done
 
 if [ "$POSTGRES_READY" = true ]; then
-    echo "Postgres is ready."
+    echo "Postgres is ready (database {{cookiecutter.project_slug}})."
 else
-    echo "Warning: Postgres did not become ready in time. Containers are still running."
+    echo "Warning: database '{{cookiecutter.project_slug}}' is not ready."
+    echo "  If this persists, wipe bind mounts: ./start-dev-services.sh --clean"
+    echo "  Or create it: docker compose -f $COMPOSE_FILE exec db psql -U {{cookiecutter.postgres_user}} -d postgres -c 'CREATE DATABASE {{cookiecutter.project_slug}};'"
 fi
 
 echo

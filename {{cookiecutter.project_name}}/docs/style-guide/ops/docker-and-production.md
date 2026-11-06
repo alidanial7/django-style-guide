@@ -40,7 +40,7 @@ flowchart TB
 ```bash
 ./start-dev-services.sh           # follow logs; Ctrl+C → down
 ./start-dev-services.sh --detach  # leave running (make up-detach)
-./start-dev-services.sh --clean   # wipe volumes, fresh DB
+./start-dev-services.sh --clean   # wipe ./volumes/* bind mounts + restart (fresh DB)
 make up                           # same as start-dev-services.sh (attached)
 # Ctrl+C / closing the terminal → compose down (volumes kept unless --clean)
 

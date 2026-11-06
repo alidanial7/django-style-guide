@@ -94,7 +94,7 @@ Defaults work with local Compose services. `devserver` runs migrations, creates 
 
 - `./start-dev-services.sh` — follow logs; Ctrl+C / closing the terminal runs `compose down`
 - `./start-dev-services.sh --detach` (or `make up-detach`) — leave containers running in the background
-- `./start-dev-services.sh --clean` — wipe volumes and start fresh
+- `./start-dev-services.sh --clean` — wipe `./volumes/*` bind mounts and start fresh
 
 More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & production](docs/style-guide/ops/docker-and-production.md) · [Logging](docs/style-guide/ops/logging.md).
 
