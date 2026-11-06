@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from interactive_prompts import (  # noqa: E402
     assert_inplace_target_ok,
     flatten_generated_project,
+    is_cookiecutter_template_root,
     list_non_git_entries,
 )
 
@@ -40,6 +41,17 @@ class InplaceTargetTests(unittest.TestCase):
             with self.assertRaises(ValueError) as ctx:
                 assert_inplace_target_ok(root)
             self.assertIn("README.md", str(ctx.exception))
+
+    def test_template_root_detected_and_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "cookiecutter.json").write_text("{}\n", encoding="utf-8")
+            (root / "{{cookiecutter.project_name}}").mkdir()
+            (root / "hooks").mkdir()
+            self.assertTrue(is_cookiecutter_template_root(root))
+            with self.assertRaises(ValueError) as ctx:
+                assert_inplace_target_ok(root)
+            self.assertIn("template repository", str(ctx.exception))
 
     def test_flatten_moves_and_replaces_gitignore(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

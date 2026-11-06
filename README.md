@@ -89,6 +89,10 @@ DSG_INPLACE=1 ./init.sh
 **Safety:** the target directory must be empty **or** contain only git metadata  
 (`.git`, `.gitignore`, `.gitattributes`, `.gitmodules`). Any other file → error and abort.
 
+Do **not** run `--inplace` from inside this template repo (`cookiecutter.json` +  
+`{{cookiecutter.project_name}}`). From the template, omit `--inplace` so the app  
+lands in `./<project_name>/`. Use inplace only from a new empty/git-only app repo.
+
 `project_name` is still used as a temporary folder name during generation, then contents are moved up into `.`.
 
 </details>

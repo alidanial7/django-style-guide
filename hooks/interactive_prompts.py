@@ -20,6 +20,12 @@ _GIT_ONLY_ENTRIES = frozenset({
     ".gitmodules",
 })
 
+# Signals "this cwd is the cookiecutter template", not a blank app repo.
+_TEMPLATE_ROOT_MARKERS = frozenset({
+    "cookiecutter.json",
+    "{{cookiecutter.project_name}}",
+})
+
 _HOOKS_DIR = Path(__file__).resolve().parent
 if str(_HOOKS_DIR) not in sys.path:
     sys.path.insert(0, str(_HOOKS_DIR))
@@ -383,8 +389,24 @@ def list_non_git_entries(target: Path) -> list[str]:
     )
 
 
+def is_cookiecutter_template_root(target: Path) -> bool:
+    """True when *target* looks like this template (not an empty app repo)."""
+    names = {entry.name for entry in target.iterdir()} if target.is_dir() else set()
+    return _TEMPLATE_ROOT_MARKERS.issubset(names)
+
+
 def assert_inplace_target_ok(target: Path) -> None:
     """Fail if *target* has anything beyond git metadata files/dirs."""
+    if is_cookiecutter_template_root(target):
+        raise ValueError(
+            "Cannot generate inplace: you are inside the django-style-guide "
+            "template repository.\n"
+            "  • Answer No to “Generate into the current directory?”, or\n"
+            "  • Create an empty (or git-only) project repo and run "
+            "`./init.sh --inplace` from there.\n"
+            "Inplace must not overwrite cookiecutter.json / hooks / "
+            "{{cookiecutter.project_name}}."
+        )
     offenders = list_non_git_entries(target)
     if not offenders:
         return
@@ -501,7 +523,27 @@ def _collect_answers_impl() -> dict[str, str] | None:
     )
 
     print_section("Output location")
-    if os.environ.get("DSG_INPLACE") == "1":
+    cwd = Path.cwd()
+    force_inplace = os.environ.get("DSG_INPLACE") == "1"
+    if is_cookiecutter_template_root(cwd):
+        if force_inplace:
+            print()
+            print(
+                f"  {COLORS.yellow}Cannot use --inplace / DSG_INPLACE here — "
+                f"this directory is the cookiecutter template itself.{COLORS.reset}"
+            )
+            print(
+                f"  {COLORS.dim}Generate into a subfolder (omit --inplace), or run "
+                f"from an empty/git-only app repo.{COLORS.reset}"
+            )
+            print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
+            return None
+        inplace = "n"
+        print(
+            f"  {COLORS.dim}↳ Inside the template repo — will create "
+            f"./<project_name>/ (inplace not available here).{COLORS.reset}"
+        )
+    elif force_inplace:
         inplace = "y"
         print(
             f"  {COLORS.dim}↳ DSG_INPLACE=1 / --inplace — "
@@ -514,7 +556,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
         )
     if inplace == "y":
         try:
-            assert_inplace_target_ok(Path.cwd())
+            assert_inplace_target_ok(cwd)
         except ValueError as error:
             print()
             print(f"  {COLORS.yellow}{error}{COLORS.reset}")
