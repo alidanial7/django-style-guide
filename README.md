@@ -216,7 +216,8 @@ Defaults match the interactive UI.
 | 🔵 | `use_google_login` | n | Google `id_token` → JWT/session |
 | 🪟 | `use_microsoft_login` | n | Microsoft `id_token` → JWT/session |
 | | `use_apple_login` | n | Apple `id_token` → JWT/session |
-| 🌍 | `use_i18n` | n | Django i18n (`LocaleMiddleware`, `locale/`, `update_translations`) |
+| 🌍 | `use_i18n` | n | Django gettext (`LocaleMiddleware`, `locale/`, `update_translations`) |
+| | `i18n_mode` | bilingual | `monolingual` (en) or `bilingual` (en+fa); ignored when `use_i18n=n` |
 | 🆔 | `use_uuid_pk` | y | UUID PK on `BaseModel` |
 | 🌐 | `use_scoped_apis` | n | Multi-scope `/api/v1/<scope>/` + `/api/docs/<scope>/` |
 | | `api_scopes` | `admin,factory` | Comma-separated lowercase names (e.g. `admin,factory,customer`); ignored if scoped APIs are off |

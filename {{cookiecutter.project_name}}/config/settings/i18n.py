@@ -7,7 +7,9 @@ LANGUAGE_CODE = env("LANGUAGE_CODE", default="en")
 
 LANGUAGES = [
     ("en", "English"),
+{%- if cookiecutter.i18n_mode == "bilingual" %}
     ("fa", "Persian"),
+{%- endif %}
 ]
 
 USE_I18N = True

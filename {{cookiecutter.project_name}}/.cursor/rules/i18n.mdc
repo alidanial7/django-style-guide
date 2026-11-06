@@ -7,8 +7,10 @@ alwaysApply: false
 # i18n
 
 - Django gettext only — `USE_I18N`, `LANGUAGES`, `LOCALE_PATHS`, `LocaleMiddleware` (after `SessionMiddleware`).
+- Generated languages: {% if cookiecutter.i18n_mode == "bilingual" %}English + Persian (`en`, `fa`){% else %}English only (`en`){% endif %}. Source of truth is `LANGUAGES` in `config/settings/i18n.py` — never hardcode a language list in scripts.
 - User-facing strings: `_()` / `gettext_lazy`; prefer **lowercase space-separated** English msgids.
-- Refresh catalogs: `python manage.py update_translations` · `make translations` · `./scripts/update_translations.sh`. Add a language with `--locale fa`. Compile with `--compile` (shell maps legacy `--compile-messages`).
+- Refresh catalogs: `python manage.py update_translations` · `make translations` · `./scripts/update_translations.sh`. Defaults to **every** code in `settings.LANGUAGES` (0–N). Override with `--locale xx` (repeatable). Compile with `--compile` (shell maps legacy `--compile-messages`).
+- **Add another language:** (1) append `("xx", "Name")` to `LANGUAGES` (2) `python manage.py update_translations --locale xx` (3) translate `locale/xx/LC_MESSAGES/django.po` (4) `--compile` or deploy-time `compilemessages`. No script edits required.
 - Language switch: `POST /i18n/setlang/` (Django). APIs also honor `Accept-Language` via `LocaleMiddleware`.
 - Default language: `.env` `LANGUAGE_CODE` (fallback `en`).
 - Do not invent a second i18n stack.

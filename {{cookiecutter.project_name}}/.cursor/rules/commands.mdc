@@ -24,7 +24,7 @@ alwaysApply: false
 {%- endif %}
 - `devserver` = migrate + `seed_demo_data` + runserver{%- if cookiecutter.use_celery == "y" %} (+ Celery worker){%- endif %}.
 {%- if cookiecutter.use_i18n == "y" %}
-- Translations: `python manage.py update_translations` (or `make translations` / `./scripts/update_translations.sh`). See `i18n` rule.
+- Translations: `python manage.py update_translations` (or `make translations` / `./scripts/update_translations.sh`) — follows `settings.LANGUAGES` (any count). See `i18n` rule.
 {%- endif %}
 - Changing command contracts / seed flow → update this rule (+ `i18n` if translation commands change) in the **same** change.
 

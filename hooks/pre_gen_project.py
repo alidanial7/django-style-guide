@@ -10,6 +10,7 @@ ci_provider = "{{ cookiecutter.ci_provider }}"
 use_asgi = "{{ cookiecutter.use_asgi }}"
 use_websockets = "{{ cookiecutter.use_websockets }}"
 use_otp_login = "{{ cookiecutter.use_otp_login }}"
+i18n_mode = "{{ cookiecutter.i18n_mode }}"
 use_scoped_apis = "{{ cookiecutter.use_scoped_apis }}"
 api_scopes = "{{ cookiecutter.api_scopes }}"
 reverse_proxy = "{{ cookiecutter.reverse_proxy }}"
@@ -54,6 +55,9 @@ if not re.match(r"^\d+(\.\d+)*$", postgres_version):
 
 if reverse_proxy not in ("none", "nginx", "traefik"):
     fail("reverse_proxy must be 'none', 'nginx', or 'traefik'.")
+
+if i18n_mode not in ("monolingual", "bilingual"):
+    fail("i18n_mode must be 'monolingual' or 'bilingual'.")
 
 if use_ci == "y" and ci_provider not in ("github", "gitlab"):
     fail("CI is enabled but ci_provider is invalid. Use 'github' or 'gitlab'.")

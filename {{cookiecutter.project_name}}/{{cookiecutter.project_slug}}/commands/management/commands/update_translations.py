@@ -1,9 +1,14 @@
 """Extract / refresh gettext catalogs under project ``locale/``.
 
+Locales default to every code in ``settings.LANGUAGES`` (any count). Pass
+``--locale`` to target one or more codes explicitly — no hardcoding required
+when adding languages.
+
 Examples::
 
     python manage.py update_translations
     python manage.py update_translations --locale fa
+    python manage.py update_translations --locale de --locale fr
     python manage.py update_translations --compile
 """
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Thin wrapper around: python manage.py update_translations
+# Locales come from settings.LANGUAGES (any count) or --locale flags — do not
+# hardcode language codes here.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

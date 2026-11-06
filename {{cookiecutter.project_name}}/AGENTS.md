@@ -48,7 +48,7 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 - Social login: verify provider `id_token` → link `SocialAccount` → continue with project auth mode (JWT or session).
 {%- endif %}
 {%- if cookiecutter.use_i18n == "y" %}
-- i18n: Django gettext only — `_()` / `gettext_lazy`; refresh with `python manage.py update_translations` (or `make translations`).
+- i18n: Django gettext only — `_()` / `gettext_lazy`; `LANGUAGES` = {% if cookiecutter.i18n_mode == "bilingual" %}`en` + `fa`{% else %}`en` (monolingual){% endif %}. Refresh with `python manage.py update_translations` (follows `LANGUAGES`, any count). Add a language: append to `LANGUAGES` → `update_translations --locale xx` → translate `.po` — see `i18n` rule / [Translations](docs/style-guide/ops/translations.md).
 {%- endif %}
 {%- if cookiecutter.use_file_manager == "y" %}
 - Uploads: `ManagedFile` only — no ad-hoc `FileField` / `ImageField` on domain models.

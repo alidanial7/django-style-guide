@@ -74,7 +74,7 @@ FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_google_login", "Google social login (id_token)"),
     ("use_microsoft_login", "Microsoft social login (id_token)"),
     ("use_apple_login", "Apple social login (id_token)"),
-    ("use_i18n", "Django i18n / multi-language (LocaleMiddleware + locales)"),
+    ("use_i18n", "Django gettext translations (LocaleMiddleware + locale/)"),
     ("use_uuid_pk", "UUID primary keys for models (off = BigAutoField)"),
     ("use_scoped_apis", "Multi-scope APIs (/api/v1/<scope>/… + /api/docs/<scope>/)"),
     ("use_file_manager", "ManagedFile file_manager app"),
@@ -129,6 +129,7 @@ CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
     "use_microsoft_login": ("y", "n"),
     "use_apple_login": ("y", "n"),
     "use_i18n": ("y", "n"),
+    "i18n_mode": ("bilingual", "monolingual"),
     "use_uuid_pk": ("y", "n"),
     "use_scoped_apis": ("y", "n"),
     "use_file_manager": ("y", "n"),
@@ -691,6 +692,27 @@ def _collect_answers_impl() -> dict[str, str] | None:
     use_apple_login = yn(selected_features, "use_apple_login")
     use_i18n = yn(selected_features, "use_i18n")
 
+    # Always a valid choice — ignored by templates when translations are off.
+    i18n_mode = "bilingual"
+    if use_i18n == "y":
+        print_section("Translations")
+        i18n_mode = prompt_radio(
+            "Language setup",
+            "How many languages should the project ship with? "
+            "You can add more later via LANGUAGES + update_translations.",
+            (
+                (
+                    "monolingual",
+                    "Monolingual — English only (gettext ready; add locales later)",
+                ),
+                (
+                    "bilingual",
+                    "Bilingual — English + Persian (fa)",
+                ),
+            ),
+            default_index=1,
+        )
+
     print_section("Login identifier")
     user_login_field = prompt_radio(
         "Login with",
@@ -856,6 +878,11 @@ def _collect_answers_impl() -> dict[str, str] | None:
     print(f"  {c.bold}Features{c.reset}    {format_feature_summary(selected_features)}")
     if use_celery == "y":
         print(f"  {c.bold}Celery{c.reset}      broker={celery_broker}")
+    if use_i18n == "y":
+        i18n_label = (
+            "en+fa" if i18n_mode == "bilingual" else "en (monolingual)"
+        )
+        print(f"  {c.bold}i18n{c.reset}        {i18n_label}")
     print(f"  {c.bold}Proxy{c.reset}       {reverse_proxy}")
     pk_type = "UUID" if use_uuid_pk == "y" else "BigAutoField"
     print(f"  {c.bold}Primary Key{c.reset} {pk_type}")
@@ -916,6 +943,8 @@ def _collect_answers_impl() -> dict[str, str] | None:
         "use_microsoft_login": use_microsoft_login,
         "use_apple_login": use_apple_login,
         "use_i18n": use_i18n,
+        # Always a valid choice — ignored by templates when translations are off.
+        "i18n_mode": i18n_mode,
         "use_uuid_pk": use_uuid_pk,
         "use_scoped_apis": use_scoped_apis,
         "api_scopes": api_scopes,

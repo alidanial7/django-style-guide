@@ -11,6 +11,7 @@ use_google_login = "{{cookiecutter.use_google_login}}"
 use_microsoft_login = "{{cookiecutter.use_microsoft_login}}"
 use_apple_login = "{{cookiecutter.use_apple_login}}"
 use_i18n = "{{cookiecutter.use_i18n}}"
+i18n_mode = "{{cookiecutter.i18n_mode}}"
 sentry = "{{cookiecutter.use_sentry}}"
 vscode = "{{cookiecutter.use_vscode}}"
 code_style = "{{cookiecutter.use_code_style}}"
@@ -111,6 +112,18 @@ if use_i18n != "y":
     delete_resource("locale")
     delete_resource("docs/style-guide/ops/translations.md")
     delete_resource(".cursor/rules/i18n.mdc")
+else:
+    # Scaffold locale dirs from LANGUAGES (scripts never hardcode language count).
+    locale_codes = ["en"]
+    if i18n_mode == "bilingual":
+        locale_codes.append("fa")
+    for code in locale_codes:
+        messages_dir = Path("locale") / code / "LC_MESSAGES"
+        messages_dir.mkdir(parents=True, exist_ok=True)
+        gitkeep = messages_dir / ".gitkeep"
+        if not gitkeep.exists():
+            gitkeep.touch()
+        print(f"  - locale/{code}/LC_MESSAGES/")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
     delete_resource(".cursor/rules/sentry.mdc")

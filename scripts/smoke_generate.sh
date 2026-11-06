@@ -212,22 +212,39 @@ fi
 assert_absent "$OUT/OtpNoRedis"
 
 gen WithI18n \
-  use_jwt=y use_i18n=y use_celery=n use_testing=y use_code_style=y use_ci=n
+  use_jwt=y use_i18n=y i18n_mode=bilingual \
+  use_celery=n use_testing=y use_code_style=y use_ci=n
 assert_file "$OUT/WithI18n/.cursor/rules/i18n.mdc"
 assert_file "$OUT/WithI18n/docs/style-guide/ops/translations.md"
 assert_file "$OUT/WithI18n/scripts/update_translations.sh"
 assert_file "$OUT/WithI18n/locale/.gitkeep"
+assert_file "$OUT/WithI18n/locale/en/LC_MESSAGES/.gitkeep"
+assert_file "$OUT/WithI18n/locale/fa/LC_MESSAGES/.gitkeep"
 assert_file "$OUT/WithI18n/withi18n/commands/management/commands/update_translations.py"
 assert_grep 'USE_I18N = True' "$OUT/WithI18n/config/settings/i18n.py"
-assert_grep 'LANGUAGES' "$OUT/WithI18n/config/settings/i18n.py"
+assert_grep '("en", "English")' "$OUT/WithI18n/config/settings/i18n.py"
+assert_grep '("fa", "Persian")' "$OUT/WithI18n/config/settings/i18n.py"
 assert_grep 'LocaleMiddleware' "$OUT/WithI18n/config/settings/middleware.py"
 assert_grep 'django.conf.urls.i18n' "$OUT/WithI18n/config/urls.py"
 assert_grep 'LANGUAGE_CODE=en' "$OUT/WithI18n/.env.example"
 assert_grep 'update_translations' "$OUT/WithI18n/Makefile"
 assert_grep 'update_translations' "$OUT/WithI18n/AGENTS.md"
 assert_grep 'Keep rules current' "$OUT/WithI18n/AGENTS.md"
+assert_grep 'Add a language' "$OUT/WithI18n/AGENTS.md"
 assert_grep 'update_translations' "$OUT/WithI18n/.cursor/rules/commands.mdc"
 assert_grep 'LANGUAGE_CODE' "$OUT/WithI18n/.cursor/rules/infra.mdc"
+assert_grep 'Add another language' "$OUT/WithI18n/.cursor/rules/i18n.mdc"
+assert_grep 'settings.LANGUAGES' "$OUT/WithI18n/docs/style-guide/ops/translations.md"
+
+gen WithI18nMono \
+  use_jwt=y use_i18n=y i18n_mode=monolingual \
+  use_celery=n use_testing=y use_code_style=y use_ci=n
+assert_file "$OUT/WithI18nMono/locale/en/LC_MESSAGES/.gitkeep"
+assert_absent "$OUT/WithI18nMono/locale/fa"
+assert_grep '("en", "English")' "$OUT/WithI18nMono/config/settings/i18n.py"
+assert_not_grep '("fa", "Persian")' "$OUT/WithI18nMono/config/settings/i18n.py"
+assert_grep 'monolingual' "$OUT/WithI18nMono/docs/style-guide/ops/translations.md"
+assert_grep 'English only' "$OUT/WithI18nMono/.cursor/rules/i18n.mdc"
 
 gen SocialLogin \
   use_jwt=y use_google_login=y use_microsoft_login=y use_apple_login=y \
@@ -283,6 +300,7 @@ assert_file "$OUT/My-App/my_app"
 gen ScopedKit \
   use_scoped_apis=y api_scopes=admin,factory use_file_manager=y use_unfold_admin=y \
   use_portal_permissions=y \
+  use_otp_login=y \
   infra_repo_name=my-infra-repo \
   use_redis=y use_celery=n use_testing=y use_code_style=y use_ci=n
 assert_file "$OUT/ScopedKit/scopedkit/api/admin_urls.py"

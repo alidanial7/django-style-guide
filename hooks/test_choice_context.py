@@ -59,6 +59,7 @@ def base_answers(**overrides: str) -> dict[str, str]:
         "use_microsoft_login": "n",
         "use_apple_login": "n",
         "use_i18n": "n",
+        "i18n_mode": "bilingual",
         "use_uuid_pk": "y",
         "use_scoped_apis": "n",
         "api_scopes": "",
@@ -95,6 +96,9 @@ def edge_case_answer_sets() -> list[tuple[str, dict[str, str]]]:
     return [
         ("ci_off", base_answers(use_ci="n", ci_provider="github")),
         ("ci_gitlab", base_answers(use_ci="y", ci_provider="gitlab")),
+        ("i18n_off", base_answers(use_i18n="n", i18n_mode="bilingual")),
+        ("i18n_mono", base_answers(use_i18n="y", i18n_mode="monolingual")),
+        ("i18n_bilingual", base_answers(use_i18n="y", i18n_mode="bilingual")),
         ("celery_off", base_answers(use_celery="n", celery_broker="redis")),
         (
             "celery_rabbit",

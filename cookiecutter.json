@@ -44,6 +44,10 @@
     "n",
     "y"
   ],
+  "i18n_mode": [
+    "bilingual",
+    "monolingual"
+  ],
   "use_uuid_pk": [
     "y",
     "n"
@@ -195,9 +199,14 @@
       "y": "Yes (verify id_token → JWT/session)"
     },
     "use_i18n": {
-      "__prompt__": "Include Django i18n (multi-language)?",
+      "__prompt__": "Include Django gettext translations?",
       "n": "No",
       "y": "Yes (LocaleMiddleware + locale/ + update_translations)"
+    },
+    "i18n_mode": {
+      "__prompt__": "Translation mode (ignored if translations are No)",
+      "bilingual": "Bilingual — English + Persian (fa)",
+      "monolingual": "Monolingual — English only (add more languages later)"
     },
     "use_sentry": {
       "__prompt__": "Include Sentry?",

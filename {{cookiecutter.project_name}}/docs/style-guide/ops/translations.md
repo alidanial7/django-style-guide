@@ -30,10 +30,16 @@ From `config/settings/i18n.py` (generated with `use_i18n=y`):
 
 ```python
 LANGUAGE_CODE = env("LANGUAGE_CODE", default="en")
+{%- if cookiecutter.i18n_mode == "bilingual" %}
 LANGUAGES = [("en", "English"), ("fa", "Persian")]
+{%- else %}
+LANGUAGES = [("en", "English")]  # monolingual — add more tuples anytime
+{%- endif %}
 USE_I18N = True
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 ```
+
+Generation also scaffolds `locale/<code>/LC_MESSAGES/` for each entry in `LANGUAGES` ({% if cookiecutter.i18n_mode == "bilingual" %}`en` + `fa`{% else %}`en`{% endif %}). Catalogs (`.po`) appear after the first `update_translations` run.
 
 Also wired:
 
@@ -140,7 +146,7 @@ make translations ARGS='--compile'
 
 | Step | What happens |
 |------|----------------|
-| Locales | Defaults to every code in `settings.LANGUAGES`; override with `--locale` |
+| Locales | Defaults to **every** code in `settings.LANGUAGES` (works for 0–N languages — no script edits when you add one); override with `--locale` |
 | Update | `makemessages` ignoring `venv`, `node_modules`, `staticfiles`, `media`, … |
 | Cleanup | Uses gettext tools (`msgattrib`, `msgcat`) when installed — `brew install gettext` on macOS |
 | Compile | With `--compile`, runs `compilemessages` for `.mo` files |
@@ -167,11 +173,17 @@ Also spot-check new validators/services for missing `_()` on user-facing strings
 
 ## ➕ Adding a new language
 
-1. Add `("xx", "Name")` to `LANGUAGES` in `config/settings/i18n.py`
-2. `python manage.py update_translations --locale xx`
-3. Translate `locale/xx/LC_MESSAGES/django.po`
-4. `python manage.py update_translations --compile` (or deploy-time `compilemessages`)
-5. Document how API clients send `Accept-Language` / use `/i18n/setlang/`
+Scripts and the management command **never** hardcode a language count — they always follow `settings.LANGUAGES` (or explicit `--locale` flags). To add a third (or Nth) language:
+
+1. Append `("xx", "Name")` to `LANGUAGES` in `config/settings/i18n.py` (keep `LANGUAGE_CODE` as the default).
+2. Create the tree if needed: `locale/xx/LC_MESSAGES/` (optional — `makemessages` creates it).
+3. `python manage.py update_translations --locale xx`  
+   Or run without `--locale` to refresh **all** languages in `LANGUAGES`.
+4. Translate strings in `locale/xx/LC_MESSAGES/django.po`.
+5. `python manage.py update_translations --compile` (or deploy-time `compilemessages`).
+6. Tell API clients to send `Accept-Language: xx` (or use `POST /i18n/setlang/`).
+
+No changes to `scripts/update_translations.sh`, the Makefile target, or the management command are required when growing from 1 → 2 → N locales.
 
 ---
 
