@@ -40,6 +40,9 @@ def scaffold_scopes(
     _write_membership_service(project_root, slug)
     _write_permissions(project_root, slug)
     _write_models(project_root, scopes, slug)
+    _write_scope_users_migration(
+        project_root, scopes, slug, use_file_manager=use_file_manager
+    )
     _write_api_urls(project_root, scopes, slug, use_file_manager=use_file_manager)
     for scope in scopes:
         _write_scope_urls(project_root, scope, slug)
@@ -166,6 +169,69 @@ def get_request_scope(request) -> str | None:
     return resolve_api_scope(request.path)
 ''',
     )
+
+
+def _scope_user_create_model(scope: str) -> str:
+    """Django MTI ``CreateModel`` op for an empty ``<Scope>User`` table."""
+    model_name = f"{scope_pascal(scope)}User"
+    label = scope.replace("_", " ")
+    return f'''        migrations.CreateModel(
+            name="{model_name}",
+            fields=[
+                (
+                    "baseuser_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={{
+                "verbose_name": "{label} user",
+                "verbose_name_plural": "{label} users",
+            }},
+            bases=("users.baseuser",),
+        ),
+'''
+
+
+def _write_scope_users_migration(
+    root: Path,
+    scopes: list[str],
+    slug: str,
+    *,
+    use_file_manager: bool,
+) -> None:
+    """Ship scope-user tables so ``migrate`` works without a manual ``makemigrations``."""
+    mig_dir = root / slug / "users" / "migrations"
+    names = sorted(p.stem for p in mig_dir.glob("[0-9][0-9][0-9][0-9]_*.py"))
+    if not use_file_manager:
+        names = [name for name in names if "profile_avatar" not in name]
+    dependency = names[-1] if names else "0001_initial"
+    number = len(names) + 1
+    filename = f"{number:04d}_scope_users.py"
+    ops = "\n".join(_scope_user_create_model(scope) for scope in scopes)
+    body = (
+        "import django.db.models.deletion\n"
+        "from django.conf import settings\n"
+        "from django.db import migrations, models\n"
+        "\n"
+        "\n"
+        "class Migration(migrations.Migration):\n"
+        "\n"
+        "    dependencies = [\n"
+        f'        ("users", "{dependency}"),\n'
+        "    ]\n"
+        "\n"
+        "    operations = [\n"
+        f"{ops}"
+        "    ]\n"
+    )
+    _write(mig_dir / filename, body)
 
 
 def _write_membership_service(root: Path, slug: str) -> None:
@@ -589,7 +655,7 @@ Enabled scopes: {listed}.
 - Identity: shared `BaseUser` + `Profile`. Scope tables (`*User` MTI subclasses) start empty — add scope-only fields there. One user may belong to many scopes.
 - `ApiScopeMiddleware` sets `request.api_scope`. Auth/register calls `ensure_scope_membership_for_request`.
 - Gate scoped views with `IsScopeMember` (or `IsScopeMember.for_scope("…")`).
-- Add a scope later: `python manage.py add_api_scope <name>` then `makemigrations` / `migrate`.
+- Add a scope later: `python manage.py add_api_scope <name>` then `migrate` (a migration file is written).
 - Changing scope conventions → update **this rule file** + `apis` / `auth` / `commands` rules in the **same** change.
 
 Deep: `docs/style-guide/domain/apis.md` · `docs/style-guide/domain/urls.md` · `docs/style-guide/http/swagger.md` · `docs/style-guide/ops/commands.md`

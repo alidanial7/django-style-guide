@@ -61,6 +61,9 @@ class Command(BaseCommand):
             return
 
         self._seed_local_admin()
+{%- if cookiecutter.use_scoped_apis == "y" %}
+        self._seed_scope_users()
+{%- endif %}
         self._seed_groups()
         # Add more steps here, e.g.:
         # self._seed_catalog()
@@ -89,6 +92,16 @@ class Command(BaseCommand):
             self.stdout.write(f"dry-run — would ensure groups: {', '.join(DEFAULT_GROUPS)}")
         else:
             self.stdout.write("dry-run — no default groups configured")
+{%- if cookiecutter.use_scoped_apis == "y" %}
+        self.stdout.write(
+            "dry-run — would ensure one user per API scope "
+            "(username/password = scope name"
+{%- if cookiecutter.use_otp_login == "y" %}
+            ", phones 989120000001, 989120000002, …"
+{%- endif %}
+            ")"
+        )
+{%- endif %}
         self.stdout.write("dry-run — no writes")
 
     def _seed_local_admin(self) -> None:
@@ -180,3 +193,98 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"groups created: {', '.join(created_names)}"))
         else:
             self.stdout.write("groups already exist — skipped")
+
+{%- if cookiecutter.use_scoped_apis == "y" %}
+    def _seed_scope_users(self) -> None:
+        """One local user per API scope: login + password = scope name."""
+        from django.conf import settings
+
+        from {{cookiecutter.project_slug}}.users.scope_registry import get_scope_user_model
+        from {{cookiecutter.project_slug}}.users.services.scope_membership import (
+            ensure_scope_membership,
+        )
+
+        User = get_user_model()
+        scopes = list(getattr(settings, "API_SCOPES", ()) or ())
+        for index, scope in enumerate(scopes, start=1):
+            model = get_scope_user_model(scope=scope)
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone = f"98912{index:07d}"
+{%- endif %}
+{%- if cookiecutter.user_login_field == "username" %}
+            email = (
+                LOCAL_ADMIN_EMAIL if scope == "admin" else f"{scope}@example.com"
+            )
+            existing = User.objects.filter(username=scope).first()
+{%- else %}
+            email = (
+                LOCAL_ADMIN_EMAIL if scope == "admin" else f"{scope}@example.com"
+            )
+            existing = User.objects.filter(email=email).first()
+{%- endif %}
+            is_super = scope == "admin"
+            if existing is None:
+{%- if cookiecutter.user_login_field == "username" %}
+                creator = (
+                    model.objects.create_superuser
+                    if is_super
+                    else model.objects.create_user
+                )
+                creator(
+                    scope,
+                    email,
+                    password=scope,
+{%- if cookiecutter.use_otp_login == "y" %}
+                    phone=phone,
+{%- endif %}
+                )
+{%- else %}
+                if is_super:
+                    model.objects.create_superuser(
+                        email,
+                        password=scope,
+{%- if cookiecutter.use_otp_login == "y" %}
+                        phone=phone,
+{%- endif %}
+                    )
+                else:
+                    model.objects.create_user(
+                        email,
+                        password=scope,
+{%- if cookiecutter.use_otp_login == "y" %}
+                        phone=phone,
+{%- endif %}
+                    )
+{%- endif %}
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"scope user created: {scope} / {scope} ({email})"
+{%- if cookiecutter.use_otp_login == "y" %}
+                        f" / {phone}"
+{%- endif %}
+                    )
+                )
+                continue
+
+            changed: list[str] = []
+{%- if cookiecutter.use_otp_login == "y" %}
+            if existing.phone != phone:
+                existing.phone = phone
+                changed.append("phone")
+{%- endif %}
+            if is_super and not existing.is_superuser:
+                existing.is_superuser = True
+                existing.is_admin = True
+                changed.extend(["is_superuser", "is_admin"])
+            if changed:
+                existing.save(update_fields=changed)
+            if not model.objects.filter(pk=existing.pk).exists():
+                ensure_scope_membership(user=existing, scope=scope)
+                changed.append("membership")
+            if changed:
+                self.stdout.write(
+                    self.style.SUCCESS(f"scope user updated ({scope}): {', '.join(changed)}")
+                )
+            else:
+                self.stdout.write(f"scope user {scope} already exists — skipped")
+{%- endif %}

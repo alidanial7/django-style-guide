@@ -42,8 +42,8 @@ def _write(path: Path, content: str) -> None:
 
 class Command(BaseCommand):
     help = (
-        "Scaffold a new API scope (MTI user model, URLs, health, docs). "
-        "Then run makemigrations / migrate."
+        "Scaffold a new API scope (MTI user model, URLs, health, docs, migration). "
+        "Then run migrate."
     )
 
     def add_arguments(self, parser):
@@ -84,11 +84,10 @@ class Command(BaseCommand):
         self._patch_config_urls(scope, pascal)
         self._patch_admin(scope, pascal, model_name)
         self._patch_scoped_rule(scope)
+        self._write_migration(scope, model_name)
 
         self.stdout.write(self.style.SUCCESS(f"Scope {scope!r} scaffolded."))
-        self.stdout.write(
-            "Next: python manage.py makemigrations users && python manage.py migrate"
-        )
+        self.stdout.write("Next: python manage.py migrate")
 
     def _validate(self, scope: str) -> None:
         if not _SCOPE_NAME_RE.match(scope):
@@ -347,6 +346,57 @@ class {pascal}UserAdmin(admin.ModelAdmin):
         )
         path.write_text(text + "\n", encoding="utf-8")
         self.stdout.write(f"  patched {path.relative_to(_PROJECT_ROOT)}")
+
+    def _write_migration(self, scope: str, model_name: str) -> None:
+        mig_dir = _PROJECT_PACKAGE_DIR / "users" / "migrations"
+        names = sorted(p.stem for p in mig_dir.glob("[0-9][0-9][0-9][0-9]_*.py"))
+        dependency = names[-1] if names else "0001_initial"
+        number = len(names) + 1
+        label = scope.replace("_", " ")
+        path = mig_dir / f"{number:04d}_{scope}_user.py"
+        if path.exists():
+            self.stdout.write(f"  skip existing {path.relative_to(_PROJECT_ROOT)}")
+            return
+        _write(
+            path,
+            f'''
+import django.db.models.deletion
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("users", "{dependency}"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="{model_name}",
+            fields=[
+                (
+                    "baseuser_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={{
+                "verbose_name": "{label} user",
+                "verbose_name_plural": "{label} users",
+            }},
+            bases=("users.baseuser",),
+        ),
+    ]
+''',
+        )
+        self.stdout.write(f"  wrote {path.relative_to(_PROJECT_ROOT)}")
 
     def _patch_scoped_rule(self, scope: str) -> None:
         path = _PROJECT_ROOT / ".cursor" / "rules" / "scoped-apis.mdc"
