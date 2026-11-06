@@ -13,9 +13,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from interactive_prompts import (  # noqa: E402
     assert_inplace_target_ok,
+    clean_inplace_target,
     flatten_generated_project,
     is_cookiecutter_template_root,
     list_non_git_entries,
+    _copy_template_snapshot,
 )
 
 
@@ -42,16 +44,57 @@ class InplaceTargetTests(unittest.TestCase):
                 assert_inplace_target_ok(root)
             self.assertIn("README.md", str(ctx.exception))
 
-    def test_template_root_detected_and_rejected(self) -> None:
+    def test_template_root_detected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "cookiecutter.json").write_text("{}\n", encoding="utf-8")
             (root / "{{cookiecutter.project_name}}").mkdir()
             (root / "hooks").mkdir()
             self.assertTrue(is_cookiecutter_template_root(root))
-            with self.assertRaises(ValueError) as ctx:
-                assert_inplace_target_ok(root)
-            self.assertIn("template repository", str(ctx.exception))
+
+    def test_clean_inplace_keeps_git_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".git").mkdir()
+            (root / ".gitignore").write_text("old\n", encoding="utf-8")
+            (root / "README.md").write_text("bye\n", encoding="utf-8")
+            (root / "hooks").mkdir()
+            (root / "hooks" / "x.py").write_text("x\n", encoding="utf-8")
+
+            removed = clean_inplace_target(root)
+            self.assertEqual(set(removed), {"README.md", "hooks"})
+            self.assertTrue((root / ".git").is_dir())
+            self.assertEqual((root / ".gitignore").read_text(encoding="utf-8"), "old\n")
+            self.assertEqual(list_non_git_entries(root), [])
+            assert_inplace_target_ok(root)
+
+    def test_copy_template_snapshot_survives_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "cookiecutter.json").write_text('{"a":1}\n', encoding="utf-8")
+            proj = root / "{{cookiecutter.project_name}}"
+            proj.mkdir()
+            (proj / "README.md").write_text("tpl\n", encoding="utf-8")
+            (root / "hooks").mkdir()
+            (root / "hooks" / "x.py").write_text("x\n", encoding="utf-8")
+
+            snapshot = _copy_template_snapshot(root)
+            try:
+                self.assertTrue((snapshot / "cookiecutter.json").is_file())
+                self.assertTrue(
+                    (snapshot / "{{cookiecutter.project_name}}" / "README.md").is_file()
+                )
+                clean_inplace_target(root)
+                self.assertFalse((root / "cookiecutter.json").exists())
+                # Snapshot still intact after cleaning the original.
+                self.assertEqual(
+                    (snapshot / "cookiecutter.json").read_text(encoding="utf-8"),
+                    '{"a":1}\n',
+                )
+            finally:
+                import shutil
+
+                shutil.rmtree(snapshot, ignore_errors=True)
 
     def test_flatten_moves_and_replaces_gitignore(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

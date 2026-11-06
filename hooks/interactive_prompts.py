@@ -6,6 +6,7 @@ import os
 import select
 import shutil
 import sys
+import tempfile
 import termios
 import tty
 from collections.abc import Iterator, Sequence
@@ -397,16 +398,6 @@ def is_cookiecutter_template_root(target: Path) -> bool:
 
 def assert_inplace_target_ok(target: Path) -> None:
     """Fail if *target* has anything beyond git metadata files/dirs."""
-    if is_cookiecutter_template_root(target):
-        raise ValueError(
-            "Cannot generate inplace: you are inside the django-style-guide "
-            "template repository.\n"
-            "  • Answer No to “Generate into the current directory?”, or\n"
-            "  • Create an empty (or git-only) project repo and run "
-            "`./init.sh --inplace` from there.\n"
-            "Inplace must not overwrite cookiecutter.json / hooks / "
-            "{{cookiecutter.project_name}}."
-        )
     offenders = list_non_git_entries(target)
     if not offenders:
         return
@@ -414,9 +405,47 @@ def assert_inplace_target_ok(target: Path) -> None:
     raise ValueError(
         "Cannot generate inplace: directory has non-git files:\n"
         f"{listed}\n"
-        "Remove them (keep only .git / .gitignore / .gitattributes / .gitmodules) "
+        "Remove them, pass --inplace-force / answer Yes to force-clean, "
         "or generate into a new folder."
     )
+
+
+def clean_inplace_target(target: Path) -> list[str]:
+    """Delete everything except git metadata. Returns removed entry names."""
+    removed: list[str] = []
+    for entry in sorted(target.iterdir(), key=lambda p: p.name):
+        if entry.name in _GIT_ONLY_ENTRIES:
+            continue
+        if entry.is_dir() and not entry.is_symlink():
+            shutil.rmtree(entry)
+        else:
+            entry.unlink()
+        removed.append(entry.name)
+    return removed
+
+
+def _copy_template_snapshot(repo_dir: Path) -> Path:
+    """Copy template to a temp dir so cwd can be force-cleaned safely."""
+    ignore = shutil.ignore_patterns(
+        ".git",
+        ".venv",
+        "venv",
+        "__pycache__",
+        "_gen_smoke",
+        "*.pyc",
+        ".DS_Store",
+    )
+    snapshot = Path(tempfile.mkdtemp(prefix="dsg-template-"))
+    # copytree into snapshot/contents — put files directly in snapshot
+    for item in repo_dir.iterdir():
+        if item.name in {".git", ".venv", "venv", "_gen_smoke"}:
+            continue
+        dest = snapshot / item.name
+        if item.is_dir():
+            shutil.copytree(item, dest, ignore=ignore)
+        elif item.is_file():
+            shutil.copy2(item, dest)
+    return snapshot
 
 
 def flatten_generated_project(output_dir: Path, project_name: str) -> None:
@@ -525,46 +554,59 @@ def _collect_answers_impl() -> dict[str, str] | None:
     print_section("Output location")
     cwd = Path.cwd()
     force_inplace = os.environ.get("DSG_INPLACE") == "1"
-    if is_cookiecutter_template_root(cwd):
-        if force_inplace:
-            print()
-            print(
-                f"  {COLORS.yellow}Cannot use --inplace / DSG_INPLACE here — "
-                f"this directory is the cookiecutter template itself.{COLORS.reset}"
-            )
-            print(
-                f"  {COLORS.dim}Generate into a subfolder (omit --inplace), or run "
-                f"from an empty/git-only app repo.{COLORS.reset}"
-            )
-            print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
-            return None
-        inplace = "n"
-        print(
-            f"  {COLORS.dim}↳ Inside the template repo — will create "
-            f"./<project_name>/ (inplace not available here).{COLORS.reset}"
-        )
-    elif force_inplace:
+    force_clean = os.environ.get("DSG_INPLACE_FORCE") == "1"
+    inplace_force = "n"
+
+    if force_inplace or force_clean:
         inplace = "y"
+        flag = "--inplace-force" if force_clean else "--inplace"
         print(
-            f"  {COLORS.dim}↳ DSG_INPLACE=1 / --inplace — "
-            f"will generate into the current directory{COLORS.reset}"
+            f"  {COLORS.dim}↳ {flag} — will generate into the current directory"
+            f"{' (force-clean non-git files)' if force_clean else ''}{COLORS.reset}"
         )
     else:
         inplace = prompt_yn(
             "Generate into the current directory (existing git repo)?",
             "n",
         )
+
     if inplace == "y":
-        try:
-            assert_inplace_target_ok(cwd)
-        except ValueError as error:
+        offenders = list_non_git_entries(cwd)
+        if not offenders:
+            print(
+                f"  {COLORS.green}↳ Current directory is git-only (or empty) — "
+                f"OK for inplace.{COLORS.reset}"
+            )
+        else:
+            listed = "\n".join(f"    - {name}" for name in offenders)
             print()
-            print(f"  {COLORS.yellow}{error}{COLORS.reset}")
-            print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
-            return None
-        print(
-            f"  {COLORS.green}↳ Current directory is git-only (or empty) — OK for inplace.{COLORS.reset}"
-        )
+            print(
+                f"  {COLORS.yellow}Directory has non-git files that must be removed "
+                f"for inplace:{COLORS.reset}\n{listed}"
+            )
+            if is_cookiecutter_template_root(cwd):
+                print(
+                    f"  {COLORS.yellow}↳ This looks like the cookiecutter template itself. "
+                    f"Force-clean keeps .git*, copies the template aside, then replaces "
+                    f"cwd with the generated app.{COLORS.reset}"
+                )
+            if force_clean:
+                inplace_force = "y"
+                print(
+                    f"  {COLORS.dim}↳ DSG_INPLACE_FORCE=1 — will delete the files above "
+                    f"before generating.{COLORS.reset}"
+                )
+            else:
+                inplace_force = prompt_yn(
+                    "Force-delete those files and generate here?",
+                    "n",
+                )
+                if inplace_force != "y":
+                    print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
+                    return None
+                print(
+                    f"  {COLORS.green}↳ Will force-clean then generate inplace.{COLORS.reset}"
+                )
 
     print_section("Author")
     first_name = prompt_text("First name", "author")
@@ -752,10 +794,14 @@ def _collect_answers_impl() -> dict[str, str] | None:
         f"  {c.bold}Auth{c.reset}        {auth_mode} · login={user_login_field}"
         f"{otp_label}{social_label}"
     )
-    print(
-        f"  {c.bold}Output{c.reset}      "
-        f"{'current directory (inplace)' if inplace == 'y' else f'./{project_name}/'}"
-    )
+    output_label = f"./{project_name}/"
+    if inplace == "y":
+        output_label = (
+            "current directory (inplace, force-clean)"
+            if inplace_force == "y"
+            else "current directory (inplace)"
+        )
+    print(f"  {c.bold}Output{c.reset}      {output_label}")
     if use_ci == "y":
         provider_label = "GitHub Actions" if ci_provider == "github" else "GitLab CI"
         print(f"  {c.bold}CI{c.reset}          {provider_label}")
@@ -772,6 +818,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
 
     return {
         "_inplace": inplace,
+        "_inplace_force": inplace_force,
         "project_name": project_name,
         "project_slug": project_slug,
         "first_name": first_name,
@@ -857,43 +904,65 @@ def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) ->
     from cookiecutter.main import cookiecutter
 
     inplace = answers.pop("_inplace", "n") == "y"
+    inplace_force = answers.pop("_inplace_force", "n") == "y"
     answers = validate_choice_answers(answers)
     target = Path(output_dir).resolve()
-
-    if inplace:
-        assert_inplace_target_ok(target)
+    template_src = Path(repo_dir).resolve()
+    template_for_cookiecutter = str(template_src)
+    snapshot: Path | None = None
 
     c = COLORS
-    print()
-    print(f"{c.cyan}{c.bold}  Generating project...{c.reset}")
-    print()
+    try:
+        if inplace:
+            offenders = list_non_git_entries(target)
+            if offenders and not inplace_force:
+                assert_inplace_target_ok(target)
+            if offenders and inplace_force:
+                # Cleaning cwd would delete the template if it lives here — snapshot first.
+                if template_src == target or template_src.is_relative_to(target):
+                    print(
+                        f"  {c.dim}↳ Snapshotting template aside before force-clean…{c.reset}"
+                    )
+                    snapshot = _copy_template_snapshot(template_src)
+                    template_for_cookiecutter = str(snapshot)
+                print(f"  {c.dim}↳ Force-cleaning non-git files in {target}…{c.reset}")
+                removed = clean_inplace_target(target)
+                for name in removed:
+                    print(f"  {c.dim}  - removed {name}{c.reset}")
 
-    cookiecutter(
-        repo_dir,
-        no_input=True,
-        extra_context=answers,
-        output_dir=str(target),
-        accept_hooks=True,
-        overwrite_if_exists=False,
-    )
+        print()
+        print(f"{c.cyan}{c.bold}  Generating project...{c.reset}")
+        print()
 
-    project_name = answers["project_name"]
-    if inplace:
-        flatten_generated_project(target, project_name)
+        cookiecutter(
+            template_for_cookiecutter,
+            no_input=True,
+            extra_context=answers,
+            output_dir=str(target),
+            accept_hooks=True,
+            overwrite_if_exists=False,
+        )
+
+        project_name = answers["project_name"]
+        if inplace:
+            flatten_generated_project(target, project_name)
+            print()
+            print(
+                f"{c.green}{c.bold}  ✓ Done!{c.reset}  "
+                f"{c.dim}files are in {target} — see README.md{c.reset}"
+            )
+            print()
+            return
+
         print()
         print(
             f"{c.green}{c.bold}  ✓ Done!{c.reset}  "
-            f"{c.dim}files are in {target} — see README.md{c.reset}"
+            f"{c.dim}cd {project_name} && see README.md{c.reset}"
         )
         print()
-        return
-
-    print()
-    print(
-        f"{c.green}{c.bold}  ✓ Done!{c.reset}  "
-        f"{c.dim}cd {project_name} && see README.md{c.reset}"
-    )
-    print()
+    finally:
+        if snapshot is not None and snapshot.exists():
+            shutil.rmtree(snapshot, ignore_errors=True)
 
 
 def run_cli(repo_dir: str) -> int:
@@ -914,11 +983,16 @@ def run_cli(repo_dir: str) -> int:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(
-            "Usage: interactive_prompts.py <template-directory> [--inplace]",
+            "Usage: interactive_prompts.py <template-directory> "
+            "[--inplace|--inplace-force]",
             file=sys.stderr,
         )
         sys.exit(2)
     repo = sys.argv[1]
-    if "--inplace" in sys.argv[2:]:
+    flags = set(sys.argv[2:])
+    if "--inplace-force" in flags:
+        os.environ["DSG_INPLACE"] = "1"
+        os.environ["DSG_INPLACE_FORCE"] = "1"
+    elif "--inplace" in flags:
         os.environ["DSG_INPLACE"] = "1"
     sys.exit(run_cli(repo))
