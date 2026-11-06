@@ -8,6 +8,7 @@ alwaysApply: false
 
 - Routes: `POST /api/v1/auth/otp/request/` · `POST /api/v1/auth/otp/verify/` (pass `kind`: `login` | `register` | `profile_update`).
 - Phone **storage**: digits only with country code, no `+` — e.g. `989134543456` (`validate_phone` / `normalize_phone`).
+- Local admin seed (`seed_demo_data`): phone `989134543456` so OTP login works out of the box (`OTP_TEST` → code `12345`).
 - **Commit-on-verify:** register with optional `phone` → `202` + OTP; profile OTP **only when `phone` is in the PATCH body**. Bio/avatar apply immediately. Nothing phone-related persists until `otp/verify` with matching `kind`. Register password is stored **hashed** in the pending challenge. Profile verify requires the **same authenticated user** who staged the change.
 - Cache keys are namespaced: `otp:challenge:{kind}:{phone}` (login/register/profile do not overwrite each other).
 - OTP-only login: `otp/request` → `otp/verify` with `kind=login` (get-or-create by phone).

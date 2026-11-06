@@ -179,11 +179,17 @@ Auth/register paths: [Authentication](../http/authentication.md), [URLs](../doma
 | Username | `admin` |
 | Email | `admin@example.com` |
 | Password | `admin` |
+{%- if cookiecutter.use_otp_login == "y" %}
+| Phone | `989134543456` (OTP login) |
+{%- endif %}
 {%- else %}
 | Field | Value |
 |-------|-------|
 | Email | `admin@example.com` |
 | Password | `admin` |
+{%- if cookiecutter.use_otp_login == "y" %}
+| Phone | `989134543456` (OTP login) |
+{%- endif %}
 {%- endif %}
 
 **Local / throwaway only** — change immediately outside disposable environments.

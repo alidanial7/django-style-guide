@@ -39,13 +39,24 @@ class BaseUserManager(BUM):
 
         return user
 
-    def create_superuser(self, username, email, password=None):
+    def create_superuser(
+        self,
+        username,
+        email,
+        password=None,
+{%- if cookiecutter.use_otp_login == "y" %}
+        phone=None,
+{%- endif %}
+    ):
         user = self.create_user(
             username=username,
             email=email,
             is_active=True,
             is_admin=True,
             password=password,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=phone,
+{%- endif %}
         )
 
         user.is_superuser = True
@@ -85,12 +96,22 @@ class BaseUserManager(BUM):
 
         return user
 
-    def create_superuser(self, email, password=None):
+    def create_superuser(
+        self,
+        email,
+        password=None,
+{%- if cookiecutter.use_otp_login == "y" %}
+        phone=None,
+{%- endif %}
+    ):
         user = self.create_user(
             email=email,
             is_active=True,
             is_admin=True,
             password=password,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=phone,
+{%- endif %}
         )
 
         user.is_superuser = True

@@ -25,6 +25,10 @@ LOCAL_ADMIN_PASSWORD = "admin"
 LOCAL_ADMIN_EMAIL = "admin@example.com"
 LOCAL_ADMIN_PASSWORD = "admin"
 {% endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+# Same sample number as phone validator docs (E.164 digits, no '+').
+LOCAL_ADMIN_PHONE = "989134543456"
+{%- endif %}
 
 # Named groups to ensure on every seed (extend as portals / roles grow).
 {% if cookiecutter.use_portal_permissions == "y" -%}
@@ -69,10 +73,16 @@ class Command(BaseCommand):
         self.stdout.write(
             "dry-run — would ensure superuser "
             f"{LOCAL_ADMIN_USERNAME} / {LOCAL_ADMIN_EMAIL} / {LOCAL_ADMIN_PASSWORD}"
+{%- if cookiecutter.use_otp_login == "y" %}
+            f" / phone {LOCAL_ADMIN_PHONE}"
+{%- endif %}
         )
 {%- else %}
         self.stdout.write(
             f"dry-run — would ensure superuser {LOCAL_ADMIN_EMAIL} / {LOCAL_ADMIN_PASSWORD}"
+{%- if cookiecutter.use_otp_login == "y" %}
+            f" / phone {LOCAL_ADMIN_PHONE}"
+{%- endif %}
         )
 {%- endif %}
         if DEFAULT_GROUPS:
@@ -85,31 +95,71 @@ class Command(BaseCommand):
         """Ensure the local-only superuser exists (dev / demo only)."""
         User = get_user_model()
 {%- if cookiecutter.user_login_field == "username" %}
-        if User.objects.filter(username=LOCAL_ADMIN_USERNAME).exists():
+        existing = User.objects.filter(username=LOCAL_ADMIN_USERNAME).first()
+        if existing is not None:
+{%- if cookiecutter.use_otp_login == "y" %}
+            if not existing.phone:
+                existing.phone = LOCAL_ADMIN_PHONE
+                existing.save(update_fields=["phone"])
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"superuser phone backfilled: {LOCAL_ADMIN_PHONE}"
+                    )
+                )
+            else:
+                self.stdout.write("superuser already exists — skipped")
+{%- else %}
             self.stdout.write("superuser already exists — skipped")
+{%- endif %}
             return
         User.objects.create_superuser(
             username=LOCAL_ADMIN_USERNAME,
             email=LOCAL_ADMIN_EMAIL,
             password=LOCAL_ADMIN_PASSWORD,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=LOCAL_ADMIN_PHONE,
+{%- endif %}
         )
         self.stdout.write(
             self.style.SUCCESS(
                 f"superuser created: {LOCAL_ADMIN_USERNAME} / {LOCAL_ADMIN_PASSWORD} "
                 f"({LOCAL_ADMIN_EMAIL})"
+{%- if cookiecutter.use_otp_login == "y" %}
+                f" / {LOCAL_ADMIN_PHONE}"
+{%- endif %}
             )
         )
 {%- else %}
-        if User.objects.filter(email=LOCAL_ADMIN_EMAIL).exists():
+        existing = User.objects.filter(email=LOCAL_ADMIN_EMAIL).first()
+        if existing is not None:
+{%- if cookiecutter.use_otp_login == "y" %}
+            if not existing.phone:
+                existing.phone = LOCAL_ADMIN_PHONE
+                existing.save(update_fields=["phone"])
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"superuser phone backfilled: {LOCAL_ADMIN_PHONE}"
+                    )
+                )
+            else:
+                self.stdout.write("superuser already exists — skipped")
+{%- else %}
             self.stdout.write("superuser already exists — skipped")
+{%- endif %}
             return
         User.objects.create_superuser(
             email=LOCAL_ADMIN_EMAIL,
             password=LOCAL_ADMIN_PASSWORD,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=LOCAL_ADMIN_PHONE,
+{%- endif %}
         )
         self.stdout.write(
             self.style.SUCCESS(
                 f"superuser created: {LOCAL_ADMIN_EMAIL} / {LOCAL_ADMIN_PASSWORD}"
+{%- if cookiecutter.use_otp_login == "y" %}
+                f" / {LOCAL_ADMIN_PHONE}"
+{%- endif %}
             )
         )
 {%- endif %}
