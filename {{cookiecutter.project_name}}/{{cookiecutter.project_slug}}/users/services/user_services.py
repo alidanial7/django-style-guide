@@ -27,12 +27,25 @@ from {{cookiecutter.project_slug}}.users.types import ChangePasswordData, Profil
 _password_reset_token_generator = PasswordResetTokenGenerator()
 
 
+{%- if cookiecutter.user_login_field == "username" %}
+def create_user(*, username: str, email: str, password: str) -> BaseUser:
+    try:
+        return BaseUser.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+        )
+    except IntegrityError as error:
+        map_integrity_error(error, model=BaseUser)
+        raise  # map_integrity_error never returns; keep type-checkers happy
+{%- else %}
 def create_user(*, email: str, password: str) -> BaseUser:
     try:
         return BaseUser.objects.create_user(email=email, password=password)
     except IntegrityError as error:
         map_integrity_error(error, model=BaseUser)
         raise  # map_integrity_error never returns; keep type-checkers happy
+{%- endif %}
 
 {% if cookiecutter.use_file_manager == "y" %}
 
@@ -51,7 +64,15 @@ def _resolve_avatar(*, user: BaseUser, avatar: UploadedFile | None):
 
 @transaction.atomic
 def register(*, data: RegisterData) -> BaseUser:
+{%- if cookiecutter.user_login_field == "username" %}
+    user = create_user(
+        username=data["username"],
+        email=data["email"],
+        password=data["password"],
+    )
+{%- else %}
     user = create_user(email=data["email"], password=data["password"])
+{%- endif %}
     profile = Profile.objects.get(user=user)
 
     update_fields: list[str] = []

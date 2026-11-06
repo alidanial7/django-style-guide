@@ -11,7 +11,11 @@ from {{cookiecutter.project_slug}}.users.constants import AUTH_TAGS
 
 
 class AuthJwtTokenObtainSerializer(TokenObtainPairSerializer):
+{%- if cookiecutter.user_login_field == "username" %}
+    """Obtain pair; field name follows USERNAME_FIELD (username) for schema + clients."""
+{%- else %}
     """Obtain pair; field name follows USERNAME_FIELD (email) for schema + clients."""
+{%- endif %}
 
 
 class AuthJwtTokenPairOutputSerializer(serializers.Serializer):

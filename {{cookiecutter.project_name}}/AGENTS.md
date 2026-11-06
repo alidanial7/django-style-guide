@@ -32,6 +32,11 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 {%- else %}
 - Domain models inherit `BaseModel` (timestamps; default `BigAutoField`); URL ids `<int:entity_id>`.
 {%- endif %}
+{%- if cookiecutter.user_login_field == "username" %}
+- Auth login field: **username** (`USERNAME_FIELD`); email remains unique for reset/notify.
+{%- else %}
+- Auth login field: **email** (`USERNAME_FIELD`).
+{%- endif %}
 {%- if cookiecutter.use_file_manager == "y" %}
 - Uploads: `ManagedFile` only — no ad-hoc `FileField` / `ImageField` on domain models.
 {%- endif %}

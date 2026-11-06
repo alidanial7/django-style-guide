@@ -62,7 +62,7 @@ Response is wrapped in the [API envelope](api-envelope.md); `result` contains `a
 Authorization: Bearer <access>
 ```
 
-Views wrap SimpleJWT and re-envelope. Login uses `AuthJwtTokenObtainSerializer` (field name follows `USERNAME_FIELD` = `email`) and documents the success envelope via `envelope_serializer`.
+Views wrap SimpleJWT and re-envelope. Login uses `AuthJwtTokenObtainSerializer` (field name follows `USERNAME_FIELD` = `{%- if cookiecutter.user_login_field == "username" %}username{%- else %}email{%- endif %}`) and documents the success envelope via `envelope_serializer`.
 
 ```python
 # users/apis/auth/auth_jwt_apis.py
@@ -222,7 +222,11 @@ Throttles: scope `password_reset` (see [Throttling](throttling.md)).
 
 | Piece | Detail |
 |-------|--------|
-| User model | `users.BaseUser` — email as `USERNAME_FIELD`, no username |
+{%- if cookiecutter.user_login_field == "username" %}
+| User model | `users.BaseUser` — username as `USERNAME_FIELD`; email unique for reset/notify |
+{%- else %}
+| User model | `users.BaseUser` — email as `USERNAME_FIELD` |
+{%- endif %}
 | Profile | `bio`, `avatar`; created by [signal](../domain/signals.md) on user create |
 | Default avatar | Static `users/default_avatar.png` via selector |
 | Update | `PATCH /api/v1/users/profile/` — multipart for avatar |

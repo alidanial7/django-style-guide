@@ -102,6 +102,7 @@ CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
     "license": ("MIT", "BEER", "None"),
     "postgres_version": ("17.10", "16.8", "15.12", "14.17"),
     "use_jwt": ("y", "n"),
+    "user_login_field": ("email", "username"),
     "use_uuid_pk": ("y", "n"),
     "use_scoped_apis": ("y", "n"),
     "use_file_manager": ("y", "n"),
@@ -458,6 +459,18 @@ def _collect_answers_impl() -> dict[str, str] | None:
     )
 
     use_jwt = yn(selected_features, "use_jwt")
+
+    print_section("Login identifier")
+    user_login_field = prompt_radio(
+        "Login with",
+        "Primary credential clients send on login/register (USERNAME_FIELD).",
+        (
+            ("email", "Email + password"),
+            ("username", "Username + password (email still stored for reset/notify)"),
+        ),
+        default_index=0,
+    )
+
     use_uuid_pk = yn(selected_features, "use_uuid_pk")
     use_scoped_apis = yn(selected_features, "use_scoped_apis")
     use_file_manager = yn(selected_features, "use_file_manager")
@@ -581,7 +594,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
     pk_type = "UUID" if use_uuid_pk == "y" else "BigAutoField"
     print(f"  {c.bold}Primary Key{c.reset} {pk_type}")
     auth_mode = "JWT" if use_jwt == "y" else "session"
-    print(f"  {c.bold}Auth{c.reset}        {auth_mode}")
+    print(f"  {c.bold}Auth{c.reset}        {auth_mode} · login={user_login_field}")
     if use_ci == "y":
         provider_label = "GitHub Actions" if ci_provider == "github" else "GitLab CI"
         print(f"  {c.bold}CI{c.reset}          {provider_label}")
@@ -606,6 +619,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
         "postgres_password": postgres_password,
         "postgres_version": postgres_version,
         "use_jwt": use_jwt,
+        "user_login_field": user_login_field,
         "use_uuid_pk": use_uuid_pk,
         "use_scoped_apis": use_scoped_apis,
         "use_file_manager": use_file_manager,

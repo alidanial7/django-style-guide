@@ -104,6 +104,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Local Docker bind mounts (keep directory placeholders)
+volumes/**
+!volumes/**/.gitkeep
+
 # Environments
 .env
 .venv

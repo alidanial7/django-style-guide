@@ -2,6 +2,20 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
+{%- if cookiecutter.user_login_field == "username" %}
+
+
+def _login_payload(user, *, password: str = "Password1!x") -> dict:
+    return {"username": user.username, "password": password}
+
+{%- else %}
+
+
+def _login_payload(user, *, password: str = "Password1!x") -> dict:
+    return {"email": user.email, "password": password}
+
+{%- endif %}
+
 
 @pytest.mark.django_db
 class TestAuthJwt:
@@ -9,7 +23,7 @@ class TestAuthJwt:
         url = reverse("api:auth:login")
         response = api_client.post(
             url,
-            data={"email": user.email, "password": "Password1!x"},
+            data=_login_payload(user),
             format="json",
         )
 
@@ -22,7 +36,7 @@ class TestAuthJwt:
         url = reverse("api:auth:login")
         response = api_client.post(
             url,
-            data={"email": user.email, "password": "wrong-password"},
+            data=_login_payload(user, password="wrong-password"),
             format="json",
         )
 
@@ -35,7 +49,7 @@ class TestAuthJwt:
 
         login = api_client.post(
             login_url,
-            data={"email": user.email, "password": "Password1!x"},
+            data=_login_payload(user),
             format="json",
         )
         assert login.status_code == status.HTTP_200_OK
@@ -53,7 +67,7 @@ class TestAuthJwt:
     def test_logout_blacklists_refresh(self, api_client, user):
         login = api_client.post(
             reverse("api:auth:login"),
-            data={"email": user.email, "password": "Password1!x"},
+            data=_login_payload(user),
             format="json",
         )
         refresh = login.data["result"]["refresh"]

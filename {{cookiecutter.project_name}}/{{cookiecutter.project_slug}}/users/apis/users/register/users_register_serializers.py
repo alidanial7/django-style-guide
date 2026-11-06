@@ -13,6 +13,9 @@ from {{cookiecutter.project_slug}}.users.validators.password import PASSWORD_VAL
 
 
 class UsersRegisterInputSerializer(serializers.Serializer):
+{%- if cookiecutter.user_login_field == "username" %}
+    username = serializers.CharField(max_length=150)
+{%- endif %}
     email = serializers.EmailField(max_length=255)
     bio = serializers.CharField(max_length=1000, required=False, allow_blank=True, allow_null=True)
     avatar = serializers.ImageField(required=False, allow_null=True)
@@ -46,10 +49,18 @@ class UsersRegisterOutputSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BaseUser
+{%- if cookiecutter.user_login_field == "username" %}
+{%- if cookiecutter.use_jwt == "y" %}
+        fields = ("username", "email", "avatar", "token", "created_at", "updated_at")
+{%- else %}
+        fields = ("username", "email", "avatar", "created_at", "updated_at")
+{%- endif %}
+{%- else %}
 {%- if cookiecutter.use_jwt == "y" %}
         fields = ("email", "avatar", "token", "created_at", "updated_at")
 {%- else %}
         fields = ("email", "avatar", "created_at", "updated_at")
+{%- endif %}
 {%- endif %}
 {% if cookiecutter.use_jwt == "y" %}
     @extend_schema_field(

@@ -20,6 +20,10 @@
     "y",
     "n"
   ],
+  "user_login_field": [
+    "email",
+    "username"
+  ],
   "use_uuid_pk": [
     "y",
     "n"
@@ -143,6 +147,11 @@
       "__prompt__": "Authentication mode",
       "y": "JWT (simplejwt)",
       "n": "Session auth"
+    },
+    "user_login_field": {
+      "__prompt__": "Login identifier (USERNAME_FIELD)",
+      "email": "Email + password",
+      "username": "Username + password"
     },
     "use_sentry": {
       "__prompt__": "Include Sentry?",

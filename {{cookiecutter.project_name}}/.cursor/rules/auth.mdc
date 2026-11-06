@@ -17,6 +17,13 @@ alwaysApply: false
 - Unsafe methods need CSRF (`CSRF_USE_SESSIONS` may be on).
 {%- endif %}
 
+{%- if cookiecutter.user_login_field == "username" %}
+- Login identifier: **username** (`USERNAME_FIELD`). Email stays unique for reset/notifications.
+- Login/register payloads use `username` (+ `email` on register).
+{%- else %}
+- Login identifier: **email** (`USERNAME_FIELD`).
+- Login/register payloads use `email`.
+{%- endif %}
 - Register / profile / password flows stay in `users` — follow existing files.
 - Throttle auth routes; keep public auth views `AllowAny`.
 

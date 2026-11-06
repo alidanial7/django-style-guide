@@ -126,6 +126,16 @@ gen RabbitCelery \
   use_testing=y use_code_style=y use_ci=n
 assert_file "$OUT/RabbitCelery/.cursor/rules/celery.mdc"
 assert_grep 'rabbitmq' "$OUT/RabbitCelery/.cursor/rules/celery.mdc"
+assert_file "$OUT/RabbitCelery/docker/rabbitmq/rabbitmq.conf"
+assert_grep './volumes/rabbitmq' "$OUT/RabbitCelery/docker-compose.dev.yml"
+assert_grep 'transient_nonexcl_queues' "$OUT/RabbitCelery/docker/rabbitmq/rabbitmq.conf"
+assert_grep './volumes/postgres' "$OUT/RabbitCelery/docker-compose.dev.yml"
+assert_absent "$OUT/RabbitCelery/volumes/redis"
+
+gen UsernameLogin \
+  use_jwt=y user_login_field=username use_celery=n use_testing=y use_code_style=y use_ci=n
+assert_grep 'USERNAME_FIELD = "username"' "$OUT/UsernameLogin/usernamelogin/users/models/base_user.py"
+assert_grep 'username = serializers.CharField' "$OUT/UsernameLogin/usernamelogin/users/apis/users/register/users_register_serializers.py"
 
 gen AsgiWs \
   use_jwt=y use_redis=y use_asgi=y use_websockets=y \

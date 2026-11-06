@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/template-1.2.0-0B5FFF?style=for-the-badge" alt="Version" /></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/template-1.3.0-0B5FFF?style=for-the-badge" alt="Version" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" /></a>
   <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-2ea44f?style=for-the-badge" alt="License" /></a>
@@ -142,7 +142,7 @@ MyProject/
 
 | | Area | Options |
 |:---:|:---|:---|
-| 🔐 | **Auth & models** | JWT / session · UUID / BigAutoField PKs · portal permission stubs |
+| 🔐 | **Auth & models** | JWT / session · email or username login · UUID / BigAutoField PKs · portal stubs |
 | 🗂️ | **Domains** | Scoped `/api/v1/site/…` · `ManagedFile` uploads · Unfold admin |
 | ⏳ | **Async & cache** | Redis · RabbitMQ · Celery · ASGI · Channels |
 | 🚢 | **Ops** | Nginx / Traefik · Sentry · pgAdmin · GitHub or GitLab CI |
@@ -170,6 +170,7 @@ Defaults match the interactive UI.
 | | Option | Default | Description |
 |:---:|--------|---------|-------------|
 | 🔑 | `use_jwt` | y | `y` → JWT · `n` → session |
+| 👤 | `user_login_field` | email | `email` or `username` (`USERNAME_FIELD`) |
 | 🆔 | `use_uuid_pk` | y | UUID PK on `BaseModel` |
 | 🌐 | `use_scoped_apis` | n | Sample site mount + per-client schema |
 | 📁 | `use_file_manager` | n | `ManagedFile` uploads app |

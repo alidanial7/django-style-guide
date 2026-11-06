@@ -11,11 +11,25 @@ class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
     Model to declare user
     """
 
+{%- if cookiecutter.user_login_field == "username" %}
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        verbose_name=_("username"),
+        help_text="Primary login identifier for the account.",
+    )
+    email = models.EmailField(
+        unique=True,
+        verbose_name=_("email"),
+        help_text="Contact email (password reset and notifications).",
+    )
+{%- else %}
     email = models.EmailField(
         unique=True,
         verbose_name=_("email"),
         help_text="Primary login identifier for the account.",
     )
+{%- endif %}
     is_active = models.BooleanField(
         default=True,
         verbose_name=_("is active"),
@@ -29,14 +43,23 @@ class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
 
     objects = BaseUserManager()
 
+{%- if cookiecutter.user_login_field == "username" %}
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
+{%- else %}
     USERNAME_FIELD = "email"
+{%- endif %}
 
     class Meta:
         verbose_name = _("user")
         verbose_name_plural = _("users")
 
     def __str__(self):
+{%- if cookiecutter.user_login_field == "username" %}
+        return self.username
+{%- else %}
         return self.email
+{%- endif %}
 
     @property
     def is_staff(self):

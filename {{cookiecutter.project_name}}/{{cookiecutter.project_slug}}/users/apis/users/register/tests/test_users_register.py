@@ -20,6 +20,9 @@ class TestUsersRegisterValidation:
     def test_register_success(self, api_client):
         url = reverse("api:users:register")
         payload = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "newuser",
+{%- endif %}
             "email": "new@example.com",
             "password": "Password1!x",
             "confirm_password": "Password1!x",
@@ -31,6 +34,9 @@ class TestUsersRegisterValidation:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["success"] is True
         assert response.data["status"] == 201
+{%- if cookiecutter.user_login_field == "username" %}
+        assert response.data["result"]["username"] == "newuser"
+{%- endif %}
         assert response.data["result"]["email"] == "new@example.com"
 {%- if cookiecutter.use_jwt == "y" %}
         assert "access" in response.data["result"]["token"]
@@ -39,6 +45,9 @@ class TestUsersRegisterValidation:
     def test_register_password_mismatch(self, api_client):
         url = reverse("api:users:register")
         payload = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "newuser",
+{%- endif %}
             "email": "new@example.com",
             "password": "Password1!x",
             "confirm_password": "Password2!x",
@@ -56,6 +65,9 @@ class TestUsersRegisterValidation:
     def test_register_duplicate_email(self, api_client, user):
         url = reverse("api:users:register")
         payload = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "anotheruser",
+{%- endif %}
             "email": user.email,
             "password": "Password1!x",
             "confirm_password": "Password1!x",
@@ -73,6 +85,9 @@ class TestUsersRegisterValidation:
 def test_register_serializer_object_rule():
     serializer = UsersRegisterInputSerializer(
         data={
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "a_user",
+{%- endif %}
             "email": "a@example.com",
             "password": "Password1!x",
             "confirm_password": "other",

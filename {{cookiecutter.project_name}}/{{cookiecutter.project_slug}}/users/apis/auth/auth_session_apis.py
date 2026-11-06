@@ -13,7 +13,11 @@ from {{cookiecutter.project_slug}}.users.constants import AUTH_TAGS
 
 
 class AuthSessionLoginInputSerializer(serializers.Serializer):
+{%- if cookiecutter.user_login_field == "username" %}
+    username = serializers.CharField()
+{%- else %}
     email = serializers.EmailField()
+{%- endif %}
     password = serializers.CharField()
 
 
@@ -30,9 +34,14 @@ class AuthSessionLoginApi(APIView):
     def post(self, request):
         serializer = AuthSessionLoginInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+{%- if cookiecutter.user_login_field == "username" %}
+        login_value = serializer.validated_data["username"]
+{%- else %}
+        login_value = serializer.validated_data["email"]
+{%- endif %}
         user = authenticate(
             request,
-            username=serializer.validated_data["email"],
+            username=login_value,
             password=serializer.validated_data["password"],
         )
         if user is None:
@@ -41,7 +50,11 @@ class AuthSessionLoginApi(APIView):
                 code=ErrorCode.INVALID,
             )
         login(request, user)
+{%- if cookiecutter.user_login_field == "username" %}
+        return api_response(data={"username": user.username, "email": user.email})
+{%- else %}
         return api_response(data={"email": user.email})
+{%- endif %}
 
 
 class AuthSessionLogoutApi(ApiAuthMixin, APIView):

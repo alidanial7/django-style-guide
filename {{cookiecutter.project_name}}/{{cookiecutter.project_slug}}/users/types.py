@@ -6,6 +6,9 @@ from typing import Any, NotRequired, TypedDict
 class RegisterData(TypedDict):
     """Validated payload for user registration (API → service)."""
 
+{%- if cookiecutter.user_login_field == "username" %}
+    username: str
+{%- endif %}
     email: str
     password: str
     bio: NotRequired[str | None]

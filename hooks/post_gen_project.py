@@ -17,6 +17,8 @@ use_scoped_apis = "{{cookiecutter.use_scoped_apis}}"
 use_file_manager = "{{cookiecutter.use_file_manager}}"
 use_unfold_admin = "{{cookiecutter.use_unfold_admin}}"
 use_portal_permissions = "{{cookiecutter.use_portal_permissions}}"
+use_rabbitmq = "{{cookiecutter.use_rabbitmq}}"
+use_redis = "{{cookiecutter.use_redis}}"
 reverse_proxy = "{{cookiecutter.reverse_proxy}}"
 project_slug = "{{cookiecutter.project_slug}}"
 
@@ -48,6 +50,12 @@ if sentry == "n":
     delete_resource(".cursor/rules/sentry.mdc")
 if use_pgadmin != "y":
     delete_resource(".cursor/rules/pgadmin.mdc")
+    delete_resource("volumes/pgadmin")
+if use_rabbitmq != "y":
+    delete_resource("docker/rabbitmq")
+    delete_resource("volumes/rabbitmq")
+if use_redis != "y":
+    delete_resource("volumes/redis")
 if vscode == "n":
     delete_resource(".vscode")
 if code_style == "n":

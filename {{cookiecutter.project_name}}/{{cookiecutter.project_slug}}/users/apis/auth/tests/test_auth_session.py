@@ -2,6 +2,20 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
+{%- if cookiecutter.user_login_field == "username" %}
+
+
+def _login_payload(user, *, password: str = "Password1!x") -> dict:
+    return {"username": user.username, "password": password}
+
+{%- else %}
+
+
+def _login_payload(user, *, password: str = "Password1!x") -> dict:
+    return {"email": user.email, "password": password}
+
+{%- endif %}
+
 
 @pytest.mark.django_db
 class TestAuthSession:
@@ -9,19 +23,22 @@ class TestAuthSession:
         url = reverse("api:auth:login")
         response = api_client.post(
             url,
-            data={"email": user.email, "password": "Password1!x"},
+            data=_login_payload(user),
             format="json",
         )
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["success"] is True
+{%- if cookiecutter.user_login_field == "username" %}
+        assert response.data["result"]["username"] == user.username
+{%- endif %}
         assert response.data["result"]["email"] == user.email
 
     def test_session_login_invalid_credentials(self, api_client, user):
         url = reverse("api:auth:login")
         response = api_client.post(
             url,
-            data={"email": user.email, "password": "wrong-password"},
+            data=_login_payload(user, password="wrong-password"),
             format="json",
         )
 

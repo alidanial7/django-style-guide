@@ -8,7 +8,12 @@ class BaseUserFactory(factory.django.DjangoModelFactory):
         model = BaseUser
         skip_postgeneration_save = True
 
+{%- if cookiecutter.user_login_field == "username" %}
+    username = factory.Sequence(lambda n: f"user{n}")
     email = factory.Sequence(lambda n: f"user{n}@example.com")
+{%- else %}
+    email = factory.Sequence(lambda n: f"user{n}@example.com")
+{%- endif %}
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):

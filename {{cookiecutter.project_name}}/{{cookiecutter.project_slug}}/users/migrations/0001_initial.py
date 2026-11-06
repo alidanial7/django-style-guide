@@ -78,6 +78,26 @@ class Migration(migrations.Migration):
                         verbose_name=_("updated at"),
                     ),
                 ),
+{%- if cookiecutter.user_login_field == "username" %}
+                (
+                    "username",
+                    models.CharField(
+                        help_text="Primary login identifier for the account.",
+                        max_length=150,
+                        unique=True,
+                        verbose_name=_("username"),
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        help_text="Contact email (password reset and notifications).",
+                        max_length=254,
+                        unique=True,
+                        verbose_name=_("email"),
+                    ),
+                ),
+{%- else %}
                 (
                     "email",
                     models.EmailField(
@@ -87,6 +107,7 @@ class Migration(migrations.Migration):
                         verbose_name=_("email"),
                     ),
                 ),
+{%- endif %}
                 (
                     "is_active",
                     models.BooleanField(

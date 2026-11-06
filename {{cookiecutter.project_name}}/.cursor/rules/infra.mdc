@@ -7,9 +7,13 @@ alwaysApply: false
 # Infra
 
 - Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`.
+- Bind mounts live under `./volumes/<service>/` (postgres, redis, rabbitmq, …); data is gitignored via `.gitkeep` placeholders.
 - Prod: `docker-compose.yml` + entrypoints under `docker/`.
 - New/changed env → update `.env.example` and document production defaults.
 - Broker/cache/DB/port/volume/healthcheck changes → developer alert section required (see `core` rule).
+{%- if cookiecutter.use_rabbitmq == "y" %}
+- RabbitMQ 4+: keep `docker/rabbitmq/rabbitmq.conf` (`transient_nonexcl_queues` permit) — Celery needs it.
+{%- endif %}
 {%- if cookiecutter.use_celery == "y" %}
 - Celery worker/beat: compose services + `scripts/run_celery_*.sh` / entrypoints.
 {%- endif %}
