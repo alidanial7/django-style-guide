@@ -15,7 +15,7 @@ usage() {
     echo "the terminal stops and removes the compose services (volumes kept unless --clean)."
     echo
     echo "  --detach, -d  Start in the background and exit (containers keep running)"
-    echo "  --clean       Stop containers and wipe ./volumes/* bind mounts (fresh DB)"
+    echo "  --clean       Stop containers, remove named Postgres volume, wipe ./volumes/* bind mounts"
     echo "  -h, --help    Show this help"
 }
 
@@ -66,17 +66,19 @@ if [ "$DETACH" = false ]; then
 fi
 
 if [ "$CLEAN" = true ]; then
-    echo "Cleaning development containers and bind-mount volumes..."
+    echo "Cleaning development containers, named Postgres volume, and bind mounts..."
+    # -v removes named volumes declared in this compose file (postgres_data).
     docker compose -f "$COMPOSE_FILE" down -v --remove-orphans || true
-    # Compose uses bind mounts under ./volumes/ — `down -v` does not wipe those.
-    # Clear them so Postgres re-runs init and creates POSTGRES_DB.
+    # Redis/RabbitMQ/pgAdmin still use bind mounts under ./volumes/ —
+    # `down -v` does not wipe those host dirs.
     if [ -d volumes ]; then
         for svc_dir in volumes/*/; do
             [ -d "$svc_dir" ] || continue
             find "$svc_dir" -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
         done
-        echo "Wiped ./volumes/*/ (kept .gitkeep placeholders)."
+        echo "Wiped ./volumes/*/ bind mounts (kept .gitkeep placeholders)."
     fi
+    echo "Removed compose named volumes (including postgres_data)."
 fi
 
 echo "Starting development containers..."
@@ -98,13 +100,13 @@ if [ "$POSTGRES_READY" = true ]; then
     echo "Postgres is ready (database {{cookiecutter.project_slug}})."
 else
     echo "Warning: database '{{cookiecutter.project_slug}}' is not ready."
-    echo "  If this persists, wipe bind mounts: ./start-dev-services.sh --clean"
+    echo "  If this persists, wipe and recreate: ./start-dev-services.sh --clean"
     echo "  Or create it: docker compose -f $COMPOSE_FILE exec db psql -U {{cookiecutter.postgres_user}} -d postgres -c 'CREATE DATABASE {{cookiecutter.project_slug}};'"
 fi
 
 echo
 echo "Development services are running:"
-echo "  Postgres   localhost:5432  (PostgreSQL {{cookiecutter.postgres_version}})"
+echo "  Postgres   localhost:5432  (PostgreSQL {{cookiecutter.postgres_version}}; data in Docker volume postgres_data)"
 {%- if cookiecutter.use_redis == "y" %}
 echo "  Redis      localhost:6379  (Redis 7.4.9)"
 {%- endif %}

@@ -154,7 +154,10 @@ assert_grep 'rabbitmq' "$OUT/RabbitCelery/.cursor/rules/celery.mdc"
 assert_file "$OUT/RabbitCelery/docker/rabbitmq/rabbitmq.conf"
 assert_grep './volumes/rabbitmq' "$OUT/RabbitCelery/docker-compose.dev.yml"
 assert_grep 'transient_nonexcl_queues' "$OUT/RabbitCelery/docker/rabbitmq/rabbitmq.conf"
-assert_grep './volumes/postgres' "$OUT/RabbitCelery/docker-compose.dev.yml"
+assert_grep 'postgres_data:/var/lib/postgresql/data' "$OUT/RabbitCelery/docker-compose.dev.yml"
+assert_grep 'postgres_data:' "$OUT/RabbitCelery/docker-compose.dev.yml"
+assert_not_grep './volumes/postgres' "$OUT/RabbitCelery/docker-compose.dev.yml"
+assert_grep 'postgres_data:/var/lib/postgresql/data' "$OUT/RabbitCelery/docker-compose.yml"
 assert_absent "$OUT/RabbitCelery/volumes/redis"
 
 gen UsernameLogin \

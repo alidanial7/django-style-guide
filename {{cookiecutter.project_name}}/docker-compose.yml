@@ -7,7 +7,8 @@ services:
       - POSTGRES_USER={{cookiecutter.postgres_user}}
       - POSTGRES_PASSWORD={{cookiecutter.postgres_password}}
     volumes:
-      - ./volumes/postgres:/var/lib/postgresql/data/
+      # Named volume avoids Docker Desktop (macOS) UID ownership FATAL on bind mounts.
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U {{cookiecutter.postgres_user}} -d {{cookiecutter.project_slug}}"]
       interval: 5s
@@ -205,3 +206,6 @@ services:
     restart: unless-stopped
 
 {%- endif %}
+
+volumes:
+  postgres_data:

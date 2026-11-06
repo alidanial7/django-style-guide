@@ -40,7 +40,7 @@ flowchart TB
 ```bash
 ./start-dev-services.sh           # follow logs; Ctrl+C → down
 ./start-dev-services.sh --detach  # leave running (make up-detach)
-./start-dev-services.sh --clean   # wipe ./volumes/* bind mounts + restart (fresh DB)
+./start-dev-services.sh --clean   # drop named postgres_data + wipe ./volumes/* bind mounts + restart
 make up                           # same as start-dev-services.sh (attached)
 # Ctrl+C / closing the terminal → compose down (volumes kept unless --clean)
 
@@ -49,17 +49,17 @@ make down                         # stop dev compose
 
 Typical published ports (defaults):
 
-| Service | Address |
-|---------|---------|
-| PostgreSQL {{cookiecutter.postgres_version}} | `localhost:5432` |
+| Service | Address | Data |
+|---------|---------|------|
+| PostgreSQL {{cookiecutter.postgres_version}} | `localhost:5432` | Named Docker volume `postgres_data` |
 {%- if cookiecutter.use_redis == "y" %}
-| Redis 7.4.9 | `localhost:6379` |
+| Redis 7.4.9 | `localhost:6379` | `./volumes/redis` bind mount |
 {%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
-| RabbitMQ | `localhost:5672` |
+| RabbitMQ | `localhost:5672` | `./volumes/rabbitmq` bind mount |
 {%- endif %}
 {%- if cookiecutter.use_pgadmin == "y" %}
-| pgAdmin | http://localhost:5050 |
+| pgAdmin | http://localhost:5050 | `./volumes/pgadmin` bind mount |
 {%- endif %}
 
 Container names are prefixed with `{{cookiecutter.project_slug}}_` (e.g. `{{cookiecutter.project_slug}}_redis`) so two generated projects on the same machine do not collide. Host ports above are still shared — only one project can bind `5432` / `6379` at a time unless you change the left-hand port mappings.

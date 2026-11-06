@@ -7,8 +7,9 @@ alwaysApply: false
 # Infra
 
 - Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`. Script exit / Ctrl+C / terminal close → `compose down` (volumes kept unless `--clean`).
-- Bind mounts live under `./volumes/<service>/` (postgres, redis, rabbitmq, …); data is gitignored via `.gitkeep` placeholders. `--clean` must wipe those dirs (not only `compose down -v`) so Postgres re-creates `POSTGRES_DB`.
-- `FATAL: database "<slug>" does not exist` with Docker up → stale `./volumes/postgres` or another process on `:5432`; use `--clean` or `CREATE DATABASE`.
+- Postgres data uses the named Docker volume `postgres_data` (not a host bind mount — avoids macOS Docker Desktop UID ownership FATAL). Redis/RabbitMQ/pgAdmin/media stay under `./volumes/<service>/` bind mounts (gitignored via `.gitkeep`).
+- `--clean` → `compose down -v` (drops `postgres_data`) **and** wipes `./volumes/*` bind mounts so Postgres re-inits `POSTGRES_DB`.
+- `FATAL: database "<slug>" does not exist` with Docker up → stale named volume or another process on `:5432`; use `--clean` or `CREATE DATABASE`.
 - Prod: `docker-compose.yml` + entrypoints under `docker/`.
 - Deploy version: Docker `ARG VERSION` → `/app/version.txt` → public `GET /api/v1/versions/` (`config/deploy_version.py`). Pass `VERSION=` on compose/CI image builds.
 - Dev entrypoint / `devserver`: migrate + `seed_demo_data` (local admin) — see `commands` rule.
