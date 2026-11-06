@@ -2,6 +2,12 @@
 # Thin wrapper around: python manage.py update_translations
 # Locales come from settings.LANGUAGES (any count) or --locale flags — do not
 # hardcode language codes here.
+#
+# Flags:
+#   --compile              compile .po → .mo after updating catalogs
+#   --compile-messages     legacy alias for --compile
+#   --locale <code>        pass-through (repeatable)
+#   --no-clean             pass-through
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,7 +28,8 @@ fi
 
 cd "$PROJECT_DIR"
 
-# Map legacy --compile-messages flag to manage.py --compile
+# Map legacy --compile-messages → --compile. Use ${arr[@]+…} so an empty
+# array does not trip `set -u` (bash treats bare "${arr[@]}" as unbound).
 ARGS=()
 for arg in "$@"; do
   if [[ "$arg" == "--compile-messages" ]]; then
@@ -32,4 +39,4 @@ for arg in "$@"; do
   fi
 done
 
-exec "$PYTHON" manage.py update_translations "${ARGS[@]}"
+exec "$PYTHON" manage.py update_translations ${ARGS[@]+"${ARGS[@]}"}

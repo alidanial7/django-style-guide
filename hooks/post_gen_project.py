@@ -113,17 +113,15 @@ if use_i18n != "y":
     delete_resource("docs/style-guide/ops/translations.md")
     delete_resource(".cursor/rules/i18n.mdc")
 else:
-    # Scaffold locale dirs from LANGUAGES (scripts never hardcode language count).
-    locale_codes = ["en"]
-    if i18n_mode == "bilingual":
-        locale_codes.append("fa")
-    for code in locale_codes:
-        messages_dir = Path("locale") / code / "LC_MESSAGES"
-        messages_dir.mkdir(parents=True, exist_ok=True)
-        gitkeep = messages_dir / ".gitkeep"
-        if not gitkeep.exists():
-            gitkeep.touch()
-        print(f"  - locale/{code}/LC_MESSAGES/")
+    # Template ships locale/en + locale/fa catalogs; prune to match i18n_mode.
+    if i18n_mode == "monolingual":
+        delete_resource("locale/fa")
+    for code in ("en", "fa") if i18n_mode == "bilingual" else ("en",):
+        po = Path("locale") / code / "LC_MESSAGES" / "django.po"
+        if po.is_file():
+            print(f"  - {po.as_posix()}")
+        else:
+            print(f"  ! missing {po.as_posix()}")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
     delete_resource(".cursor/rules/sentry.mdc")

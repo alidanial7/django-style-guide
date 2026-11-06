@@ -1,0 +1,263 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fa\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "%(field)s already exists."
+msgstr "%(field)s از قبل وجود دارد."
+
+msgid "Apple login is not configured."
+msgstr "ورود با اپل پیکربندی نشده است."
+
+msgid "Apple token is missing subject."
+msgstr "توکن اپل فاقد شناسه موضوع است."
+
+msgid "Authentication is required to confirm a profile phone change."
+msgstr "برای تأیید تغییر تلفن پروفایل، احراز هویت لازم است."
+
+msgid "Dashboard"
+msgstr "داشبورد"
+
+msgid "Enter a valid mobile number (e.g. 989134543456)."
+msgstr "یک شماره موبایل معتبر وارد کنید (مثلاً 989134543456)."
+
+msgid "Google login is not configured."
+msgstr "ورود با گوگل پیکربندی نشده است."
+
+msgid "Google token is missing email or subject."
+msgstr "توکن گوگل فاقد ایمیل یا شناسه موضوع است."
+
+msgid "Invalid Apple id_token."
+msgstr "شناسه توکن اپل نامعتبر است."
+
+msgid "Invalid Google id_token."
+msgstr "شناسه توکن گوگل نامعتبر است."
+
+msgid "Invalid Microsoft id_token."
+msgstr "شناسه توکن مایکروسافت نامعتبر است."
+
+msgid "Invalid verification challenge."
+msgstr "چالش تأیید نامعتبر است."
+
+msgid "Invalid verification code."
+msgstr "کد تأیید نامعتبر است."
+
+msgid "Microsoft login is not configured."
+msgstr "ورود با مایکروسافت پیکربندی نشده است."
+
+msgid "Microsoft token is missing email or subject."
+msgstr "توکن مایکروسافت فاقد ایمیل یا شناسه موضوع است."
+
+msgid "Navigation"
+msgstr "ناوبری"
+
+msgid "Phone does not match the verification challenge."
+msgstr "تلفن با چالش تأیید مطابقت ندارد."
+
+msgid "Please wait before requesting another code."
+msgstr "لطفاً قبل از درخواست کد دیگر صبر کنید."
+
+msgid "Provider did not return an email; cannot create an account."
+msgstr "ارائه‌دهنده ایمیلی برنگرداند؛ امکان ایجاد حساب وجود ندارد."
+
+msgid "Provider email is not verified."
+msgstr "ایمیل ارائه‌دهنده تأیید نشده است."
+
+msgid "This account is inactive."
+msgstr "این حساب غیرفعال است."
+
+msgid "This verification code does not belong to the current user."
+msgstr "این کد تأیید متعلق به کاربر فعلی نیست."
+
+msgid "Too many invalid attempts. Request a new code."
+msgstr "تلاش‌های نامعتبر بیش از حد. کد جدیدی درخواست کنید."
+
+msgid "Verification code expired or not requested."
+msgstr "کد تأیید منقضی شده یا درخواست نشده است."
+
+msgid "Your verification code is {code}."
+msgstr "کد تأیید شما {code} است."
+
+msgid "a conflicting record already exists."
+msgstr "یک رکورد متناقض از قبل وجود دارد."
+
+msgid "a required database field is missing."
+msgstr "یک فیلد الزامی پایگاه داده وجود ندارد."
+
+msgid "a server error occurred."
+msgstr "خطای سرور رخ داد."
+
+msgid "avatar"
+msgstr "آواتار"
+
+msgid "bio"
+msgstr "بیوگرافی"
+
+msgid "cannot change avatar in the same request as phone; update avatar separately."
+msgstr "نمی‌توان آواتار را در همان درخواست تغییر تلفن عوض کرد؛ آواتار را جداگانه به‌روزرسانی کنید."
+
+msgid "cannot clear phone before one is set; provide a phone to verify."
+msgstr "نمی‌توان تلفن را قبل از تنظیم پاک کرد؛ یک تلفن برای تأیید ارائه دهید."
+
+msgid "category"
+msgstr "دسته‌بندی"
+
+msgid "confirm password is not equal to password"
+msgstr "رمز عبور و تکرار آن یکسان نیستند"
+
+msgid "could not complete the request due to a data conflict."
+msgstr "به دلیل تداخل داده، درخواست کامل نشد."
+
+msgid "created at"
+msgstr "ایجاد شده در"
+
+msgid "current password is incorrect."
+msgstr "رمز عبور فعلی نادرست است."
+
+msgid "document"
+msgstr "سند"
+
+msgid "email"
+msgstr "ایمیل"
+
+msgid "file"
+msgstr "فایل"
+
+msgid "file cannot be empty."
+msgstr "فایل نمی‌تواند خالی باشد."
+
+msgid "file content not found."
+msgstr "محتوای فایل یافت نشد."
+
+msgid "file content type (%(content_type)s) is not allowed."
+msgstr "نوع محتوای فایل (%(content_type)s) مجاز نیست."
+
+msgid "file extension .%(ext)s is not allowed. allowed extensions: %(allowed)s."
+msgstr "پسوند فایل .%(ext)s مجاز نیست. پسوندهای مجاز: %(allowed)s."
+
+msgid "file manager"
+msgstr "مدیریت فایل"
+
+msgid "file size"
+msgstr "اندازه فایل"
+
+msgid "file size cannot exceed %(max_size)d mb."
+msgstr "اندازه فایل نمی‌تواند از %(max_size)d مگابایت بیشتر باشد."
+
+msgid "id"
+msgstr "شناسه"
+
+msgid "image"
+msgstr "تصویر"
+
+msgid "invalid or expired password reset token."
+msgstr "توکن بازنشانی رمز عبور نامعتبر یا منقضی است."
+
+msgid "invalid password reset link."
+msgstr "لینک بازنشانی رمز عبور نامعتبر است."
+
+msgid "invalid reference."
+msgstr "ارجاع نامعتبر است."
+
+msgid "is active"
+msgstr "فعال است"
+
+msgid "is admin"
+msgstr "مدیر است"
+
+msgid "is public"
+msgstr "عمومی است"
+
+msgid "managed file"
+msgstr "فایل مدیریت‌شده"
+
+msgid "managed files"
+msgstr "فایل‌های مدیریت‌شده"
+
+msgid "mime type"
+msgstr "نوع MIME"
+
+msgid "original filename"
+msgstr "نام فایل اصلی"
+
+msgid "other"
+msgstr "سایر"
+
+msgid "owner"
+msgstr "مالک"
+
+msgid "password must be at least %(limit_value)d characters"
+msgstr "رمز عبور باید حداقل %(limit_value)d کاراکتر باشد"
+
+msgid "password must include letter"
+msgstr "رمز عبور باید شامل حرف باشد"
+
+msgid "password must include number"
+msgstr "رمز عبور باید شامل عدد باشد"
+
+msgid "password must include special char"
+msgstr "رمز عبور باید شامل کاراکتر خاص باشد"
+
+msgid "password reset"
+msgstr "بازنشانی رمز عبور"
+
+msgid "phone"
+msgstr "تلفن"
+
+msgid "please fill password and confirm password"
+msgstr "لطفاً رمز عبور و تکرار آن را وارد کنید"
+
+msgid "profile"
+msgstr "پروفایل"
+
+msgid "profiles"
+msgstr "پروفایل‌ها"
+
+msgid "provider"
+msgstr "ارائه‌دهنده"
+
+msgid "set avatar after phone verification."
+msgstr "آواتار را پس از تأیید تلفن تنظیم کنید."
+
+msgid "social account"
+msgstr "حساب اجتماعی"
+
+msgid "social accounts"
+msgstr "حساب‌های اجتماعی"
+
+msgid "subject"
+msgstr "موضوع"
+
+msgid "this field cannot be null."
+msgstr "این فیلد نمی‌تواند خالی باشد."
+
+msgid "title"
+msgstr "عنوان"
+
+msgid "token is invalid or expired."
+msgstr "توکن نامعتبر یا منقضی است."
+
+msgid "unable to log in with provided credentials."
+msgstr "ورود با اطلاعات وارد شده ممکن نیست."
+
+msgid "updated at"
+msgstr "به‌روزرسانی شده در"
+
+msgid "use the following details to reset your password:"
+msgstr "از جزئیات زیر برای بازنشانی رمز عبور خود استفاده کنید:"
+
+msgid "user"
+msgstr "کاربر"
+
+msgid "username"
+msgstr "نام کاربری"
+
+msgid "users"
+msgstr "کاربران"
+

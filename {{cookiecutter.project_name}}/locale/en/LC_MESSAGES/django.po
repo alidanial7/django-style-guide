@@ -1,0 +1,263 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "%(field)s already exists."
+msgstr ""
+
+msgid "Apple login is not configured."
+msgstr ""
+
+msgid "Apple token is missing subject."
+msgstr ""
+
+msgid "Authentication is required to confirm a profile phone change."
+msgstr ""
+
+msgid "Dashboard"
+msgstr ""
+
+msgid "Enter a valid mobile number (e.g. 989134543456)."
+msgstr ""
+
+msgid "Google login is not configured."
+msgstr ""
+
+msgid "Google token is missing email or subject."
+msgstr ""
+
+msgid "Invalid Apple id_token."
+msgstr ""
+
+msgid "Invalid Google id_token."
+msgstr ""
+
+msgid "Invalid Microsoft id_token."
+msgstr ""
+
+msgid "Invalid verification challenge."
+msgstr ""
+
+msgid "Invalid verification code."
+msgstr ""
+
+msgid "Microsoft login is not configured."
+msgstr ""
+
+msgid "Microsoft token is missing email or subject."
+msgstr ""
+
+msgid "Navigation"
+msgstr ""
+
+msgid "Phone does not match the verification challenge."
+msgstr ""
+
+msgid "Please wait before requesting another code."
+msgstr ""
+
+msgid "Provider did not return an email; cannot create an account."
+msgstr ""
+
+msgid "Provider email is not verified."
+msgstr ""
+
+msgid "This account is inactive."
+msgstr ""
+
+msgid "This verification code does not belong to the current user."
+msgstr ""
+
+msgid "Too many invalid attempts. Request a new code."
+msgstr ""
+
+msgid "Verification code expired or not requested."
+msgstr ""
+
+msgid "Your verification code is {code}."
+msgstr ""
+
+msgid "a conflicting record already exists."
+msgstr ""
+
+msgid "a required database field is missing."
+msgstr ""
+
+msgid "a server error occurred."
+msgstr ""
+
+msgid "avatar"
+msgstr ""
+
+msgid "bio"
+msgstr ""
+
+msgid "cannot change avatar in the same request as phone; update avatar separately."
+msgstr ""
+
+msgid "cannot clear phone before one is set; provide a phone to verify."
+msgstr ""
+
+msgid "category"
+msgstr ""
+
+msgid "confirm password is not equal to password"
+msgstr ""
+
+msgid "could not complete the request due to a data conflict."
+msgstr ""
+
+msgid "created at"
+msgstr ""
+
+msgid "current password is incorrect."
+msgstr ""
+
+msgid "document"
+msgstr ""
+
+msgid "email"
+msgstr ""
+
+msgid "file"
+msgstr ""
+
+msgid "file cannot be empty."
+msgstr ""
+
+msgid "file content not found."
+msgstr ""
+
+msgid "file content type (%(content_type)s) is not allowed."
+msgstr ""
+
+msgid "file extension .%(ext)s is not allowed. allowed extensions: %(allowed)s."
+msgstr ""
+
+msgid "file manager"
+msgstr ""
+
+msgid "file size"
+msgstr ""
+
+msgid "file size cannot exceed %(max_size)d mb."
+msgstr ""
+
+msgid "id"
+msgstr ""
+
+msgid "image"
+msgstr ""
+
+msgid "invalid or expired password reset token."
+msgstr ""
+
+msgid "invalid password reset link."
+msgstr ""
+
+msgid "invalid reference."
+msgstr ""
+
+msgid "is active"
+msgstr ""
+
+msgid "is admin"
+msgstr ""
+
+msgid "is public"
+msgstr ""
+
+msgid "managed file"
+msgstr ""
+
+msgid "managed files"
+msgstr ""
+
+msgid "mime type"
+msgstr ""
+
+msgid "original filename"
+msgstr ""
+
+msgid "other"
+msgstr ""
+
+msgid "owner"
+msgstr ""
+
+msgid "password must be at least %(limit_value)d characters"
+msgstr ""
+
+msgid "password must include letter"
+msgstr ""
+
+msgid "password must include number"
+msgstr ""
+
+msgid "password must include special char"
+msgstr ""
+
+msgid "password reset"
+msgstr ""
+
+msgid "phone"
+msgstr ""
+
+msgid "please fill password and confirm password"
+msgstr ""
+
+msgid "profile"
+msgstr ""
+
+msgid "profiles"
+msgstr ""
+
+msgid "provider"
+msgstr ""
+
+msgid "set avatar after phone verification."
+msgstr ""
+
+msgid "social account"
+msgstr ""
+
+msgid "social accounts"
+msgstr ""
+
+msgid "subject"
+msgstr ""
+
+msgid "this field cannot be null."
+msgstr ""
+
+msgid "title"
+msgstr ""
+
+msgid "token is invalid or expired."
+msgstr ""
+
+msgid "unable to log in with provided credentials."
+msgstr ""
+
+msgid "updated at"
+msgstr ""
+
+msgid "use the following details to reset your password:"
+msgstr ""
+
+msgid "user"
+msgstr ""
+
+msgid "username"
+msgstr ""
+
+msgid "users"
+msgstr ""
+

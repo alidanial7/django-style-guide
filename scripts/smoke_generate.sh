@@ -218,8 +218,11 @@ assert_file "$OUT/WithI18n/.cursor/rules/i18n.mdc"
 assert_file "$OUT/WithI18n/docs/style-guide/ops/translations.md"
 assert_file "$OUT/WithI18n/scripts/update_translations.sh"
 assert_file "$OUT/WithI18n/locale/.gitkeep"
-assert_file "$OUT/WithI18n/locale/en/LC_MESSAGES/.gitkeep"
-assert_file "$OUT/WithI18n/locale/fa/LC_MESSAGES/.gitkeep"
+assert_file "$OUT/WithI18n/locale/en/LC_MESSAGES/django.po"
+assert_file "$OUT/WithI18n/locale/fa/LC_MESSAGES/django.po"
+assert_grep 'Language: fa' "$OUT/WithI18n/locale/fa/LC_MESSAGES/django.po"
+assert_grep 'ARGS[@]+' "$OUT/WithI18n/scripts/update_translations.sh"
+assert_grep '--compile-messages' "$OUT/WithI18n/scripts/update_translations.sh"
 assert_file "$OUT/WithI18n/withi18n/commands/management/commands/update_translations.py"
 assert_grep 'USE_I18N = True' "$OUT/WithI18n/config/settings/i18n.py"
 assert_grep '("en", "English")' "$OUT/WithI18n/config/settings/i18n.py"
@@ -239,7 +242,7 @@ assert_grep 'settings.LANGUAGES' "$OUT/WithI18n/docs/style-guide/ops/translation
 gen WithI18nMono \
   use_jwt=y use_i18n=y i18n_mode=monolingual \
   use_celery=n use_testing=y use_code_style=y use_ci=n
-assert_file "$OUT/WithI18nMono/locale/en/LC_MESSAGES/.gitkeep"
+assert_file "$OUT/WithI18nMono/locale/en/LC_MESSAGES/django.po"
 assert_absent "$OUT/WithI18nMono/locale/fa"
 assert_grep '("en", "English")' "$OUT/WithI18nMono/config/settings/i18n.py"
 assert_not_grep '("fa", "Persian")' "$OUT/WithI18nMono/config/settings/i18n.py"

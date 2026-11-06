@@ -39,7 +39,7 @@ USE_I18N = True
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 ```
 
-Generation also scaffolds `locale/<code>/LC_MESSAGES/` for each entry in `LANGUAGES` ({% if cookiecutter.i18n_mode == "bilingual" %}`en` + `fa`{% else %}`en`{% endif %}). Catalogs (`.po`) appear after the first `update_translations` run.
+Generation ships starter catalogs under `locale/<code>/LC_MESSAGES/django.po` for each entry in `LANGUAGES` ({% if cookiecutter.i18n_mode == "bilingual" %}`en` + `fa`{% else %}`en`{% endif %}). Refresh / extend them with `update_translations` after adding new `_()` strings.
 
 Also wired:
 
@@ -135,11 +135,12 @@ python manage.py update_translations --locale fa
 python manage.py update_translations --compile
 ```
 
-Thin shell wrapper (maps legacy `--compile-messages` → `--compile`):
+Thin shell wrapper (`--compile` preferred; `--compile-messages` is a legacy alias):
 
 ```bash
 ./scripts/update_translations.sh
-./scripts/update_translations.sh --compile-messages
+./scripts/update_translations.sh --compile
+./scripts/update_translations.sh --compile-messages   # → --compile
 make translations
 make translations ARGS='--compile'
 ```
