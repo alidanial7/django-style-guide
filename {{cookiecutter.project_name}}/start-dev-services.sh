@@ -11,6 +11,9 @@ usage() {
     echo
     echo "Start local development infrastructure (Postgres{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}{%- if cookiecutter.use_pgadmin == "y" %}, pgAdmin{%- endif %})."
     echo
+    echo "Containers stay up while this script runs (log follow). Ctrl+C / closing the"
+    echo "terminal stops and removes the compose services (volumes are kept unless --clean)."
+    echo
     echo "  --clean   Stop containers and remove named volumes (fresh database state)"
     echo "  -h, --help  Show this help"
 }
@@ -42,6 +45,20 @@ fi
 if [ ! -f .env ]; then
     echo "Warning: .env not found. Copy .env.example to .env before running Django."
 fi
+
+CLEANED_UP=0
+cleanup() {
+    if [ "$CLEANED_UP" -eq 1 ]; then
+        return
+    fi
+    CLEANED_UP=1
+    echo
+    echo "Stopping development containers..."
+    docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
+}
+
+# INT/TERM/HUP: Ctrl+C, kill, terminal/editor close. EXIT: any process end.
+trap cleanup EXIT INT TERM HUP
 
 if [ "$CLEAN" = true ]; then
     echo "Cleaning development containers and volumes..."
@@ -84,5 +101,5 @@ echo "Run Django locally with:"
 echo "  python manage.py migrate"
 echo "  python manage.py runserver"
 echo
-echo "Following container logs (Ctrl+C stops log follow only)..."
+echo "Following container logs (Ctrl+C or closing this terminal stops services)..."
 docker compose -f "$COMPOSE_FILE" logs -f

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Infra
 
-- Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`.
+- Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`. Script exit / Ctrl+C / terminal close → `compose down` (volumes kept unless `--clean`).
 - Bind mounts live under `./volumes/<service>/` (postgres, redis, rabbitmq, …); data is gitignored via `.gitkeep` placeholders.
 - Prod: `docker-compose.yml` + entrypoints under `docker/`.
 - Dev entrypoint / `devserver`: migrate + `seed_demo_data` (local admin) — see `commands` rule.

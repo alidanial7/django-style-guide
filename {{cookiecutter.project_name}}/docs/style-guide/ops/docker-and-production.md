@@ -41,6 +41,8 @@ flowchart TB
 ./start-dev-services.sh
 ./start-dev-services.sh --clean   # wipe volumes, fresh DB
 make up                           # same as start-dev-services.sh
+# Ctrl+C / closing the terminal → compose down (volumes kept unless --clean)
+
 make down                         # stop dev compose
 ```
 

@@ -92,7 +92,8 @@ python manage.py devserver
 
 Defaults work with local Compose services. `devserver` runs migrations, creates a default superuser (`admin@example.com` / `admin`), and starts the server{%- if cookiecutter.use_celery == "y" %} (plus a Celery worker){%- endif %}.
 
-Use `./start-dev-services.sh --clean` to wipe volumes and start fresh.
+Use `./start-dev-services.sh --clean` to wipe volumes and start fresh.  
+Ctrl+C or closing the terminal runs `docker compose down` (volumes kept unless `--clean`).
 
 More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & production](docs/style-guide/ops/docker-and-production.md) · [Logging](docs/style-guide/ops/logging.md).
 

@@ -126,7 +126,7 @@ When a schema change needs seed updates, extend these commands in the **same** c
 
 | Script | Purpose |
 |--------|---------|
-| `./start-dev-services.sh` | Start (or `--clean` recreate) `docker-compose.dev.yml` services |
+| `./start-dev-services.sh` | Start (or `--clean` recreate) `docker-compose.dev.yml`; exit/Ctrl+C → `compose down` |
 {%- if cookiecutter.use_i18n == "y" %}
 | `./scripts/update_translations.sh` | Thin wrapper → `manage.py update_translations` — see [Translations](translations.md) |
 {%- endif %}
