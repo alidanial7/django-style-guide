@@ -10,6 +10,9 @@ class BaseUserManager(BUM):
         is_active=True,
         is_admin=False,
         password=None,
+{%- if cookiecutter.use_otp_login == "y" %}
+        phone=None,
+{%- endif %}
     ):
         if not username:
             raise ValueError("Users must have a username")
@@ -21,6 +24,9 @@ class BaseUserManager(BUM):
             email=self.normalize_email(email.lower()),
             is_active=is_active,
             is_admin=is_admin,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=phone,
+{%- endif %}
         )
 
         if password is not None:
@@ -47,11 +53,27 @@ class BaseUserManager(BUM):
 
         return user
 {%- else %}
-    def create_user(self, email, is_active=True, is_admin=False, password=None):
+    def create_user(
+        self,
+        email,
+        is_active=True,
+        is_admin=False,
+        password=None,
+{%- if cookiecutter.use_otp_login == "y" %}
+        phone=None,
+{%- endif %}
+    ):
         if not email:
             raise ValueError("Users must have an email address")
 
-        user = self.model(email=self.normalize_email(email.lower()), is_active=is_active, is_admin=is_admin)
+        user = self.model(
+            email=self.normalize_email(email.lower()),
+            is_active=is_active,
+            is_admin=is_admin,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=phone,
+{%- endif %}
+        )
 
         if password is not None:
             user.set_password(password)

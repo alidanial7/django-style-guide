@@ -105,7 +105,10 @@ More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & productio
 | http://localhost:8000/schema/ | OpenAPI schema (**DEBUG only**) |
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API routes (v1) |
-| http://localhost:8000/api/v1/health/ | Health check |
+| http://localhost:8000/api/v1/health/ | Platform health check |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| http://localhost:8000/api/v1/site/health/ | Scoped sample (same probe under `/site/`) |
+{%- endif %}
 
 Auth, register, and profile endpoints: [Authentication](docs/style-guide/http/authentication.md).
 

@@ -40,9 +40,11 @@ class TestAuthOtp:
 
     @override_settings(OTP_TEST=True, OTP_TEST_CODE="12345")
     def test_verify_rejects_wrong_code(self, api_client):
-        url = reverse("api:auth:otp-verify")
+        request_url = reverse("api:auth:otp-request")
+        verify_url = reverse("api:auth:otp-verify")
+        api_client.post(request_url, data={"phone": "989134543456"}, format="json")
         response = api_client.post(
-            url,
+            verify_url,
             data={"phone": "989134543456", "code": "00000"},
             format="json",
         )

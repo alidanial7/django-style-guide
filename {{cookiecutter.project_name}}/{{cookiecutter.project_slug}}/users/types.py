@@ -13,6 +13,9 @@ class RegisterData(TypedDict):
     password: str
     bio: NotRequired[str | None]
     avatar: NotRequired[Any]
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone: NotRequired[str | None]
+{%- endif %}
 
 
 class ProfileUpdateData(TypedDict, total=False):
@@ -20,6 +23,9 @@ class ProfileUpdateData(TypedDict, total=False):
 
     bio: str | None
     avatar: Any
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone: str | None
+{%- endif %}
 
 
 class ChangePasswordData(TypedDict):

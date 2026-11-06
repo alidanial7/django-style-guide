@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -10,6 +11,9 @@ from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 from {{cookiecutter.project_slug}}.users.models import BaseUser
 from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_avatar_url
 from {{cookiecutter.project_slug}}.users.validators.password import PASSWORD_VALIDATORS
+{%- if cookiecutter.use_otp_login == "y" %}
+from {{cookiecutter.project_slug}}.users.validators.phone import validate_phone
+{%- endif %}
 
 
 class UsersRegisterInputSerializer(serializers.Serializer):
@@ -17,10 +21,27 @@ class UsersRegisterInputSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
 {%- endif %}
     email = serializers.EmailField(max_length=255)
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone = serializers.CharField(
+        max_length=20,
+        help_text=(
+            "Required mobile (stored as 98XXXXXXXXXX). Registration completes after "
+            "POST /api/v1/auth/otp/verify/ with the SMS code."
+        ),
+    )
+{%- endif %}
     bio = serializers.CharField(max_length=1000, required=False, allow_blank=True, allow_null=True)
     avatar = serializers.ImageField(required=False, allow_null=True)
     password = serializers.CharField(validators=PASSWORD_VALIDATORS)
     confirm_password = serializers.CharField(max_length=255)
+
+{%- if cookiecutter.use_otp_login == "y" %}
+    def validate_phone(self, value):
+        try:
+            return validate_phone(phone=value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages, code=error.code) from error
+{%- endif %}
 
     def validate(self, data):
         password = data.get("password")
@@ -41,6 +62,19 @@ class UsersRegisterInputSerializer(serializers.Serializer):
         return data
 
 
+{%- if cookiecutter.use_otp_login == "y" %}
+class UsersRegisterOtpChallengeSerializer(serializers.Serializer):
+    phone = serializers.CharField()
+    expires_in = serializers.IntegerField()
+    resend_in = serializers.IntegerField()
+    test_mode = serializers.BooleanField()
+
+
+class UsersRegisterPendingOutputSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    otp = UsersRegisterOtpChallengeSerializer()
+
+{%- endif %}
 class UsersRegisterOutputSerializer(serializers.ModelSerializer):
 {%- if cookiecutter.use_jwt == "y" %}
     token = serializers.SerializerMethodField("get_token")

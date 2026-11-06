@@ -1,5 +1,6 @@
 import pytest
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail, ValidationError
@@ -13,10 +14,48 @@ from {{cookiecutter.project_slug}}.users.apis.users.register.users_register_seri
     UsersRegisterInputSerializer,
 )
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
+{%- if cookiecutter.use_otp_login == "y" %}
+from {{cookiecutter.project_slug}}.users.models import BaseUser
+{%- endif %}
 
 
 @pytest.mark.django_db
 class TestUsersRegisterValidation:
+{%- if cookiecutter.use_otp_login == "y" %}
+    @override_settings(OTP_TEST=True, OTP_TEST_CODE="12345")
+    def test_register_pending_then_otp_creates_user(self, api_client):
+        register_url = reverse("api:users:register")
+        verify_url = reverse("api:auth:otp-verify")
+        payload = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "newuser",
+{%- endif %}
+            "email": "new@example.com",
+            "phone": "09134543456",
+            "password": "Password1!x",
+            "confirm_password": "Password1!x",
+            "bio": "hello",
+        }
+
+        pending = api_client.post(register_url, data=payload, format="json")
+        assert pending.status_code == status.HTTP_202_ACCEPTED
+        assert pending.data["result"]["detail"] == "otp_required"
+        assert pending.data["result"]["otp"]["phone"] == "989134543456"
+        assert not BaseUser.objects.filter(email="new@example.com").exists()
+
+        verified = api_client.post(
+            verify_url,
+            data={"phone": "989134543456", "code": "12345"},
+            format="json",
+        )
+        assert verified.status_code == status.HTTP_200_OK
+        user = BaseUser.objects.get(email="new@example.com")
+        assert user.phone == "989134543456"
+        assert user.profile.bio == "hello"
+{%- if cookiecutter.use_jwt == "y" %}
+        assert "access" in verified.data["result"]
+{%- endif %}
+{%- else %}
     def test_register_success(self, api_client):
         url = reverse("api:users:register")
         payload = {
@@ -41,6 +80,7 @@ class TestUsersRegisterValidation:
 {%- if cookiecutter.use_jwt == "y" %}
         assert "access" in response.data["result"]["token"]
 {%- endif %}
+{%- endif %}
 
     def test_register_password_mismatch(self, api_client):
         url = reverse("api:users:register")
@@ -49,6 +89,9 @@ class TestUsersRegisterValidation:
             "username": "newuser",
 {%- endif %}
             "email": "new@example.com",
+{%- if cookiecutter.use_otp_login == "y" %}
+            "phone": "09134543456",
+{%- endif %}
             "password": "Password1!x",
             "confirm_password": "Password2!x",
         }
@@ -62,6 +105,7 @@ class TestUsersRegisterValidation:
         assert item["code"] == UserErrorCode.PASSWORD_MISMATCH
         assert "confirm password" in item["message"]
 
+{%- if cookiecutter.use_otp_login != "y" %}
     def test_register_duplicate_email(self, api_client, user):
         url = reverse("api:users:register")
         payload = {
@@ -80,6 +124,7 @@ class TestUsersRegisterValidation:
         item = response.data["messages"]["email"][0]
         assert item["code"] == ErrorCode.UNIQUE
         assert "message" in item
+{%- endif %}
 
 
 def test_register_serializer_object_rule():
@@ -89,6 +134,9 @@ def test_register_serializer_object_rule():
             "username": "a_user",
 {%- endif %}
             "email": "a@example.com",
+{%- if cookiecutter.use_otp_login == "y" %}
+            "phone": "09134543456",
+{%- endif %}
             "password": "Password1!x",
             "confirm_password": "other",
         }

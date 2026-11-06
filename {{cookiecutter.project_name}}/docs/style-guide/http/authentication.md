@@ -148,6 +148,10 @@ python manage.py migrate
 ### Register + tokens
 
 `POST /api/v1/users/register/` is public (throttled `register`). Output serializer includes JWT `token.refresh` / `token.access` so the client can authenticate immediately without a separate login call.
+{%- if cookiecutter.use_otp_login == "y" %}
+
+With OTP enabled, register **requires** `phone`, returns **`202`** with `otp`, and does **not** create the user until `POST /api/v1/auth/otp/verify/`.
+{%- endif %}
 
 ### Endpoint map (JWT)
 
@@ -209,7 +213,7 @@ Unsafe methods with session cookies need a valid CSRF token (`X-CSRFToken` or fo
 
 Optional SMS OTP alongside password auth. Phone numbers are **normalized and stored** as digits with country code and **no** `+` (example: `989134543456`).
 
-### Flow
+### Flow (OTP-only login)
 
 1. `POST /api/v1/auth/otp/request/` with `{ "phone": "0913…" }` → challenge cached; SMS via provider (skipped when `OTP_TEST=true`)
 2. `POST /api/v1/auth/otp/verify/` with `{ "phone", "code" }` → get-or-create user by `phone`, then
@@ -218,6 +222,18 @@ Optional SMS OTP alongside password auth. Phone numbers are **normalized and sto
 {%- else %}
    establish a session (`login`)
 {%- endif %}
+
+### Flow (register / profile — commit on verify)
+
+1. `POST /users/register/` (phone required) or `PATCH /users/profile/` → **`202`** `{ detail: otp_required, otp: {…} }`; data is staged in the OTP challenge (not written yet). Profile OTP is sent to the new phone if provided, otherwise the current phone.
+2. `POST /auth/otp/verify/` with `{ "phone", "code" }` → applies pending register / profile update, then
+{%- if cookiecutter.use_jwt == "y" %}
+   issues JWT
+{%- else %}
+   establishes a session
+{%- endif %}
+
+Avatar cannot be staged in the OTP step — upload it after the account/phone is verified.
 
 ### Provider pattern (Strategy + factory)
 
@@ -334,11 +350,11 @@ Throttles: scope `password_reset` (see [Throttling](throttling.md)).
 | User model | `users.BaseUser` — email as `USERNAME_FIELD` |
 {%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
-| Phone | Optional unique `phone` (`9891…` digits); set on OTP verify |
+| Phone | Unique `phone` (`9891…`); register/profile commit only after OTP verify |
 {%- endif %}
-| Profile | `bio`, `avatar`; created by [signal](../domain/signals.md) on user create |
+| Profile | `bio`, `avatar`{% if cookiecutter.use_otp_login == "y" %}, `phone` (on user){% endif %}; created by [signal](../domain/signals.md) on user create |
 | Default avatar | Static `users/default_avatar.png` via selector |
-| Update | `PATCH /api/v1/users/profile/` — multipart for avatar |
+| Update | `PATCH /api/v1/users/profile/` — multipart for avatar{% if cookiecutter.use_otp_login == "y" %}; with OTP: `202` + verify (avatar after){% endif %} |
 
 Password policy for admin/`set_password` is wired in `AUTH_PASSWORD_VALIDATORS` (`config/settings/auth.py`) including domain `Password*DjangoValidator` adapters — keep in sync with API `PASSWORD_VALIDATORS`.
 

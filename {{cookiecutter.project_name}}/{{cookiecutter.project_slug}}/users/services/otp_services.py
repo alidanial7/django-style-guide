@@ -13,12 +13,16 @@ from django.utils.translation import gettext_lazy as _
 
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
-from {{cookiecutter.project_slug}}.users.models import BaseUser
+from {{cookiecutter.project_slug}}.users.models import BaseUser, Profile
 from {{cookiecutter.project_slug}}.users.providers.sms import get_sms_provider
+from {{cookiecutter.project_slug}}.users.types import ProfileUpdateData, RegisterData
 from {{cookiecutter.project_slug}}.users.validators.phone import validate_phone
 
 _CHALLENGE_KEY = "otp:challenge:{phone}"
 _COOLDOWN_KEY = "otp:cooldown:{phone}"
+
+PENDING_REGISTER = "register"
+PENDING_PROFILE_UPDATE = "profile_update"
 
 
 def _challenge_key(*, phone: str) -> str:
@@ -42,9 +46,14 @@ def _generate_code() -> str:
     return f"{secrets.randbelow(upper):0{length}d}"
 
 
-def request_otp(*, phone: str) -> dict[str, Any]:
+def request_otp(*, phone: str, pending: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Create (or replace) an OTP challenge and deliver SMS unless ``OTP_TEST``.
+
+    Optional ``pending`` is applied only after a successful ``verify_otp``::
+
+        {"kind": "register", "data": {...}}
+        {"kind": "profile_update", "user_id": "<pk>", "data": {...}}
 
     Public response never includes the code — use ``OTP_TEST=true`` locally
     and enter ``OTP_TEST_CODE`` (default ``12345``).
@@ -60,15 +69,15 @@ def request_otp(*, phone: str) -> dict[str, Any]:
 
     code = _generate_code()
     ttl = int(getattr(settings, "OTP_TTL_SECONDS", 120))
-    cache.set(
-        _challenge_key(phone=normalized),
-        {
-            "code_hash": _hash_code(code=code),
-            "attempts": 0,
-            "expires_at": time.time() + ttl,
-        },
-        timeout=ttl,
-    )
+    payload: dict[str, Any] = {
+        "code_hash": _hash_code(code=code),
+        "attempts": 0,
+        "expires_at": time.time() + ttl,
+    }
+    if pending is not None:
+        payload["pending"] = pending
+
+    cache.set(_challenge_key(phone=normalized), payload, timeout=ttl)
     cache.set(_cooldown_key(phone=normalized), True, timeout=cooldown)
 
     if not getattr(settings, "OTP_TEST", False):
@@ -85,18 +94,15 @@ def request_otp(*, phone: str) -> dict[str, Any]:
 
 @transaction.atomic
 def verify_otp(*, phone: str, code: str) -> BaseUser:
-    """Validate OTP, get-or-create the user by phone, clear the challenge."""
+    """
+    Validate OTP, then:
+
+    - pending ``register`` → create the staged account
+    - pending ``profile_update`` → apply the staged profile PATCH
+    - otherwise → get-or-create user by phone (OTP login)
+    """
     normalized = validate_phone(phone=phone)
     raw_code = (code or "").strip()
-
-    # Test mode: fixed code, no cache challenge required.
-    if getattr(settings, "OTP_TEST", False):
-        if raw_code != settings.OTP_TEST_CODE:
-            raise ValidationError(
-                _("Invalid verification code."),
-                code=UserErrorCode.OTP_INVALID,
-            )
-        return _get_or_create_user_by_phone(phone=normalized)
 
     payload = cache.get(_challenge_key(phone=normalized))
     if not payload:
@@ -131,9 +137,94 @@ def verify_otp(*, phone: str, code: str) -> BaseUser:
             code=UserErrorCode.OTP_INVALID,
         )
 
+    pending = payload.get("pending")
     cache.delete(_challenge_key(phone=normalized))
     cache.delete(_cooldown_key(phone=normalized))
-    return _get_or_create_user_by_phone(phone=normalized)
+
+    if not pending:
+        return _get_or_create_user_by_phone(phone=normalized)
+
+    kind = pending.get("kind")
+    if kind == PENDING_REGISTER:
+        return _complete_pending_register(phone=normalized, data=pending.get("data") or {})
+    if kind == PENDING_PROFILE_UPDATE:
+        return _complete_pending_profile_update(
+            phone=normalized,
+            user_id=pending.get("user_id"),
+            data=pending.get("data") or {},
+        )
+
+    raise ValidationError(
+        _("Invalid verification challenge."),
+        code=UserErrorCode.OTP_INVALID,
+    )
+
+
+def _complete_pending_register(*, phone: str, data: dict[str, Any]) -> BaseUser:
+    from {{cookiecutter.project_slug}}.users.services.user_services import register
+
+    existing = BaseUser.objects.filter(phone=phone).first()
+    if existing is not None:
+        if not existing.is_active:
+            raise ValidationError(
+                _("This account is inactive."),
+                code=UserErrorCode.ACCOUNT_INACTIVE,
+            )
+        return existing
+
+    register_data: RegisterData = {
+{%- if cookiecutter.user_login_field == "username" %}
+        "username": data["username"],
+{%- endif %}
+        "email": data["email"],
+        "password": data["password"],
+        "phone": phone,
+    }
+    if data.get("bio") is not None:
+        register_data["bio"] = data.get("bio")
+    return register(data=register_data)
+
+
+def _complete_pending_profile_update(
+    *,
+    phone: str,
+    user_id: Any,
+    data: dict[str, Any],
+) -> BaseUser:
+    from {{cookiecutter.project_slug}}.users.services.user_services import profile_update
+
+    if user_id is None:
+        raise ValidationError(
+            _("Invalid verification challenge."),
+            code=UserErrorCode.OTP_INVALID,
+        )
+
+    try:
+        user = BaseUser.objects.get(pk=user_id)
+    except BaseUser.DoesNotExist as error:
+        raise ValidationError(
+            _("Invalid verification challenge."),
+            code=UserErrorCode.OTP_INVALID,
+        ) from error
+
+    if not user.is_active:
+        raise ValidationError(
+            _("This account is inactive."),
+            code=UserErrorCode.ACCOUNT_INACTIVE,
+        )
+
+    update_data: ProfileUpdateData = {}
+    if "bio" in data:
+        update_data["bio"] = data.get("bio")
+    if "phone" in data:
+        # May be a new number (matches verified ``phone``) or ``None`` to clear.
+        update_data["phone"] = data.get("phone")
+
+    profile = Profile.objects.select_related("user").get(user=user)
+    if update_data:
+        profile_update(profile=profile, data=update_data)
+    user.refresh_from_db()
+    return user
 
 
 def _get_or_create_user_by_phone(*, phone: str) -> BaseUser:
@@ -152,17 +243,17 @@ def _get_or_create_user_by_phone(*, phone: str) -> BaseUser:
             username=phone,
             email=f"{phone}@otp.local",
             password=None,
+            phone=phone,
         )
 {%- else %}
         user = BaseUser.objects.create_user(
             email=f"{phone}@otp.local",
             password=None,
+            phone=phone,
         )
 {%- endif %}
     except IntegrityError as error:
         map_integrity_error(error, model=BaseUser)
         raise
 
-    user.phone = phone
-    user.save(update_fields=["phone"])
     return user

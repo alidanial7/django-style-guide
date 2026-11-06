@@ -27,20 +27,44 @@ _password_reset_token_generator = PasswordResetTokenGenerator()
 
 
 {%- if cookiecutter.user_login_field == "username" %}
-def create_user(*, username: str, email: str, password: str) -> BaseUser:
+def create_user(
+    *,
+    username: str,
+    email: str,
+    password: str,
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone: str | None = None,
+{%- endif %}
+) -> BaseUser:
     try:
         return BaseUser.objects.create_user(
             username=username,
             email=email,
             password=password,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=phone,
+{%- endif %}
         )
     except IntegrityError as error:
         map_integrity_error(error, model=BaseUser)
         raise  # map_integrity_error never returns; keep type-checkers happy
 {%- else %}
-def create_user(*, email: str, password: str) -> BaseUser:
+def create_user(
+    *,
+    email: str,
+    password: str,
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone: str | None = None,
+{%- endif %}
+) -> BaseUser:
     try:
-        return BaseUser.objects.create_user(email=email, password=password)
+        return BaseUser.objects.create_user(
+            email=email,
+            password=password,
+{%- if cookiecutter.use_otp_login == "y" %}
+            phone=phone,
+{%- endif %}
+        )
     except IntegrityError as error:
         map_integrity_error(error, model=BaseUser)
         raise  # map_integrity_error never returns; keep type-checkers happy
@@ -68,9 +92,18 @@ def register(*, data: RegisterData) -> BaseUser:
         username=data["username"],
         email=data["email"],
         password=data["password"],
+{%- if cookiecutter.use_otp_login == "y" %}
+        phone=data.get("phone"),
+{%- endif %}
     )
 {%- else %}
-    user = create_user(email=data["email"], password=data["password"])
+    user = create_user(
+        email=data["email"],
+        password=data["password"],
+{%- if cookiecutter.use_otp_login == "y" %}
+        phone=data.get("phone"),
+{%- endif %}
+    )
 {%- endif %}
     profile = Profile.objects.get(user=user)
 
@@ -94,21 +127,29 @@ def register(*, data: RegisterData) -> BaseUser:
 
 def profile_update(*, profile: Profile, data: ProfileUpdateData) -> Profile:
     """Apply only keys present in ``data`` — PATCH-safe; ``None`` ≠ missing."""
-{%- if cookiecutter.use_file_manager == "y" %}
     payload = dict(data)
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone_provided = "phone" in payload
+    phone_value = payload.pop("phone", None) if phone_provided else None
+{%- endif %}
+{%- if cookiecutter.use_file_manager == "y" %}
     if "avatar" in payload and isinstance(payload["avatar"], UploadedFile):
         payload["avatar"] = _resolve_avatar(user=profile.user, avatar=payload["avatar"])
+{%- endif %}
     profile, _changed = model_update(
         instance=profile,
         fields=["bio", "avatar"],
         data=payload,
     )
-{%- else %}
-    profile, _changed = model_update(
-        instance=profile,
-        fields=["bio", "avatar"],
-        data=data,
-    )
+{%- if cookiecutter.use_otp_login == "y" %}
+    if phone_provided:
+        user = profile.user
+        user.phone = phone_value
+        try:
+            model_save(instance=user, update_fields=["phone"])
+        except IntegrityError as error:
+            map_integrity_error(error, model=BaseUser)
+            raise
 {%- endif %}
     return profile
 

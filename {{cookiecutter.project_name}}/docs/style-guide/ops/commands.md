@@ -142,7 +142,10 @@ When a schema change needs seed updates, extend these commands in the **same** c
 | http://localhost:8000/schema/ | OpenAPI schema (**DEBUG only**) |
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API v1 |
-| http://localhost:8000/api/v1/health/ | Health check |
+| http://localhost:8000/api/v1/health/ | Platform health |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| http://localhost:8000/api/v1/site/health/ | Scoped sample health (same checks) |
+{%- endif %}
 
 Auth/register paths: [Authentication](../http/authentication.md), [URLs](../domain/urls.md).
 

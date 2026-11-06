@@ -24,6 +24,20 @@ class TestUserServices:
 {%- endif %}
         assert user.email == "svc@example.com"
         assert Profile.objects.filter(user=user, bio="from service").exists()
+{%- if cookiecutter.use_otp_login == "y" %}
+
+    def test_register_with_phone(self):
+        data: RegisterData = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "phoneuser",
+{%- endif %}
+            "email": "phone-svc@example.com",
+            "password": "Password1!x",
+            "phone": "989134543456",
+        }
+        user = register(data=data)
+        assert user.phone == "989134543456"
+{%- endif %}
 
     def test_profile_update(self):
         user = BaseUserFactory()
@@ -56,3 +70,15 @@ class TestUserServices:
         updated = profile_update(profile=profile, data=data)
 
         assert updated.bio is None
+{%- if cookiecutter.use_otp_login == "y" %}
+
+    def test_profile_update_phone(self):
+        user = BaseUserFactory()
+        profile = user.profile
+
+        data: ProfileUpdateData = {"phone": "989131112233"}
+        profile_update(profile=profile, data=data)
+
+        user.refresh_from_db()
+        assert user.phone == "989131112233"
+{%- endif %}

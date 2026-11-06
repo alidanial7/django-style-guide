@@ -14,6 +14,9 @@ class BaseUserFactory(factory.django.DjangoModelFactory):
 {%- else %}
     email = factory.Sequence(lambda n: f"user{n}@example.com")
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone = factory.Sequence(lambda n: f"98913{n:07d}")
+{%- endif %}
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
