@@ -76,6 +76,8 @@ python manage.py devserver
 
 Health for local/prod app: `GET /api/v1/health/` — status + latency only, no secrets.
 
+Deploy version: `GET /api/v1/versions/` reads `/app/version.txt` (baked at image build). Local/dev without the file returns `version: null`.
+
 ---
 
 ## 🏭 Production Compose
@@ -126,9 +128,29 @@ Production Compose **does not bind-mount source**. Rebuild after code changes:
 
 ```bash
 docker compose up --build -d
+# optional: VERSION=1.2.3 docker compose up --build -d
 ```
 
+`docker/production.Dockerfile` accepts `ARG VERSION` (default `dev`) and writes `/app/version.txt`. Compose passes `VERSION=${VERSION:-dev}` into django{%- if cookiecutter.use_celery == "y" %} / celery / beats{% endif %} builds.
+
 Volumes typically persist Postgres data, media, and collected static files.
+
+### Bake version from CI
+
+When you add an image-build job, pass the git tag or short SHA:
+
+```bash
+# GitLab CI
+VERSION="${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
+docker build --build-arg VERSION="$VERSION" -f docker/production.Dockerfile -t "$IMAGE" .
+
+# GitHub Actions — set VERSION from a tag name, else the short SHA
+#   if: github.ref_type == 'tag' → github.ref_name
+#   else → github.sha (first 7 chars)
+docker build --build-arg VERSION="$VERSION" -f docker/production.Dockerfile -t "$IMAGE" .
+```
+
+Clients/ops then call `GET /api/v1/versions/` (`{ "version": "…" }`). OpenAPI header `VERSION` also prefers this file when present.
 
 ---
 
@@ -158,11 +180,13 @@ Swagger / schema routes are **DEBUG-only** — they stay off under production se
 
 | Path | Role |
 |------|------|
-| `docker/production.Dockerfile` | App image |
+| `docker/production.Dockerfile` | App image (`ARG VERSION` → `/app/version.txt`) |
 | `docker/web_entrypoint.sh` | Migrate / collectstatic / start server (as shipped) |
 | `docker/nginx/` or `docker/traefik/` | Proxy configs when selected |
-| `docker-compose.yml` | Production stack |
+| `docker-compose.yml` | Production stack (`build.args.VERSION`) |
 | `docker-compose.dev.yml` | Dev dependencies only |
+| `version.txt` | Deploy version file (gitignored; baked in image) |
+| `config/deploy_version.py` | Reader used by `/api/v1/versions/` + Swagger |
 
 ---
 

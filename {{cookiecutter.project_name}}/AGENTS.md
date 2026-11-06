@@ -22,6 +22,7 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 - APIs glue only; serializers = HTTP; TypedDict = service `data=`; selectors read; services write.
 - Responses: `api_response` / pagination helpers — `{success,status,result,messages}`.
 - Default permission **IsAuthenticated**; public views set `AllowAny`.
+- Deploy version: bake Docker `VERSION` → `version.txt` → `GET /api/v1/versions/` (`config/deploy_version.py`).
 - Services/selectors: keyword-only `def foo(*, …)`.
 - Writes via `model_create` / `model_update` / `model_save` / `model_delete`.
 - Model/admin stay in sync (`admin.py` when models change).

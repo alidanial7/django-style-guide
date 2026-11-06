@@ -43,6 +43,8 @@ This file is the Django `ROOT_URLCONF`. It mounts **admin**, the **versioned API
 |------|---------|----------------|
 | `/admin/` | Django admin | Always |
 | `/api/v1/` | All product + system HTTP APIs | Always |
+| `/api/v1/health/` | Platform health probe | Always (`AllowAny`) |
+| `/api/v1/versions/` | Deploy version from `version.txt` | Always (`AllowAny`) |
 | `/api/docs/` | Swagger UI (full API) | **DEBUG only** |
 | `/api/docs/redoc/` | ReDoc | **DEBUG only** |
 | `/api/docs/schema/` | Raw OpenAPI schema | **DEBUG only** |

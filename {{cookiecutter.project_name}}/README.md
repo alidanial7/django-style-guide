@@ -111,6 +111,7 @@ More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & productio
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API routes (v1) |
 | http://localhost:8000/api/v1/health/ | Platform health (use this for probes) |
+| http://localhost:8000/api/v1/versions/ | Deploy version (`version.txt`) |
 {%- if cookiecutter.use_scoped_apis == "y" %}
 | http://localhost:8000/api/v1/`{scope}`/… | Domain APIs per scope (auth, users, sample health) |
 {%- endif %}

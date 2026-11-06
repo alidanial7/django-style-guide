@@ -9,6 +9,7 @@ alwaysApply: false
 - Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`. Script exit / Ctrl+C / terminal close → `compose down` (volumes kept unless `--clean`).
 - Bind mounts live under `./volumes/<service>/` (postgres, redis, rabbitmq, …); data is gitignored via `.gitkeep` placeholders.
 - Prod: `docker-compose.yml` + entrypoints under `docker/`.
+- Deploy version: Docker `ARG VERSION` → `/app/version.txt` → public `GET /api/v1/versions/` (`config/deploy_version.py`). Pass `VERSION=` on compose/CI image builds.
 - Dev entrypoint / `devserver`: migrate + `seed_demo_data` (local admin) — see `commands` rule.
 - New/changed env → update `.env.example` and document production defaults.
 - Broker/cache/DB/port/volume/healthcheck changes → developer alert section required (see `core` rule).

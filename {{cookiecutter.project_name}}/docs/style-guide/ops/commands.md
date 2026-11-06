@@ -164,6 +164,7 @@ When a schema change needs seed updates, extend these commands in the **same** c
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API v1 |
 | http://localhost:8000/api/v1/health/ | Platform health (canonical probe) |
+| http://localhost:8000/api/v1/versions/ | Deploy version (`version.txt` / Docker `VERSION`) |
 {%- if cookiecutter.use_scoped_apis == "y" %}
 | http://localhost:8000/api/v1/`{scope}`/… | Domain APIs per scope |
 {%- endif %}

@@ -48,6 +48,8 @@ services:
     build:
       context: .
       dockerfile: docker/production.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     container_name: {{cookiecutter.project_slug}}_django
     command: ./docker/web_entrypoint.sh
     env_file:
@@ -101,6 +103,8 @@ services:
     build:
       context: .
       dockerfile: docker/production.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     container_name: {{cookiecutter.project_slug}}_worker
     command: ./docker/celery_entrypoint.sh
     env_file:
@@ -134,6 +138,8 @@ services:
     build:
       context: .
       dockerfile: docker/production.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     container_name: {{cookiecutter.project_slug}}_beats
     command: ./docker/beats_entrypoint.sh
     env_file:

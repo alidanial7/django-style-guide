@@ -1,6 +1,9 @@
+from config.deploy_version import read_deploy_version
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "{{cookiecutter.project_name}} API",
-    "VERSION": "1.0.0",
+    # Prefer baked deploy version when present (see version.txt / Docker VERSION).
+    "VERSION": read_deploy_version() or "0.0.0-dev",
     "SERVE_INCLUDE_SCHEMA": False,
     # Split request/response components (e.g. FileField binary on request, URI on response).
     "COMPONENT_SPLIT_REQUEST": True,

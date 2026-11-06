@@ -1,5 +1,9 @@
 name: CI
 
+# When you add a Docker image build job, bake deploy version from the git tag
+# or commit SHA, then: docker build --build-arg VERSION="$VERSION" -f docker/production.Dockerfile …
+# Exposed at GET /api/v1/versions/ via /app/version.txt.
+
 on:
   push:
     branches: [main, master]

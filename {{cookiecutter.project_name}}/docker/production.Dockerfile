@@ -1,6 +1,10 @@
 # Production image — non-root, slim base
 FROM python:3.12-slim AS base
 
+# Baked into /app/version.txt for GET /api/v1/versions/ (CI tag or short SHA).
+ARG VERSION=dev
+ENV APP_VERSION=${VERSION}
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
@@ -24,6 +28,8 @@ COPY --chown=app:app . /app/
 
 RUN mkdir -p /app/media /app/staticfiles /app/logs \
     && chmod +x /app/docker/*.sh /app/wait-for-it.sh \
+    && echo "${APP_VERSION}" > /app/version.txt \
+    && chown app:app /app/version.txt \
     && chown -R app:app /app/media /app/staticfiles /app/logs
 
 USER app

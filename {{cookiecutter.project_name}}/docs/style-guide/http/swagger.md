@@ -62,7 +62,7 @@ Prefer documenting **success** responses with `envelope_serializer(...)` so the 
 
 | Setting | Meaning |
 |---------|---------|
-| `TITLE` / `VERSION` | Shown in Swagger header |
+| `TITLE` / `VERSION` | Shown in Swagger header (`VERSION` prefers `version.txt` when baked) |
 | `SERVE_INCLUDE_SCHEMA` | `False` — schema endpoint does not embed itself recursively |
 | `deepLinking` | UI URLs can deep-link to operations |
 | `persistAuthorization` | Keeps Authorize values across page reloads in the UI |

@@ -108,6 +108,9 @@ celerybeat.pid
 volumes/**
 !volumes/**/.gitkeep
 
+# Deploy version file (baked by Docker/CI; do not commit local copies)
+/version.txt
+
 # Environments
 .env
 .venv

@@ -62,6 +62,7 @@ flowchart LR
 │   ├── urls.py                 # admin + /api/v1/ + DEBUG Swagger
 │   ├── env.py                  # env helpers (django-environ style)
 │   ├── request_id.py           # X-Request-ID middleware + log filter
+│   ├── deploy_version.py       # reads version.txt → /api/v1/versions/ + Swagger VERSION
 │   ├── logging_formatters.py
 │   ├── asgi.py / wsgi.py
 │   ├── celery.py               # Celery app factory (if enabled at generation)
@@ -69,7 +70,7 @@ flowchart LR
 │
 ├── {{cookiecutter.project_slug}}/          # installable Django apps live here
 │   ├── api/                    # URL package only (not in INSTALLED_APPS): router, mixins, pagination
-│   ├── core/                   # health, ApplicationError, channels routing hooks
+│   ├── core/                   # health, versions, ApplicationError, channels routing hooks
 │   ├── common/                 # platform: http envelope, integrity, BaseModel, helpers
 │   ├── commands/               # management commands (devserver, start_domain_app)
 │   ├── users/                  # identity domain (reference app)
