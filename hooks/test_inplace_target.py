@@ -117,6 +117,32 @@ class InplaceTargetTests(unittest.TestCase):
             self.assertEqual((root / "README.md").read_text(encoding="utf-8"), "app\n")
             self.assertTrue((root / "pkg" / "x.py").is_file())
 
+    def test_flatten_when_package_name_equals_project_name(self) -> None:
+        """Regression: project_name == project_slug used to collide on move."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".git").mkdir()
+            (root / ".gitignore").write_text("old\n", encoding="utf-8")
+
+            generated = root / "saryzd"
+            generated.mkdir()
+            pkg = generated / "saryzd"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (generated / "manage.py").write_text("print(1)\n", encoding="utf-8")
+            (generated / ".gitignore").write_text("new\n", encoding="utf-8")
+
+            flatten_generated_project(root, "saryzd")
+
+            self.assertTrue((root / ".git").is_dir())
+            # Package landed at root/saryzd (same path name as the old cookiecutter folder).
+            self.assertTrue((root / "saryzd" / "__init__.py").is_file())
+            self.assertTrue((root / "manage.py").is_file())
+            self.assertFalse((root / "saryzd" / "saryzd").exists())
+            self.assertEqual((root / ".gitignore").read_text(encoding="utf-8"), "new\n")
+            # No leftover staging dir.
+            self.assertFalse(any(root.glob(".dsg_inplace_*")))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,9 @@ alwaysApply: false
 - Login identifier: **email** (`USERNAME_FIELD`).
 - Login/register payloads use `email`.
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" or cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+- Login methods are **complementary** (same auth mode / tokens): password{% if cookiecutter.use_jwt == "y" %} JWT{% else %} session{% endif %}{% if cookiecutter.use_otp_login == "y" %} + phone OTP{% endif %}{% if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %} + social id_token{% endif %} can all be enabled together.
+{%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
 - Phone OTP: `otp/request` + `otp/verify` (see `otp-auth` rule). Phone stored as `9891…` digits.
 {%- endif %}

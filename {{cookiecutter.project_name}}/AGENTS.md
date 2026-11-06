@@ -37,6 +37,9 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 {%- else %}
 - Auth login field: **email** (`USERNAME_FIELD`).
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" or cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+- Auth methods stack: password{% if cookiecutter.use_jwt == "y" %} JWT{% else %} session{% endif %}{% if cookiecutter.use_otp_login == "y" %} + OTP{% endif %}{% if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %} + social{% endif %} share one auth mode (not mutually exclusive).
+{%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
 - Phone OTP: store as `98XXXXXXXXXX`; SMS via `SmsProvider` / `get_sms_provider()`; `OTP_TEST=true` → code `12345`.
 {%- endif %}

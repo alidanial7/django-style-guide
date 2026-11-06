@@ -449,33 +449,45 @@ def _copy_template_snapshot(repo_dir: Path) -> Path:
 
 
 def flatten_generated_project(output_dir: Path, project_name: str) -> None:
-    """Move ``output_dir/project_name/*`` up into ``output_dir`` and remove the folder."""
+    """Move ``output_dir/project_name/*`` up into ``output_dir`` and remove the folder.
+
+    Renames the cookiecutter folder to a unique staging name first so a package
+    named the same as ``project_name`` (common when slug == name) does not
+    collide with the parent directory being emptied.
+    """
     generated = output_dir / project_name
     if not generated.is_dir():
         raise RuntimeError(f"Expected generated project at {generated}")
 
-    for item in generated.iterdir():
-        dest = output_dir / item.name
-        if dest.exists():
-            if dest.name == ".git":
-                # Never replace the existing repo metadata.
-                if item.is_dir():
-                    shutil.rmtree(item)
-                else:
-                    item.unlink()
-                continue
-            if dest.name in _GIT_ONLY_ENTRIES:
-                if dest.is_dir():
-                    shutil.rmtree(dest)
-                else:
-                    dest.unlink()
-            else:
-                raise RuntimeError(
-                    f"Refusing to overwrite unexpected path during inplace move: {dest}"
-                )
-        shutil.move(str(item), str(dest))
+    staging = output_dir / f".dsg_inplace_{os.getpid()}"
+    if staging.exists():
+        shutil.rmtree(staging)
+    generated.rename(staging)
 
-    generated.rmdir()
+    try:
+        for item in list(staging.iterdir()):
+            dest = output_dir / item.name
+            if dest.exists():
+                if dest.name == ".git":
+                    # Never replace the existing repo metadata.
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                    else:
+                        item.unlink()
+                    continue
+                if dest.name in _GIT_ONLY_ENTRIES:
+                    if dest.is_dir():
+                        shutil.rmtree(dest)
+                    else:
+                        dest.unlink()
+                else:
+                    raise RuntimeError(
+                        f"Refusing to overwrite unexpected path during inplace move: {dest}"
+                    )
+            shutil.move(str(item), str(dest))
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
 
 
 def prompt_yn(label: str, default: str = "y") -> str:
