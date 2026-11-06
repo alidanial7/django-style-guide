@@ -42,7 +42,7 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 - Auth methods stack: password{% if cookiecutter.use_jwt == "y" %} JWT{% else %} session{% endif %}{% if cookiecutter.use_otp_login == "y" %} + OTP{% endif %}{% if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %} + social{% endif %} share one auth mode (not mutually exclusive).
 {%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
-- Phone OTP: store as `98XXXXXXXXXX`; SMS via `SmsProvider` / `get_sms_provider()`; `OTP_TEST=true` → code `12345`. Local admin seed phone `989134543456`. Challenges keyed by `kind`; register phone optional; profile OTP only for phone changes; Redis required.
+- Phone OTP: store as `98XXXXXXXXXX`; SMS via `SmsProvider` / `get_sms_provider()`; `OTP_TEST=true` → code `12345`. Local admin seed phone `989123456789`. Challenges keyed by `kind`; register phone optional; profile OTP only for phone changes; Redis required.
 {%- endif %}
 {%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
 - Social login: verify provider `id_token` → link `SocialAccount` → continue with project auth mode (JWT or session).

@@ -27,7 +27,7 @@ LOCAL_ADMIN_PASSWORD = "admin"
 {% endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
 # Same sample number as phone validator docs (E.164 digits, no '+').
-LOCAL_ADMIN_PHONE = "989134543456"
+LOCAL_ADMIN_PHONE = "989123456789"
 {%- endif %}
 
 # Named groups to ensure on every seed (extend as portals / roles grow).
@@ -98,12 +98,12 @@ class Command(BaseCommand):
         existing = User.objects.filter(username=LOCAL_ADMIN_USERNAME).first()
         if existing is not None:
 {%- if cookiecutter.use_otp_login == "y" %}
-            if not existing.phone:
+            if existing.phone != LOCAL_ADMIN_PHONE:
                 existing.phone = LOCAL_ADMIN_PHONE
                 existing.save(update_fields=["phone"])
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"superuser phone backfilled: {LOCAL_ADMIN_PHONE}"
+                        f"superuser phone set: {LOCAL_ADMIN_PHONE}"
                     )
                 )
             else:
@@ -133,12 +133,12 @@ class Command(BaseCommand):
         existing = User.objects.filter(email=LOCAL_ADMIN_EMAIL).first()
         if existing is not None:
 {%- if cookiecutter.use_otp_login == "y" %}
-            if not existing.phone:
+            if existing.phone != LOCAL_ADMIN_PHONE:
                 existing.phone = LOCAL_ADMIN_PHONE
                 existing.save(update_fields=["phone"])
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"superuser phone backfilled: {LOCAL_ADMIN_PHONE}"
+                        f"superuser phone set: {LOCAL_ADMIN_PHONE}"
                     )
                 )
             else:

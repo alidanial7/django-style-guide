@@ -90,7 +90,7 @@ cp .env.example .env
 python manage.py devserver
 ```
 
-Defaults work with local Compose services. `devserver` runs migrations, creates a default superuser (`admin@example.com` / `admin`{% if cookiecutter.use_otp_login == "y" %} / phone `989134543456`{% endif %}), and starts the server{%- if cookiecutter.use_celery == "y" %} (plus a Celery worker){%- endif %}.
+Defaults work with local Compose services. `devserver` runs migrations, creates a default superuser (`admin@example.com` / `admin`{% if cookiecutter.use_otp_login == "y" %} / phone `989123456789`{% endif %}), and starts the server{%- if cookiecutter.use_celery == "y" %} (plus a Celery worker){%- endif %}.
 
 - `./start-dev-services.sh` — follow logs; Ctrl+C / closing the terminal runs `compose down`
 - `./start-dev-services.sh --detach` (or `make up-detach`) — leave containers running in the background

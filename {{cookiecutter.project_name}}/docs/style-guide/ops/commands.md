@@ -180,7 +180,7 @@ Auth/register paths: [Authentication](../http/authentication.md), [URLs](../doma
 | Email | `admin@example.com` |
 | Password | `admin` |
 {%- if cookiecutter.use_otp_login == "y" %}
-| Phone | `989134543456` (OTP login) |
+| Phone | `989123456789` (OTP login) |
 {%- endif %}
 {%- else %}
 | Field | Value |
@@ -188,7 +188,7 @@ Auth/register paths: [Authentication](../http/authentication.md), [URLs](../doma
 | Email | `admin@example.com` |
 | Password | `admin` |
 {%- if cookiecutter.use_otp_login == "y" %}
-| Phone | `989134543456` (OTP login) |
+| Phone | `989123456789` (OTP login) |
 {%- endif %}
 {%- endif %}
 
