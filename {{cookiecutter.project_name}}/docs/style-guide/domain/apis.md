@@ -41,12 +41,12 @@ apis/
 ### Client / surface-scoped APIs (`/api/v1/<scope>/…`)
 
 {%- if cookiecutter.use_scoped_apis == "y" %}
-Enabled scopes: `{{ cookiecutter.api_scopes }}`. Domain auth/users mount under each scope; do not add product routes at bare `/api/v1/`.
+Enabled scopes: `{{ cookiecutter.api_scopes }}`. Domain auth/users{% if cookiecutter.use_file_manager == "y" %}/files{% endif %} mount under each scope; do not add product routes at bare `/api/v1/`.
 
 1. **Directory mirror** — `apis/<scope>/…` matches URL segments
 2. **Files / classes** — scope prefix (`AdminCityListApiView`, …)
 3. **OpenAPI** — `@extend_schema_serializer(component_name="Admin…")` to avoid codegen collisions
-4. **URLs** — `api/<scope>_urls.py` includes auth/users (+ sample health)
+4. **URLs** — `api/<scope>_urls.py` includes auth/users{% if cookiecutter.use_file_manager == "y" %}/files{% endif %} (+ sample health)
 5. **Users** — shared `BaseUser`; empty MTI `<Scope>User` tables for scope-only fields
 6. **Authz** — `ApiScopeMiddleware` → `request.api_scope`; gate with `IsScopeMember` / `IsScopeMember.for_scope("…")`
 7. **Add later** — `python manage.py add_api_scope <name>` then migrate

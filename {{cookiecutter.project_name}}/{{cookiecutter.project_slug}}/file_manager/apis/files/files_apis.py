@@ -23,6 +23,9 @@ from {{cookiecutter.project_slug}}.file_manager.services import (
     delete_managed_file,
     serve_managed_file_securely,
 )
+{%- if cookiecutter.use_scoped_apis == "y" %}
+from {{cookiecutter.project_slug}}.users.permissions import IsScopeMember
+{%- endif %}
 
 
 class ManagedFileListCreateApiView(ApiAuthMixin, APIView):
@@ -30,6 +33,9 @@ class ManagedFileListCreateApiView(ApiAuthMixin, APIView):
 
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     Pagination = LimitOffsetPagination
+{%- if cookiecutter.use_scoped_apis == "y" %}
+    permission_classes = [IsScopeMember]
+{%- endif %}
 
     @extend_schema(
         tags=FILE_MANAGER_TAGS,
@@ -71,6 +77,10 @@ class ManagedFileListCreateApiView(ApiAuthMixin, APIView):
 
 class ManagedFileRetrieveDestroyApiView(ApiAuthMixin, APIView):
     """Retrieve metadata or delete a managed file."""
+
+{%- if cookiecutter.use_scoped_apis == "y" %}
+    permission_classes = [IsScopeMember]
+{%- endif %}
 
     @extend_schema(
         tags=FILE_MANAGER_TAGS,

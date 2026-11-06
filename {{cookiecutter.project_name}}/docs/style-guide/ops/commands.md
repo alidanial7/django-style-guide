@@ -109,7 +109,7 @@ python manage.py add_api_scope customer
 python manage.py migrate
 ```
 
-Adds a new multi-scope surface after generate: empty `<Scope>User` MTI model, migration, `/api/v1/<scope>/` mounts (auth/users/health), `/api/docs/<scope>/`, registry + settings entries. Then `python manage.py migrate`. Gate views with `IsScopeMember` (see `scoped-apis` rule).
+Adds a new multi-scope surface after generate: empty `<Scope>User` MTI model, migration, `/api/v1/<scope>/` mounts (auth/users{% if cookiecutter.use_file_manager == "y" %}/files{% endif %}/health), `/api/docs/<scope>/`, registry + settings entries. Then `python manage.py migrate`. Gate views with `IsScopeMember` (see `scoped-apis` rule).
 
 `seed_demo_data` also ensures one local user per scope: **username and password are the scope name** (`admin` / `admin`, `factory` / `factory`). Email is `admin@example.com` for the `admin` scope and `<scope>@example.com` otherwise. The `admin` scope user is the Django superuser.{%- if cookiecutter.use_otp_login == "y" %} Phones are `989120000001`, `989120000002`, … in `API_SCOPES` order.{%- endif %}
 {%- endif %}

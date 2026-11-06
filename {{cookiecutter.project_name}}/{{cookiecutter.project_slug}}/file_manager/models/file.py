@@ -80,9 +80,8 @@ class ManagedFile(BaseModel):
     @property
     def url(self) -> str:
         """Convenience property returning the download URL path."""
-        try:
-            from django.urls import reverse
+        from {{cookiecutter.project_slug}}.file_manager.urls.download import (
+            managed_file_download_path,
+        )
 
-            return reverse("api:file_manager:files-download", kwargs={"file_id": self.id})
-        except Exception:
-            return f"/api/v1/files/{self.id}/download/"
+        return managed_file_download_path(file_id=self.id)

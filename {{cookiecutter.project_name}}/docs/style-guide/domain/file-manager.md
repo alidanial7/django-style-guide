@@ -34,7 +34,7 @@ file_manager/
 ├── errors/codes.py
 ├── signals/file_signals.py   # post_delete → wipe storage
 ├── apis/files/               # list/create, detail/delete, download
-└── urls/file_manager_url.py  # mounted at /api/v1/files/
+└── urls/file_manager_url.py  # {% if cookiecutter.use_scoped_apis == "y" %}/api/v1/<scope>/files/{% else %}/api/v1/files/{% endif %}
 ```
 
 ---
@@ -66,7 +66,7 @@ class Pet(BaseModel):
     )
 ```
 
-Flow: client uploads to `POST /api/v1/files/` → receives `id` → PATCH/create the domain resource with that id. Optionally assert `category` / `owner` in the domain service before attaching.
+Flow: client uploads to `POST /api/v1/{% if cookiecutter.use_scoped_apis == "y" %}<scope>/{% endif %}files/` → receives `id` → PATCH/create the domain resource with that id. Optionally assert `category` / `owner` in the domain service before attaching.
 
 In-tree reference: `users.Profile.avatar` is an FK to `ManagedFile` (added in `users.0002` after `file_manager.0001` to avoid a circular migration). Register/profile multipart still accepts an upload; the users service calls `create_managed_file` then attaches the row.
 
@@ -102,9 +102,15 @@ managed = create_managed_file(
 
 | Method | Path | Auth |
 |--------|------|------|
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| `GET` / `POST` | `/api/v1/<scope>/files/` | Scope member (own files) |
+| `GET` / `DELETE` | `/api/v1/<scope>/files/<id>/` | Scope member + owner / admin |
+| `GET` | `/api/v1/<scope>/files/<id>/download/` | Public if `is_public`; else owner / admin |
+{%- else %}
 | `GET` / `POST` | `/api/v1/files/` | Authenticated (own files) |
 | `GET` / `DELETE` | `/api/v1/files/<id>/` | Owner / admin |
 | `GET` | `/api/v1/files/<id>/download/` | Public if `is_public`; else owner / admin |
+{%- endif %}
 
 Download: `FileResponse` when `DEBUG`; production uses `X-Accel-Redirect` to `PROTECTED_STORAGE_URL`.
 

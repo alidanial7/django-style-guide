@@ -163,6 +163,7 @@ urlpatterns = [
     path("", include(("{_PROJECT_SLUG}.core.urls.{scope}_core_url", "{scope}_core"))),
     path("auth/", include(("{_PROJECT_SLUG}.users.urls.auth_url", "auth"))),
     path("users/", include(("{_PROJECT_SLUG}.users.urls.users_url", "users"))),
+__SCOPE_FILES_INCLUDE__
 ]
 ''',
         )

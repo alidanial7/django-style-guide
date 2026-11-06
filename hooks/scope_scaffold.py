@@ -43,9 +43,11 @@ def scaffold_scopes(
     _write_scope_users_migration(
         project_root, scopes, slug, use_file_manager=use_file_manager
     )
-    _write_api_urls(project_root, scopes, slug, use_file_manager=use_file_manager)
+    _write_api_urls(project_root, scopes, slug)
     for scope in scopes:
-        _write_scope_urls(project_root, scope, slug)
+        _write_scope_urls(
+            project_root, scope, slug, use_file_manager=use_file_manager
+        )
         _write_scope_health(project_root, scope, slug)
     _write_config_urls(
         project_root,
@@ -57,7 +59,9 @@ def scaffold_scopes(
     _write_schema_generators(project_root, scopes, slug)
     _write_scoped_apis_rule(project_root, scopes)
     _register_admin(project_root, scopes, slug)
-    _write_add_api_scope_command(project_root, slug)
+    _write_add_api_scope_command(
+        project_root, slug, use_file_manager=use_file_manager
+    )
     if use_testing:
         _write_contract_tests(
             project_root,
@@ -389,12 +393,32 @@ def _write_api_urls(
     root: Path,
     scopes: list[str],
     slug: str,
-    *,
-    use_file_manager: bool,
 ) -> None:
     scope_paths = "\n".join(
         f'    path("{s}/", include(("{slug}.api.{s}_urls", "{s}"))),' for s in scopes
     )
+    _write(
+        root / slug / "api" / "urls.py",
+        f'''
+from django.urls import include, path
+
+urlpatterns = [
+    # Platform (unscoped) — health, versions, …
+    path("", include(("{slug}.core.urls", "core"))),
+    # Per-scope domain surfaces: /api/v1/<scope>/auth|users|files|…
+{scope_paths}
+]
+''',
+    )
+
+
+def _write_scope_urls(
+    root: Path,
+    scope: str,
+    slug: str,
+    *,
+    use_file_manager: bool = False,
+) -> None:
     files_path = ""
     if use_file_manager:
         files_path = f'''
@@ -402,22 +426,6 @@ def _write_api_urls(
         "files/",
         include(("{slug}.file_manager.urls.file_manager_url", "file_manager")),
     ),'''
-    _write(
-        root / slug / "api" / "urls.py",
-        f'''
-from django.urls import include, path
-
-urlpatterns = [
-    # Platform (unscoped)
-    path("", include(("{slug}.core.urls", "core"))),{files_path}
-    # Per-scope domain surfaces: /api/v1/<scope>/auth|users|…
-{scope_paths}
-]
-''',
-    )
-
-
-def _write_scope_urls(root: Path, scope: str, slug: str) -> None:
     _write(
         root / slug / "api" / f"{scope}_urls.py",
         f'''
@@ -428,7 +436,7 @@ from django.urls import include, path
 urlpatterns = [
     path("", include(("{slug}.core.urls.{scope}_core_url", "{scope}_core"))),
     path("auth/", include(("{slug}.users.urls.auth_url", "auth"))),
-    path("users/", include(("{slug}.users.urls.users_url", "users"))),
+    path("users/", include(("{slug}.users.urls.users_url", "users"))),{files_path}
 ]
 ''',
     )
@@ -649,14 +657,15 @@ alwaysApply: false
 
 Enabled scopes: {listed}.
 
-- Domain routes live under `/api/v1/<scope>/…` (auth, users, future apps). Do **not** mount domain APIs at bare `/api/v1/` when multi-scope is on.
+- Domain routes live under `/api/v1/<scope>/…` (auth, users, files when enabled, future apps). Do **not** mount domain APIs at bare `/api/v1/` when multi-scope is on.
 - Platform health stays at `/api/v1/health/`. Each scope also has a sample `/api/v1/<scope>/health/`.
+- File manager (when enabled): `/api/v1/<scope>/files/` — never bare `/api/v1/files/`.
 - Docs: `/api/docs/` (full) · `/api/docs/<scope>/` (filtered).
 - Identity: shared `BaseUser` + `Profile`. Scope tables (`*User` MTI subclasses) start empty — add scope-only fields there. One user may belong to many scopes.
 - `ApiScopeMiddleware` sets `request.api_scope`. Auth/register calls `ensure_scope_membership_for_request`.
 - Gate scoped views with `IsScopeMember` (or `IsScopeMember.for_scope("…")`).
-- Add a scope later: `python manage.py add_api_scope <name>` then `migrate` (a migration file is written).
-- Changing scope conventions → update **this rule file** + `apis` / `auth` / `commands` rules in the **same** change.
+- Add a scope later: `python manage.py add_api_scope <name>` then `migrate` (a migration file is written; files mount included when file_manager is on).
+- Changing scope conventions → update **this rule file** + `apis` / `auth` / `commands` / `file-manager` rules in the **same** change.
 
 Deep: `docs/style-guide/domain/apis.md` · `docs/style-guide/domain/urls.md` · `docs/style-guide/http/swagger.md` · `docs/style-guide/ops/commands.md`
 ''',
@@ -664,7 +673,12 @@ Deep: `docs/style-guide/domain/apis.md` · `docs/style-guide/domain/urls.md` · 
 
 
 
-def _write_add_api_scope_command(root: Path, slug: str) -> None:
+def _write_add_api_scope_command(
+    root: Path,
+    slug: str,
+    *,
+    use_file_manager: bool = False,
+) -> None:
     src = _TEMPLATES_DIR / "add_api_scope.py"
     dest = (
         root
@@ -675,7 +689,18 @@ def _write_add_api_scope_command(root: Path, slug: str) -> None:
         / "add_api_scope.py"
     )
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    text = src.read_text(encoding="utf-8")
+    if use_file_manager:
+        files_include = (
+            f'    path(\n'
+            f'        "files/",\n'
+            f'        include(("{slug}.file_manager.urls.file_manager_url", "file_manager")),\n'
+            f'    ),\n'
+        )
+    else:
+        files_include = ""
+    text = text.replace("__SCOPE_FILES_INCLUDE__\n", files_include)
+    dest.write_text(text, encoding="utf-8")
     print(f"  - scoped {dest.as_posix()}")
 
 

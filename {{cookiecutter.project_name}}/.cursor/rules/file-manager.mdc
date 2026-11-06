@@ -9,9 +9,14 @@ alwaysApply: false
 - All uploads go through `create_managed_file` (`data: CreateManagedFileData` or `file_obj=`).
 - Domain models **FK / O2O to `ManagedFile`** — never add ad-hoc `FileField` / `ImageField` for product files.
 - Categories only in `enums.FileCategory` (`avatar`, `image`, `document`, `other`); rules in `constants.CATEGORY_FILE_RULES`.
-- User-owned only (`owner`); no clinic/org scope in this scaffold.
+- User-owned only (`owner`); no clinic/org ownership in this scaffold.
+{%- if cookiecutter.use_scoped_apis == "y" %}
+- Mount: `/api/v1/<scope>/files/` on every scope (never bare `/api/v1/files/`). Gate list/detail with `IsScopeMember`. Download URLs via `managed_file_download_path` (uses `request.api_scope`).
+{%- else %}
+- Mount: `/api/v1/files/`.
+{%- endif %}
 - Delete via `delete_managed_file`; disk cleanup is the `post_delete` signal.
 - Download: `serve_managed_file_securely` (FileResponse in DEBUG).
-- Changing upload contracts → update **this rule file** in the **same** change.
+- Changing upload contracts / mounts → update **this rule file**{% if cookiecutter.use_scoped_apis == "y" %} (+ `scoped-apis` when scope URL layout changes){% endif %} in the **same** change.
 
 Deep: `docs/style-guide/domain/file-manager.md`

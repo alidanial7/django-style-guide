@@ -33,14 +33,12 @@ class ManagedFileOutputSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.URLField(help_text="Download URL for the managed file."))
     def get_download_url(self, obj: ManagedFile) -> str:
-        try:
-            from django.urls import reverse
-
-            url = reverse("api:file_manager:files-download", kwargs={"file_id": obj.id})
-        except Exception:
-            url = f"/api/v1/files/{obj.id}/download/"
+        from {{cookiecutter.project_slug}}.file_manager.urls.download import (
+            managed_file_download_path,
+        )
 
         request = self.context.get("request")
+        url = managed_file_download_path(file_id=obj.id, request=request)
         if request is not None:
             return request.build_absolute_uri(url)
         return url
