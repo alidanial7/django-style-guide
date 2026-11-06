@@ -15,4 +15,6 @@ alwaysApply: false
 
 - Keyword-only: `def foo(*, …)`.
 - Uniqueness: DB constraint + `map_integrity_error` — not serializer-only.
-- Deep: `docs/style-guide/overview/architecture.md`
+- Changing layer contracts → update **this rule file** (+ `AGENTS.md` hard dos) in the **same** change.
+
+Deep: `docs/style-guide/overview/architecture.md`

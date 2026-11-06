@@ -75,6 +75,25 @@ cd django-style-guide
 </details>
 
 <details>
+<summary>📁 Generate into an existing git repo (inplace)</summary>
+
+The wizard asks: **Generate into the current directory?**  
+Or force it:
+
+```bash
+./init.sh --inplace
+# or
+DSG_INPLACE=1 ./init.sh
+```
+
+**Safety:** the target directory must be empty **or** contain only git metadata  
+(`.git`, `.gitignore`, `.gitattributes`, `.gitmodules`). Any other file → error and abort.
+
+`project_name` is still used as a temporary folder name during generation, then contents are moved up into `.`.
+
+</details>
+
+<details>
 <summary>🤖 Non-interactive / CI preset</summary>
 
 ```bash
@@ -142,7 +161,7 @@ MyProject/
 
 | | Area | Options |
 |:---:|:---|:---|
-| 🔐 | **Auth & models** | JWT / session · email or username login · UUID / BigAutoField PKs · portal stubs |
+| 🔐 | **Auth & models** | JWT / session · email or username · OTP · Google/Microsoft/Apple · UUID PKs · portal stubs |
 | 🗂️ | **Domains** | Scoped `/api/v1/site/…` · `ManagedFile` uploads · Unfold admin |
 | ⏳ | **Async & cache** | Redis · RabbitMQ · Celery · ASGI · Channels |
 | 🚢 | **Ops** | Nginx / Traefik · Sentry · pgAdmin · GitHub or GitLab CI |
@@ -171,6 +190,11 @@ Defaults match the interactive UI.
 |:---:|--------|---------|-------------|
 | 🔑 | `use_jwt` | y | `y` → JWT · `n` → session |
 | 👤 | `user_login_field` | email | `email` or `username` (`USERNAME_FIELD`) |
+| 📲 | `use_otp_login` | n | Phone OTP (`otp/request` · `otp/verify`) + SMS provider stub · `OTP_TEST` |
+| 🔵 | `use_google_login` | n | Google `id_token` → JWT/session |
+| 🪟 | `use_microsoft_login` | n | Microsoft `id_token` → JWT/session |
+| | `use_apple_login` | n | Apple `id_token` → JWT/session |
+| 🌍 | `use_i18n` | n | Django i18n (`LocaleMiddleware`, `locale/`, `update_translations`) |
 | 🆔 | `use_uuid_pk` | y | UUID PK on `BaseModel` |
 | 🌐 | `use_scoped_apis` | n | Sample site mount + per-client schema |
 | 📁 | `use_file_manager` | n | `ManagedFile` uploads app |

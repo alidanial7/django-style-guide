@@ -10,5 +10,6 @@ alwaysApply: false
 - Tasks stay thin: load IDs → call **services** → map errors; use `@shared_task` with retries only for transient failures.
 - Autodiscover app `tasks.py` modules. Prefer logging + structured failure over silent swallow.
 - Local: `devserver` may start a worker; prod: compose worker + beat entrypoints.
+- Changing Celery conventions → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/celery.md`

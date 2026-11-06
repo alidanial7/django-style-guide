@@ -9,5 +9,6 @@ alwaysApply: false
 - Settings: `config/settings/sentry.py` — activates when `SENTRY_DSN` is set.
 - Keep DSN out of git; document in `.env.example` only as empty/placeholder.
 - Prefer scrubbing PII in `before_send` if you expand sampling.
+- Changing Sentry wiring → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/settings.md` · `docs/style-guide/http/security.md`

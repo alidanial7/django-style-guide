@@ -10,5 +10,6 @@ alwaysApply: false
 - Use `users.permissions.IsAdmin` / `IsCustomer` only when the view is portal-scoped.
 - Prefer explicit flags on `BaseUser` (e.g. `is_admin`) over inventing parallel auth stacks.
 - Do not treat staff flags as a substitute for object-level checks.
+- Changing portal gates → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/http/permissions.md`

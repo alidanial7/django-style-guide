@@ -400,6 +400,19 @@ Services and selectors generally **should not** need `reverse()` — building pr
 | `POST` | `/api/v1/auth/session/login/` | `auth:login` |
 | `POST` | `/api/v1/auth/session/logout/` | `auth:logout` |
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+| `POST` | `/api/v1/auth/otp/request/` | `auth:otp-request` |
+| `POST` | `/api/v1/auth/otp/verify/` | `auth:otp-verify` |
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" %}
+| `POST` | `/api/v1/auth/social/google/` | `auth:social-google` |
+{%- endif %}
+{%- if cookiecutter.use_microsoft_login == "y" %}
+| `POST` | `/api/v1/auth/social/microsoft/` | `auth:social-microsoft` |
+{%- endif %}
+{%- if cookiecutter.use_apple_login == "y" %}
+| `POST` | `/api/v1/auth/social/apple/` | `auth:social-apple` |
+{%- endif %}
 | `POST` | `/api/v1/auth/password/change/` | `auth:password-change` |
 | `POST` | `/api/v1/auth/password/reset/` | `auth:password-reset` |
 | `POST` | `/api/v1/auth/password/reset/confirm/` | `auth:password-reset-confirm` |

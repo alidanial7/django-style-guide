@@ -13,13 +13,12 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 {%- endif %}
-{%- if cookiecutter.use_file_manager == "y" %}
-
-from {{cookiecutter.project_slug}}.file_manager.services.file_services import create_managed_file
-{%- endif %}
 
 from {{cookiecutter.project_slug}}.common.db.integrity import map_integrity_error
 from {{cookiecutter.project_slug}}.common.services import model_save, model_update
+{%- if cookiecutter.use_file_manager == "y" %}
+from {{cookiecutter.project_slug}}.file_manager.services.file_services import create_managed_file
+{%- endif %}
 from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 from {{cookiecutter.project_slug}}.users.models import BaseUser, Profile
 from {{cookiecutter.project_slug}}.users.types import ChangePasswordData, ProfileUpdateData, RegisterData

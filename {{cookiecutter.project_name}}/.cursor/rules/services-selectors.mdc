@@ -13,5 +13,6 @@ alwaysApply: false
 - Validation: `is_*` + `*Validator` + domain `*ErrorCode` in `<app>/errors/`.
 - Filters: FilterSet in `apis/…/*_search_filters.py`; apply in list view **after** `list_*()` — never inside selector.
 - Lists: pagination by default; no filters unless needed.
+- Changing service/selector contracts → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/domain/services.md` · `docs/style-guide/domain/selectors.md` · `docs/style-guide/domain/types.md` · `docs/style-guide/domain/validation.md`

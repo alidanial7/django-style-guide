@@ -1,0 +1,22 @@
+---
+description: Management commands, seeds, local bootstrap
+globs: "**/commands/management/commands/**/*.py,**/docker/dev_entrypoint.sh"
+alwaysApply: false
+---
+
+# Commands & seeds
+
+- Prefer `BaseCommand`; clear phases (`starting` / success / skip); `--dry-run` when mutating.
+- Multi-row writes: `@transaction.atomic`; keep steps **idempotent**.
+- New domain apps: `python manage.py start_domain_app <plural>` — never `startapp`.
+- Local demo / fixture rows → `seed_demo_data` (not ad-hoc shell one-liners). No `--fake` / skip flags — real idempotent seeds only.
+- Required bootstrap (flags, catalog roots) → `initial_system`.
+- Schema/feature that needs sample data or default roles → extend `seed_demo_data` in the **same** change (add a `_seed_*` method + call it from `handle`). Ask before inventing production-like data.
+- Default local admin is created by `seed_demo_data` (also invoked from `devserver` / `dev_entrypoint.sh`). Do not hardcode a second createsuperuser path.
+- `devserver` = migrate + `seed_demo_data` + runserver{%- if cookiecutter.use_celery == "y" %} (+ Celery worker){%- endif %}.
+{%- if cookiecutter.use_i18n == "y" %}
+- Translations: `python manage.py update_translations` (or `make translations` / `./scripts/update_translations.sh`). See `i18n` rule.
+{%- endif %}
+- Changing command contracts / seed flow → update this rule (+ `i18n` if translation commands change) in the **same** change.
+
+Deep: `docs/style-guide/ops/commands.md`

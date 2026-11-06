@@ -9,8 +9,18 @@ alwaysApply: false
 - Local deps: `./start-dev-services.sh` (or `make up`) — app on host via `devserver`.
 - Bind mounts live under `./volumes/<service>/` (postgres, redis, rabbitmq, …); data is gitignored via `.gitkeep` placeholders.
 - Prod: `docker-compose.yml` + entrypoints under `docker/`.
+- Dev entrypoint / `devserver`: migrate + `seed_demo_data` (local admin) — see `commands` rule.
 - New/changed env → update `.env.example` and document production defaults.
 - Broker/cache/DB/port/volume/healthcheck changes → developer alert section required (see `core` rule).
+{%- if cookiecutter.use_i18n == "y" %}
+- i18n: `LANGUAGE_CODE` in `.env`; catalogs via `make translations` — see `i18n` rule.
+{%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+- OTP: `OTP_TEST` (+ optional `SMS_PROVIDER` / TTL env) — see `otp-auth` rule.
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+- Social OAuth client IDs in `.env` / `config/settings/social_auth.py` — see `social-auth` rule.
+{%- endif %}
 {%- if cookiecutter.use_rabbitmq == "y" %}
 - RabbitMQ 4+: keep `docker/rabbitmq/rabbitmq.conf` (`transient_nonexcl_queues` permit) — Celery needs it.
 {%- endif %}
@@ -22,5 +32,6 @@ alwaysApply: false
 {%- elif cookiecutter.reverse_proxy == "traefik" %}
 - Reverse proxy: Traefik (`docker/traefik/`).
 {%- endif %}
+- Changing infra/env patterns → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/docker-and-production.md` · `docs/style-guide/ops/settings.md` · `docs/style-guide/ops/commands.md`

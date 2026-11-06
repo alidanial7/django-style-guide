@@ -1,6 +1,6 @@
 from .base import *  # noqa
-from config.env import env
 {% if cookiecutter.use_celery == "y" %}
+from config.env import env
 
 # Set to True in .env if you want to execute tasks synchronously without running a worker
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)

@@ -14,6 +14,9 @@ from {{cookiecutter.project_slug}}.common.http.schema import SiteSchemaGenerator
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+{%- if cookiecutter.use_i18n == "y" %}
+    path("i18n/", include("django.conf.urls.i18n")),
+{%- endif %}
     path("api/v1/", include(("{{cookiecutter.project_slug}}.api.urls", "api"))),
 ]
 

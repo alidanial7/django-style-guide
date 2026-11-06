@@ -33,6 +33,12 @@ Based on the [HackSoft Django Styleguide](https://github.com/HackSoftware/Django
 {%- else %}
 - Session authentication (`users` app)
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+- Phone OTP login (`OTP_TEST` + SMS provider stub)
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+- Social login ({% if cookiecutter.use_google_login == "y" %}Google{% endif %}{% if cookiecutter.use_microsoft_login == "y" %}{% if cookiecutter.use_google_login == "y" %} / {% endif %}Microsoft{% endif %}{% if cookiecutter.use_apple_login == "y" %}{% if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" %} / {% endif %}Apple{% endif %})
+{%- endif %}
 {%- if cookiecutter.use_asgi == "y" %}
 - ASGI via Uvicorn
 {%- endif %}
@@ -125,7 +131,9 @@ Full layout and checklist: [Domain apps](docs/style-guide/overview/domain-apps.m
 | `make migrate` | Apply migrations |
 | `make runserver` | `manage.py devserver` |
 | `python manage.py start_domain_app <name>` | Scaffold a domain app |
-| `./scripts/update_translations.sh` | Update `.po` translation files |
+{%- if cookiecutter.use_i18n == "y" %}
+| `make translations` / `python manage.py update_translations` | Update `.po` translation files |
+{%- endif %}
 | `docker compose up --build -d` | Start production stack |
 
 See [Commands](docs/style-guide/ops/commands.md) for the full reference.

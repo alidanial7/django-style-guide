@@ -14,7 +14,7 @@
 |------|-----|
 | Consistent Python style | Formatter + linter |
 | Catch foot-guns early | Pre-commit (debug leftovers, secrets, YAML, …) |
-| Stable i18n msgids | Prefer lowercase, space-separated gettext — see [Translations](translations.md) |
+| Stable i18n msgids | Prefer lowercase, space-separated gettext{% if cookiecutter.use_i18n == "y" %} — see [Translations](translations.md){% endif %} |
 | Readable APIs | Google-style docstrings where pydoclint is enabled |
 
 ```mermaid
@@ -50,7 +50,7 @@ Which groups appear depends on cookiecutter choices (`precommit_*` flags). Typic
 | **pyupgrade** | Rewrites older syntax toward Python 3.12 (`list[str]` instead of `List[str]`, …) |
 | **Ruff** | `ruff check --fix` + `ruff format` |
 | **pydoclint** | Google-style docstrings on functions/methods |
-| **django-translation-lint** | Preferred: `_()` / gettext msgids are **lowercase** (aligns with [Translations](translations.md) strong recommendation) |
+| **django-translation-lint** | Preferred: `_()` / gettext msgids are **lowercase**{% if cookiecutter.use_i18n == "y" %} (aligns with [Translations](translations.md) strong recommendation){% endif %} |
 
 To disable a group: comment out or remove its `repo:` block, then optionally `pre-commit autoupdate`.
 
@@ -120,7 +120,9 @@ Domain/architecture rules (selectors vs services, envelope, …) live in the res
 
 | Doc | Why |
 |-----|-----|
+{%- if cookiecutter.use_i18n == "y" %}
 | [Translations](translations.md) | Lowercase + spaces msgid recommendation |
+{%- endif %}
 | [Testing](testing.md) | CI test expectations |
 | [Commands](commands.md) | `make lint` / `make format` |
 | [Settings](settings.md) | Tooling is not Django settings |

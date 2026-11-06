@@ -9,5 +9,6 @@ alwaysApply: false
 - Enabled in `docker-compose.dev.yml` (port **5050** by default).
 - Start with `./start-dev-services.sh`. Credentials come from compose / `.env`.
 - Dev-only — do not expose pgAdmin in production compose.
+- Changing pgAdmin setup → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/docker-and-production.md`

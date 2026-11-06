@@ -10,12 +10,18 @@ from {{cookiecutter.project_slug}}.users.types import ProfileUpdateData, Registe
 class TestUserServices:
     def test_register_creates_user_and_profile(self):
         data: RegisterData = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "svcuser",
+{%- endif %}
             "email": "svc@example.com",
             "password": "Password1!x",
             "bio": "from service",
         }
         user = register(data=data)
 
+{%- if cookiecutter.user_login_field == "username" %}
+        assert user.username == "svcuser"
+{%- endif %}
         assert user.email == "svc@example.com"
         assert Profile.objects.filter(user=user, bio="from service").exists()
 

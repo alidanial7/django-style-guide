@@ -24,6 +24,26 @@
     "email",
     "username"
   ],
+  "use_otp_login": [
+    "n",
+    "y"
+  ],
+  "use_google_login": [
+    "n",
+    "y"
+  ],
+  "use_microsoft_login": [
+    "n",
+    "y"
+  ],
+  "use_apple_login": [
+    "n",
+    "y"
+  ],
+  "use_i18n": [
+    "n",
+    "y"
+  ],
   "use_uuid_pk": [
     "y",
     "n"
@@ -152,6 +172,31 @@
       "__prompt__": "Login identifier (USERNAME_FIELD)",
       "email": "Email + password",
       "username": "Username + password"
+    },
+    "use_otp_login": {
+      "__prompt__": "Include phone OTP login?",
+      "n": "No",
+      "y": "Yes (SMS provider stub + OTP_TEST)"
+    },
+    "use_google_login": {
+      "__prompt__": "Include Google social login?",
+      "n": "No",
+      "y": "Yes (verify id_token → JWT/session)"
+    },
+    "use_microsoft_login": {
+      "__prompt__": "Include Microsoft social login?",
+      "n": "No",
+      "y": "Yes (verify id_token → JWT/session)"
+    },
+    "use_apple_login": {
+      "__prompt__": "Include Apple social login?",
+      "n": "No",
+      "y": "Yes (verify id_token → JWT/session)"
+    },
+    "use_i18n": {
+      "__prompt__": "Include Django i18n (multi-language)?",
+      "n": "No",
+      "y": "Yes (LocaleMiddleware + locale/ + update_translations)"
     },
     "use_sentry": {
       "__prompt__": "Include Sentry?",

@@ -27,7 +27,7 @@ Import from the package root (`from {{cookiecutter.project_slug}}.users.models i
 
 ### Labels, help text, Meta, docstrings
 
-On **every** declared field: `verbose_name` **and** `help_text`. On every FK / O2O: explicit `related_name`. Use `gettext_lazy as _` for import-time strings — [Translations](../ops/translations.md). Inherited Django fields keep upstream labels unless overridden.
+On **every** declared field: `verbose_name` **and** `help_text`. On every FK / O2O: explicit `related_name`. Use `gettext_lazy as _` for import-time strings{% if cookiecutter.use_i18n == "y" %} — [Translations](../ops/translations.md){% endif %}. Inherited Django fields keep upstream labels unless overridden.
 
 | Attribute | Required? | Convention |
 |-----------|-----------|------------|

@@ -15,6 +15,7 @@ alwaysApply: false
 {%- endif %}
 - Always `api_response` / pagination helpers. Public → `AllowAny`.
 - OpenAPI: `envelope_serializer(...)`; document FilterSet query params on filtered lists.
+{%- if cookiecutter.use_scoped_apis == "y" %}
 
 ## Scoped `/api/v1/<scope>/…`
 
@@ -22,5 +23,7 @@ alwaysApply: false
 - Leaf `tests/` next to each collection **and** `id/` leaf (when testing enabled).
 - Dedicated `<Scope>*` serializers + `@extend_schema_serializer(component_name="…")`.
 - URLs: `urls/<scope>_<app>_url.py` → `api/<scope>_urls.py`.
+{%- endif %}
+- Changing URL/layout conventions → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/domain/apis.md` · `docs/style-guide/domain/urls.md`

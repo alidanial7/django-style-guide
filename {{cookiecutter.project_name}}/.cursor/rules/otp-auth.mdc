@@ -1,0 +1,17 @@
+---
+description: Phone OTP login, SMS providers, OTP_TEST
+globs: "**/users/apis/auth/auth_otp*.py,**/users/services/otp_services.py,**/users/providers/sms/**/*.py,**/users/validators/phone.py,**/config/settings/otp.py"
+alwaysApply: false
+---
+
+# OTP auth
+
+- Routes: `POST /api/v1/auth/otp/request/` · `POST /api/v1/auth/otp/verify/`.
+- Phone **storage**: digits only with country code, no `+` — e.g. `989134543456` (`validate_phone` / `normalize_phone`).
+- SMS delivery: Strategy via `SmsProvider` + `get_sms_provider()` (`SMS_PROVIDER` env). Default `StubSmsProvider` is intentionally empty — implement your gateway there (or register a new class in the provider map).
+- `OTP_TEST=true` → code is always `12345`, SMS is skipped (local/CI only). Env documented in `.env.example`.
+- Challenges live in Django cache (hashed code); keep steps idempotent and throttle auth routes.
+- Do not invent a second OTP stack — extend `otp_services` / providers.
+- Changing OTP routes / phone format / providers / env → update **this rule file** + `auth` rule (+ `.env.example` / settings) in the **same** change.
+
+Deep: `docs/style-guide/http/authentication.md`

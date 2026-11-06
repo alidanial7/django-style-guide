@@ -78,7 +78,9 @@ docs/style-guide/
 {%- endif %}
 | [Logging](ops/logging.md) | Handlers, request ID |
 | [Migrations](ops/migrations.md) | Expand/contract |
+{%- if cookiecutter.use_i18n == "y" %}
 | [Translations](ops/translations.md) | gettext msgids |
+{%- endif %}
 | [Code quality](ops/code-quality.md) | {%- if cookiecutter.use_code_style == "y" %}Ruff / pre-commit{%- else %}flake8 / mypy{%- endif %} |
 | [Commands](ops/commands.md) | `make`, scripts, seeds |
 | [Docker & production](ops/docker-and-production.md) | Compose |

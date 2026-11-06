@@ -1,8 +1,11 @@
-.PHONY: help install up down migrate makemigrations runserver test lint format check shell
+.PHONY: help install up down migrate makemigrations runserver test lint format check shell{% if cookiecutter.use_i18n == "y" %} translations{% endif %}
 
 PYTHON ?= python
 PIP ?= pip
 MANAGE := $(PYTHON) manage.py
+{%- if cookiecutter.use_i18n == "y" %}
+ARGS ?=
+{%- endif %}
 
 help:
 	@echo "Targets:"
@@ -17,6 +20,9 @@ help:
 	@echo "  format          Auto-format (ruff, when enabled)"
 	@echo "  check           Django system check"
 	@echo "  shell           Django shell_plus / shell"
+{%- if cookiecutter.use_i18n == "y" %}
+	@echo "  translations    Update gettext catalogs (ARGS='--compile' optional)"
+{%- endif %}
 
 install:
 	$(PIP) install -r requirements_dev.txt
@@ -44,6 +50,11 @@ check:
 
 shell:
 	$(MANAGE) shell_plus || $(MANAGE) shell
+
+{%- if cookiecutter.use_i18n == "y" %}
+translations:
+	$(MANAGE) update_translations $(ARGS)
+{%- endif %}
 
 {%- if cookiecutter.use_testing == "y" %}
 test:

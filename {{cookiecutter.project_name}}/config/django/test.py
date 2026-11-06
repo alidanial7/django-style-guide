@@ -47,6 +47,11 @@ CELERY_BROKER_URL = "memory://"
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+
+OTP_TEST = True
+OTP_TEST_CODE = "12345"
+{%- endif %}
 
 CACHES = {
     "default": {

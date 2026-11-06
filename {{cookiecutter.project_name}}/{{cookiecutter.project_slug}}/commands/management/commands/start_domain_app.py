@@ -266,7 +266,8 @@ class Command(BaseCommand):
             self.stdout.write(f"     Or re-run with: python manage.py start_domain_app {app_name} --register")
             self.stdout.write(f"  2. Wire URLs in {_PROJECT_SLUG}/api/urls.py, e.g.:")
             self.stdout.write(
-                f'       path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}_url", "{app_name}"))),'
+                f'       path("{app_name}/", include(('
+                f'"{_PROJECT_SLUG}.{app_name}.urls.{app_name}_url", "{app_name}"))),'
             )
             self.stdout.write(f"  3. Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations.")
 
@@ -296,6 +297,7 @@ class Command(BaseCommand):
         self.stdout.write("Still needed:")
         self.stdout.write(f"  - Wire URLs in {_PROJECT_SLUG}/api/urls.py")
         self.stdout.write(
-            f'      path("{app_name}/", include(("{_PROJECT_SLUG}.{app_name}.urls.{app_name}_url", "{app_name}"))),'
+            f'      path("{app_name}/", include(('
+            f'"{_PROJECT_SLUG}.{app_name}.urls.{app_name}_url", "{app_name}"))),'
         )
         self.stdout.write(f"  - Add models under {_PROJECT_SLUG}/{app_name}/models/, then makemigrations")

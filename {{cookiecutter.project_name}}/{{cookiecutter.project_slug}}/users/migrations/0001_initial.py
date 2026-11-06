@@ -108,6 +108,19 @@ class Migration(migrations.Migration):
                     ),
                 ),
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+                (
+                    "phone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Mobile in E.164 digits without '+', e.g. 989134543456.",
+                        max_length=15,
+                        null=True,
+                        unique=True,
+                        verbose_name=_("phone"),
+                    ),
+                ),
+{%- endif %}
                 (
                     "is_active",
                     models.BooleanField(
@@ -234,4 +247,79 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": _("profiles"),
             },
         ),
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+        migrations.CreateModel(
+            name="SocialAccount",
+            fields=[
+{%- if cookiecutter.use_uuid_pk == "y" %}
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        help_text="Random UUID v4 primary key. Not sequential and not guessable.",
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name=_("id"),
+                    ),
+                ),
+{%- else %}
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+{%- endif %}
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True,
+                        default=django.utils.timezone.now,
+                        help_text="When this row was first created.",
+                        verbose_name=_("created at"),
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="When this row was last updated.",
+                        verbose_name=_("updated at"),
+                    ),
+                ),
+                (
+                    "provider",
+                    models.CharField(max_length=32, verbose_name=_("provider")),
+                ),
+                (
+                    "subject",
+                    models.CharField(max_length=255, verbose_name=_("subject")),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="social_accounts",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name=_("user"),
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": _("social account"),
+                "verbose_name_plural": _("social accounts"),
+            },
+        ),
+        migrations.AddConstraint(
+            model_name="socialaccount",
+            constraint=models.UniqueConstraint(
+                fields=("provider", "subject"),
+                name="users_socialaccount_provider_subject_uniq",
+            ),
+        ),
+{%- endif %}
     ]

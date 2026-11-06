@@ -11,5 +11,6 @@ alwaysApply: false
 - Never hardcode admin URLs (`/admin/...`); use `reverse` / `reverse_lazy` and named admin routes.
 - When a model is created or changed, sync its `<app>/admin.py` (`list_display`, filters, search, readonly).
 - Admin mount path comes from `config/urls.py` (default `/admin/`); do not assume a custom path in links or docs.
+- Changing Unfold conventions → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/admin-unfold.md`

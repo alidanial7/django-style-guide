@@ -21,6 +21,9 @@ attrs==25.3.0
 {%- if cookiecutter.use_jwt == "y" %}
 djangorestframework-simplejwt==5.5.1
 {%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+PyJWT[crypto]==2.10.1
+{%- endif %}
 drf-spectacular==0.30.0
 
 {%- if cookiecutter.use_redis == "y" %}

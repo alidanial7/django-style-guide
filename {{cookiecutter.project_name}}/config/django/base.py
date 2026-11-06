@@ -17,6 +17,12 @@ from config.settings.logging import *  # noqa
 {%- if cookiecutter.use_jwt == "y" %}
 from config.settings.jwt import *  # noqa
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+from config.settings.otp import *  # noqa
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+from config.settings.social_auth import *  # noqa
+{%- endif %}
 from config.settings.middleware import *  # noqa
 from config.settings.security import *  # noqa
 from config.settings.sessions import *  # noqa

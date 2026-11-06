@@ -11,7 +11,8 @@ alwaysApply: false
 | `pre_prompt.py` | TTY → checklist UI; skip on `--no-input` / non-TTY |
 | `interactive_prompts.py` | Wizard; auto-enable Redis/ASGI deps; force pre-commit if none picked |
 | `pre_gen_project.py` | Hard fail on bad slug, WS/Celery deps, empty pre-commit |
-| `post_gen_project.py` | Delete unused auth/CI/proxy/Celery/WS/tests/rules/docs |
+| `post_gen_project.py` | Delete unused auth/OTP/social/i18n/CI/proxy/Celery/WS/tests/rules/docs |
 
 - Exit 143 after interactive generate is normal (outer cookiecutter SIGTERM).
 - `init.sh` wraps the same UI path.
+- New prune targets (rules/docs/commands) → keep `post_gen` + smoke asserts in sync.

@@ -10,5 +10,6 @@ alwaysApply: false
 - Routes: `{{cookiecutter.project_slug}}/core/routing.py` → `websocket_urlpatterns`.
 - Authenticate before joining groups; keep consumers thin — business rules in services.
 - Do not mix WS auth casually with HTTP auth helpers without reading existing patterns.
+- Changing WS conventions → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/websockets.md`

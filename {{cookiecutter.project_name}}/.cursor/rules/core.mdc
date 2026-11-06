@@ -11,5 +11,6 @@ alwaysApply: true
 - New apps: `python manage.py start_domain_app <plural>` only.
 - Layers: APIs glue; serializers = HTTP; TypedDict = service `data=`; selectors read; services write (`model_*` incl. delete).
 - Envelope: `api_response` → `{success,status,result,messages}`. Default **IsAuthenticated**.
+- **Keep rules current for the next agent:** whenever you change a convention, feature, auth/path/env pattern, seed, or command, edit the matching `.cursor/rules/*.mdc` **file contents** (and the `AGENTS.md` index row when needed) in the **same** change. Do not leave stale rule text — later agents load these files, not the chat history.
 - Infra/env/Docker/broker changes → reply section `### ⚠️ Infrastructure & Deployment Action Required`{% if cookiecutter.infra_repo_name %} (update `{{cookiecutter.infra_repo_name}}`){% endif %}.
 - Deep detail: open **one** page from `AGENTS.md` table — never bulk-read `docs/style-guide/`.

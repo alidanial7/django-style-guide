@@ -1,10 +1,14 @@
-{%- if cookiecutter.use_uuid_pk == "y" %}
+{%- if cookiecutter.use_uuid_pk == "y" -%}
 import uuid
 
-{%- endif %}
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+{%- else -%}
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+{%- endif %}
 
 
 class BaseModel(models.Model):
@@ -15,8 +19,8 @@ class BaseModel(models.Model):
     Model to declare shared timestamp fields
 {%- endif %}
     """
-
 {%- if cookiecutter.use_uuid_pk == "y" %}
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,

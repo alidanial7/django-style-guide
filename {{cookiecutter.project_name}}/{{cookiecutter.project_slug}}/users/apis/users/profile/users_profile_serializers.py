@@ -25,6 +25,6 @@ class UsersProfileOutputSerializer(serializers.ModelSerializer):
         return get_avatar_url(profile=profile, request=self.context.get("request"))
 
 
-class UsersProfileInputSerializer(serializers.Serializer):
+class UsersProfileUpdateInputSerializer(serializers.Serializer):
     bio = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=1000)
     avatar = serializers.ImageField(required=False, allow_null=True)

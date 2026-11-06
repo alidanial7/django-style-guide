@@ -37,11 +37,11 @@ flowchart LR
 
 | Rule | Example |
 |------|---------|
-| `gettext_lazy` / `_()` msgids: prefer **lowercase + spaces** | `_("password must include number")` — strong recommendation; see [Translations](../ops/translations.md) |
+| `gettext_lazy` / `_()` msgids: prefer **lowercase + spaces** | `_("password must include number")` — strong recommendation{% if cookiecutter.use_i18n == "y" %}; see [Translations](../ops/translations.md){% endif %} |
 | Parameterized messages use `params=` | `params={"limit_value": 10}` |
 | Don’t bake values into the msgid | ❌ `_("password must be at least 10 characters")` as the only form when limit may change |
 
-Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see [Translations](../ops/translations.md) / [Code quality](../ops/code-quality.md).
+Pre-commit may enforce lowercase gettext when code-style hooks are enabled — see {% if cookiecutter.use_i18n == "y" %}[Translations](../ops/translations.md) / {% endif %}[Code quality](../ops/code-quality.md).
 
 ---
 
@@ -182,4 +182,6 @@ users/
 | [Errors](errors.md) | Codes + integrity mapping |
 | [API envelope](../http/api-envelope.md) | How failures appear in JSON |
 | [APIs](apis.md) | Serializer patterns |
+{%- if cookiecutter.use_i18n == "y" %}
 | [Translations](../ops/translations.md) | Prefer lowercase + space-separated msgids |
+{%- endif %}

@@ -8,6 +8,9 @@ alwaysApply: false
 
 - Inherit `BaseModel`. Docstring: `Model to declare …`.
 - Every field: `verbose_name` + `help_text`. Every FK/O2O: explicit `related_name`.
+{%- if cookiecutter.use_i18n == "y" %}
+- Import-time labels: `gettext_lazy as _` — see `i18n` rule (lowercase space-separated msgids).
+{%- endif %}
 - Choices live in `<app>/enums.py` — never nested on the model.
 - Model create/change → update `<app>/admin.py` (`list_display`, filters, search, readonly).
 {%- if cookiecutter.use_uuid_pk == "y" %}
@@ -15,5 +18,6 @@ alwaysApply: false
 {%- else %}
 - PK: project default `BigAutoField` unless a model declares otherwise.
 {%- endif %}
+- Changing model conventions → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/domain/models.md` · `docs/style-guide/domain/enums.md`

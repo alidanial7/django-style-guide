@@ -89,7 +89,7 @@ flowchart LR
 │   └── style-guide/            # coding conventions (you are here)
 │
 ├── logs/                       # runtime logs (.gitkeep kept; files gitignored)
-├── scripts/                    # e.g. update_translations.sh
+├── scripts/                    # shell helpers{% if cookiecutter.use_i18n == "y" %} (e.g. update_translations.sh){% endif %}
 ├── requirements/               # base.txt, local.txt, production.txt
 ├── requirements.txt            # prod-oriented meta file
 ├── requirements_dev.txt        # local + tools
@@ -206,7 +206,7 @@ Pick a **plural domain** name instead (`blogs`, `orders`, …) — see [Domain a
 | `docker-compose.yml` + `docker/` | Production-like full stack |
 | `requirements/` | Split deps: base / local / production |
 | `Makefile` | Shortcuts: `make up`, `make test`, `make lint`, … |
-| `scripts/` | Non-Django shell helpers (translations, …) |
+| `scripts/` | Non-Django shell helpers{% if cookiecutter.use_i18n == "y" %} (translations, …){% endif %} |
 | `logs/` | File logs when `LOG_TO_FILE=true` |
 
 Details: [Docker & production](../ops/docker-and-production.md), [Commands](../ops/commands.md), [Logging](../ops/logging.md).

@@ -1,6 +1,6 @@
 ---
 description: Auth endpoints and users auth flows
-globs: "**/users/apis/auth/**/*.py,**/users/urls/auth*.py,**/config/settings/auth.py,**/config/settings/drf.py,**/config/settings/sessions.py{% if cookiecutter.use_jwt == 'y' %},**/config/settings/jwt.py{% endif %}"
+globs: "**/users/apis/auth/**/*.py,**/users/urls/auth*.py,**/config/settings/auth.py,**/config/settings/drf.py,**/config/settings/sessions.py{% if cookiecutter.use_jwt == 'y' %},**/config/settings/jwt.py{% endif %}{% if cookiecutter.use_otp_login == 'y' %},**/config/settings/otp.py{% endif %}{% if cookiecutter.use_google_login == 'y' or cookiecutter.use_microsoft_login == 'y' or cookiecutter.use_apple_login == 'y' %},**/config/settings/social_auth.py{% endif %}"
 alwaysApply: false
 ---
 
@@ -24,7 +24,14 @@ alwaysApply: false
 - Login identifier: **email** (`USERNAME_FIELD`).
 - Login/register payloads use `email`.
 {%- endif %}
-- Register / profile / password flows stay in `users` — follow existing files.
+{%- if cookiecutter.use_otp_login == "y" %}
+- Phone OTP: `otp/request` + `otp/verify` (see `otp-auth` rule). Phone stored as `9891…` digits.
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+- Social: `social/google|microsoft|apple` with `id_token` → same JWT/session as password login (see `social-auth` rule).
+{%- endif %}
+- Also under auth URLs: `password/change/`, `password/reset/` (+ confirm). Register / profile stay under `users` URLs — follow existing files.
 - Throttle auth routes; keep public auth views `AllowAny`.
+- Changing auth routes/modes/providers → update **this rule file** + related feature rules (`otp-auth` / `social-auth`) in the **same** change.
 
 Deep: `docs/style-guide/http/authentication.md` · `docs/style-guide/http/throttling.md` · `docs/style-guide/http/security.md`

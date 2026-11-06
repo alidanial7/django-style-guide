@@ -20,7 +20,9 @@
 | Django check | `make check` |
 | Shell | `make shell` |
 | New domain app | `python manage.py start_domain_app <name>` |
-| Translations | `./scripts/update_translations.sh` |
+{%- if cookiecutter.use_i18n == "y" %}
+| Translations | `make translations` / `python manage.py update_translations` |
+{%- endif %}
 | Production stack | `docker compose up --build -d` |
 
 ---
@@ -51,6 +53,9 @@ Defined in the project root `Makefile`:
 | `make lint` | `flake8` |
 | `make format` | Not enabled (`use_code_style=n`) |
 {%- endif %}
+{%- if cookiecutter.use_i18n == "y" %}
+| `make translations` | `manage.py update_translations` (`ARGS='--compile'` optional) |
+{%- endif %}
 
 Override interpreter if needed: `make test PYTHON=python3.12`.
 
@@ -67,7 +72,7 @@ python manage.py devserver
 Typical behavior (template):
 
 1. Apply migrations
-2. Ensure default superuser exists (`admin@example.com` / `admin` — **local only**)
+2. `seed_demo_data` — local admin (+ default groups) — **local only**
 3. Start the development server
 {%- if cookiecutter.use_celery == "y" %}
 4. Start a Celery worker in the background when Celery is enabled
@@ -77,6 +82,7 @@ For Django-only without the extras:
 
 ```bash
 python manage.py migrate
+python manage.py seed_demo_data
 python manage.py runserver
 ```
 
@@ -101,8 +107,10 @@ python manage.py initial_system
 
 | Command | Role |
 |---------|------|
-| `seed_demo_data` | Local/demo rows — keep idempotent; ask before inventing seeds |
-| `initial_system` | Required bootstrap (groups/flags/catalog roots) |
+| `seed_demo_data` | Local admin + default groups (+ your `_seed_*` extensions) — idempotent |
+| `initial_system` | Required bootstrap (flags / catalog roots — not day-to-day demo rows) |
+
+**Extending seeds:** add a private `_seed_<thing>()` method and call it from `handle`. Keep each step idempotent. Ask before inventing production-like data.
 
 When a schema change needs seed updates, extend these commands in the **same** change.
 
@@ -119,7 +127,9 @@ When a schema change needs seed updates, extend these commands in the **same** c
 | Script | Purpose |
 |--------|---------|
 | `./start-dev-services.sh` | Start (or `--clean` recreate) `docker-compose.dev.yml` services |
-| `./scripts/update_translations.sh` | `makemessages` workflow; `--compile-messages` optional — see [Translations](translations.md) |
+{%- if cookiecutter.use_i18n == "y" %}
+| `./scripts/update_translations.sh` | Thin wrapper → `manage.py update_translations` — see [Translations](translations.md) |
+{%- endif %}
 
 ---
 
@@ -136,14 +146,22 @@ When a schema change needs seed updates, extend these commands in the **same** c
 
 Auth/register paths: [Authentication](../http/authentication.md), [URLs](../domain/urls.md).
 
-### Default superuser (`devserver`)
+### Default superuser (`seed_demo_data` / `devserver`)
 
+{%- if cookiecutter.user_login_field == "username" %}
+| Field | Value |
+|-------|-------|
+| Username | `admin` |
+| Email | `admin@example.com` |
+| Password | `admin` |
+{%- else %}
 | Field | Value |
 |-------|-------|
 | Email | `admin@example.com` |
 | Password | `admin` |
+{%- endif %}
 
-Change immediately outside throwaway local environments.
+**Local / throwaway only** — change immediately outside disposable environments.
 
 ---
 
@@ -192,4 +210,6 @@ make test
 | [Domain apps](../overview/domain-apps.md) | `start_domain_app` |
 | [Code quality](code-quality.md) | Lint/format |
 | [Testing](testing.md) | pytest |
-| [Translations](translations.md) | i18n script |
+{%- if cookiecutter.use_i18n == "y" %}
+| [Translations](translations.md) | i18n / gettext |
+{%- endif %}

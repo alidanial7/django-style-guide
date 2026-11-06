@@ -1,0 +1,17 @@
+---
+description: Django i18n, locales, update_translations
+globs: "**/config/settings/i18n.py,**/locale/**,**/scripts/update_translations.sh,**/commands/management/commands/update_translations.py,**/config/settings/middleware.py,**/config/urls.py"
+alwaysApply: false
+---
+
+# i18n
+
+- Django gettext only — `USE_I18N`, `LANGUAGES`, `LOCALE_PATHS`, `LocaleMiddleware` (after `SessionMiddleware`).
+- User-facing strings: `_()` / `gettext_lazy`; prefer **lowercase space-separated** English msgids.
+- Refresh catalogs: `python manage.py update_translations` · `make translations` · `./scripts/update_translations.sh`. Add a language with `--locale fa`. Compile with `--compile` (shell maps legacy `--compile-messages`).
+- Language switch: `POST /i18n/setlang/` (Django). APIs also honor `Accept-Language` via `LocaleMiddleware`.
+- Default language: `.env` `LANGUAGE_CODE` (fallback `en`).
+- Do not invent a second i18n stack.
+- Changing languages / middleware / translation commands → update **this rule file** + `docs/style-guide/ops/translations.md` (+ `commands` / `AGENTS.md` if entrypoints change) in the **same** change.
+
+Deep: `docs/style-guide/ops/translations.md`

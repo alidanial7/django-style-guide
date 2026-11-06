@@ -8,4 +8,5 @@ alwaysApply: true
 - Output tree: `{{cookiecutter.project_name}}/`. Hooks: `pre_prompt` → UI, `pre_gen` validate, `post_gen` prune.
 - New cookiecutter option → update `cookiecutter.json`, prompts UI, `pre_gen` if deps, `post_gen` if files to delete, root `README.md`, and generated `AGENTS.md` / rules / docs index when relevant.
 - Keep generated agent files **short**; feature rules/docs must disappear when the feature is off.
+- **Keep generated rules current:** if you change a generated convention/feature (auth, OTP, social, i18n, seeds, commands, env), edit the matching `{{cookiecutter.project_name}}/.cursor/rules/*.mdc` **contents** + generated `AGENTS.md` in the **same** change — the next agent only sees those files, not this chat.
 - Never commit/push unless asked. Run `python hooks/test_choice_context.py` after choice-map edits.

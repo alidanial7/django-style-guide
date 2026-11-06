@@ -4,12 +4,21 @@ from __future__ import annotations
 
 import os
 import select
+import shutil
 import sys
 import termios
 import tty
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
+
+# Allowed when generating into an existing directory (inplace).
+_GIT_ONLY_ENTRIES = frozenset({
+    ".git",
+    ".gitignore",
+    ".gitattributes",
+    ".gitmodules",
+})
 
 _HOOKS_DIR = Path(__file__).resolve().parent
 if str(_HOOKS_DIR) not in sys.path:
@@ -54,6 +63,11 @@ COLORS = _Colors()
 
 FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_jwt", "JWT authentication (off = session auth)"),
+    ("use_otp_login", "Phone OTP login (SMS provider stub)"),
+    ("use_google_login", "Google social login (id_token)"),
+    ("use_microsoft_login", "Microsoft social login (id_token)"),
+    ("use_apple_login", "Apple social login (id_token)"),
+    ("use_i18n", "Django i18n / multi-language (LocaleMiddleware + locales)"),
     ("use_uuid_pk", "UUID primary keys for models (off = BigAutoField)"),
     ("use_scoped_apis", "Scoped API sample (/api/v1/site/…)"),
     ("use_file_manager", "ManagedFile file_manager app"),
@@ -103,6 +117,11 @@ CHOICE_OPTIONS: dict[str, tuple[str, ...]] = {
     "postgres_version": ("17.10", "16.8", "15.12", "14.17"),
     "use_jwt": ("y", "n"),
     "user_login_field": ("email", "username"),
+    "use_otp_login": ("y", "n"),
+    "use_google_login": ("y", "n"),
+    "use_microsoft_login": ("y", "n"),
+    "use_apple_login": ("y", "n"),
+    "use_i18n": ("y", "n"),
     "use_uuid_pk": ("y", "n"),
     "use_scoped_apis": ("y", "n"),
     "use_file_manager": ("y", "n"),
@@ -355,6 +374,59 @@ def format_precommit_summary(selected_keys: set[str]) -> str:
     return ", ".join(enabled)
 
 
+def list_non_git_entries(target: Path) -> list[str]:
+    """Return names of entries that are not plain git metadata."""
+    if not target.exists():
+        return []
+    return sorted(
+        entry.name for entry in target.iterdir() if entry.name not in _GIT_ONLY_ENTRIES
+    )
+
+
+def assert_inplace_target_ok(target: Path) -> None:
+    """Fail if *target* has anything beyond git metadata files/dirs."""
+    offenders = list_non_git_entries(target)
+    if not offenders:
+        return
+    listed = "\n".join(f"  - {name}" for name in offenders)
+    raise ValueError(
+        "Cannot generate inplace: directory has non-git files:\n"
+        f"{listed}\n"
+        "Remove them (keep only .git / .gitignore / .gitattributes / .gitmodules) "
+        "or generate into a new folder."
+    )
+
+
+def flatten_generated_project(output_dir: Path, project_name: str) -> None:
+    """Move ``output_dir/project_name/*`` up into ``output_dir`` and remove the folder."""
+    generated = output_dir / project_name
+    if not generated.is_dir():
+        raise RuntimeError(f"Expected generated project at {generated}")
+
+    for item in generated.iterdir():
+        dest = output_dir / item.name
+        if dest.exists():
+            if dest.name == ".git":
+                # Never replace the existing repo metadata.
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+                continue
+            if dest.name in _GIT_ONLY_ENTRIES:
+                if dest.is_dir():
+                    shutil.rmtree(dest)
+                else:
+                    dest.unlink()
+            else:
+                raise RuntimeError(
+                    f"Refusing to overwrite unexpected path during inplace move: {dest}"
+                )
+        shutil.move(str(item), str(dest))
+
+    generated.rmdir()
+
+
 def prompt_yn(label: str, default: str = "y") -> str:
     print(f"  {COLORS.bold}{label}{COLORS.reset}")
     print(
@@ -428,6 +500,30 @@ def _collect_answers_impl() -> dict[str, str] | None:
         prompt_text("Project slug (Python package)", default_slug) or default_slug
     )
 
+    print_section("Output location")
+    if os.environ.get("DSG_INPLACE") == "1":
+        inplace = "y"
+        print(
+            f"  {COLORS.dim}↳ DSG_INPLACE=1 / --inplace — "
+            f"will generate into the current directory{COLORS.reset}"
+        )
+    else:
+        inplace = prompt_yn(
+            "Generate into the current directory (existing git repo)?",
+            "n",
+        )
+    if inplace == "y":
+        try:
+            assert_inplace_target_ok(Path.cwd())
+        except ValueError as error:
+            print()
+            print(f"  {COLORS.yellow}{error}{COLORS.reset}")
+            print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
+            return None
+        print(
+            f"  {COLORS.green}↳ Current directory is git-only (or empty) — OK for inplace.{COLORS.reset}"
+        )
+
     print_section("Author")
     first_name = prompt_text("First name", "author")
     last_name = prompt_text("Last name", "author lastname")
@@ -459,6 +555,11 @@ def _collect_answers_impl() -> dict[str, str] | None:
     )
 
     use_jwt = yn(selected_features, "use_jwt")
+    use_otp_login = yn(selected_features, "use_otp_login")
+    use_google_login = yn(selected_features, "use_google_login")
+    use_microsoft_login = yn(selected_features, "use_microsoft_login")
+    use_apple_login = yn(selected_features, "use_apple_login")
+    use_i18n = yn(selected_features, "use_i18n")
 
     print_section("Login identifier")
     user_login_field = prompt_radio(
@@ -594,7 +695,25 @@ def _collect_answers_impl() -> dict[str, str] | None:
     pk_type = "UUID" if use_uuid_pk == "y" else "BigAutoField"
     print(f"  {c.bold}Primary Key{c.reset} {pk_type}")
     auth_mode = "JWT" if use_jwt == "y" else "session"
-    print(f"  {c.bold}Auth{c.reset}        {auth_mode} · login={user_login_field}")
+    otp_label = " · OTP phone" if use_otp_login == "y" else ""
+    social_bits = [
+        name
+        for flag, name in (
+            (use_google_login, "Google"),
+            (use_microsoft_login, "Microsoft"),
+            (use_apple_login, "Apple"),
+        )
+        if flag == "y"
+    ]
+    social_label = f" · social={'+'.join(social_bits)}" if social_bits else ""
+    print(
+        f"  {c.bold}Auth{c.reset}        {auth_mode} · login={user_login_field}"
+        f"{otp_label}{social_label}"
+    )
+    print(
+        f"  {c.bold}Output{c.reset}      "
+        f"{'current directory (inplace)' if inplace == 'y' else f'./{project_name}/'}"
+    )
     if use_ci == "y":
         provider_label = "GitHub Actions" if ci_provider == "github" else "GitLab CI"
         print(f"  {c.bold}CI{c.reset}          {provider_label}")
@@ -610,6 +729,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
         return None
 
     return {
+        "_inplace": inplace,
         "project_name": project_name,
         "project_slug": project_slug,
         "first_name": first_name,
@@ -620,6 +740,11 @@ def _collect_answers_impl() -> dict[str, str] | None:
         "postgres_version": postgres_version,
         "use_jwt": use_jwt,
         "user_login_field": user_login_field,
+        "use_otp_login": use_otp_login,
+        "use_google_login": use_google_login,
+        "use_microsoft_login": use_microsoft_login,
+        "use_apple_login": use_apple_login,
+        "use_i18n": use_i18n,
         "use_uuid_pk": use_uuid_pk,
         "use_scoped_apis": use_scoped_apis,
         "use_file_manager": use_file_manager,
@@ -689,7 +814,12 @@ def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) ->
 
     from cookiecutter.main import cookiecutter
 
+    inplace = answers.pop("_inplace", "n") == "y"
     answers = validate_choice_answers(answers)
+    target = Path(output_dir).resolve()
+
+    if inplace:
+        assert_inplace_target_ok(target)
 
     c = COLORS
     print()
@@ -700,12 +830,22 @@ def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) ->
         repo_dir,
         no_input=True,
         extra_context=answers,
-        output_dir=output_dir,
+        output_dir=str(target),
         accept_hooks=True,
         overwrite_if_exists=False,
     )
 
     project_name = answers["project_name"]
+    if inplace:
+        flatten_generated_project(target, project_name)
+        print()
+        print(
+            f"{c.green}{c.bold}  ✓ Done!{c.reset}  "
+            f"{c.dim}files are in {target} — see README.md{c.reset}"
+        )
+        print()
+        return
+
     print()
     print(
         f"{c.green}{c.bold}  ✓ Done!{c.reset}  "
@@ -721,12 +861,22 @@ def run_cli(repo_dir: str) -> int:
         return 0
 
     output_dir = os.environ.get("PWD") or "."
-    generate_project(repo_dir, output_dir, answers)
+    try:
+        generate_project(repo_dir, output_dir, answers)
+    except ValueError as error:
+        print(f"  {COLORS.yellow}{error}{COLORS.reset}", file=sys.stderr)
+        return 1
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: interactive_prompts.py <template-directory>", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print(
+            "Usage: interactive_prompts.py <template-directory> [--inplace]",
+            file=sys.stderr,
+        )
         sys.exit(2)
-    sys.exit(run_cli(sys.argv[1]))
+    repo = sys.argv[1]
+    if "--inplace" in sys.argv[2:]:
+        os.environ["DSG_INPLACE"] = "1"
+    sys.exit(run_cli(repo))

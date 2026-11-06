@@ -30,6 +30,16 @@ class BaseUser(BaseModel, AbstractBaseUser, PermissionsMixin):
         help_text="Primary login identifier for the account.",
     )
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone = models.CharField(
+        max_length=15,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name=_("phone"),
+        help_text="Mobile in E.164 digits without '+', e.g. 989134543456.",
+    )
+{%- endif %}
     is_active = models.BooleanField(
         default=True,
         verbose_name=_("is active"),

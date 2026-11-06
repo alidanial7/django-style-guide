@@ -5,6 +5,18 @@
 {%- else %}
 > This project was generated with **session** authentication (cookie-based).
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+>
+> **Phone OTP login** is also enabled (`otp/request` · `otp/verify`, SMS provider stub, `OTP_TEST`).
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+>
+> **Social login** is enabled for
+{%- if cookiecutter.use_google_login == "y" %} Google{% endif %}
+{%- if cookiecutter.use_microsoft_login == "y" %}{% if cookiecutter.use_google_login == "y" %}/{% endif %} Microsoft{% endif %}
+{%- if cookiecutter.use_apple_login == "y" %}{% if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" %}/{% endif %} Apple{% endif %}
+ (`id_token` → same JWT/session).
+{%- endif %}
 >
 > The `users` app always ships register, profile, and password flows. Auth mechanism is chosen at cookiecutter generation time — do not mix both stacks casually.
 
@@ -17,6 +29,9 @@ flowchart TB
     subgraph Public["Public (no ApiAuthMixin)"]
         REG[Register]
         LOGIN[Login]
+{%- if cookiecutter.use_otp_login == "y" %}
+        OTP[OTP request/verify]
+{%- endif %}
         RESET[Password reset]
     end
     subgraph Protected["Protected (ApiAuthMixin)"]
@@ -39,6 +54,9 @@ flowchart TB
 | Concern | Location |
 |---------|----------|
 | Login / logout / JWT or session views | `users/apis/auth/` |
+{%- if cookiecutter.use_otp_login == "y" %}
+| Phone OTP + SMS providers | `auth_otp_apis.py` · `otp_services` · `providers/sms/` |
+{%- endif %}
 | Password change / reset | `auth_password_apis.py` + `user_services` |
 | Register | `users/apis/users/register/` |
 | Profile | `users/apis/users/profile/` |
@@ -184,6 +202,94 @@ Unsafe methods with session cookies need a valid CSRF token (`X-CSRFToken` or fo
 
 {%- endif %}
 
+{%- if cookiecutter.use_otp_login == "y" %}
+---
+
+## 📱 Phone OTP login
+
+Optional SMS OTP alongside password auth. Phone numbers are **normalized and stored** as digits with country code and **no** `+` (example: `989134543456`).
+
+### Flow
+
+1. `POST /api/v1/auth/otp/request/` with `{ "phone": "0913…" }` → challenge cached; SMS via provider (skipped when `OTP_TEST=true`)
+2. `POST /api/v1/auth/otp/verify/` with `{ "phone", "code" }` → get-or-create user by `phone`, then
+{%- if cookiecutter.use_jwt == "y" %}
+   issue JWT access/refresh
+{%- else %}
+   establish a session (`login`)
+{%- endif %}
+
+### Provider pattern (Strategy + factory)
+
+| Piece | Role |
+|-------|------|
+| `users/providers/sms/base.py` | `SmsProvider` ABC |
+| `users/providers/sms/stub.py` | Empty `send_otp` — **fill with your gateway** |
+| `users/providers/sms/__init__.py` | `get_sms_provider()` + registry (`SMS_PROVIDER` env) |
+| `users/services/otp_services.py` | `request_otp` / `verify_otp` |
+| `users/validators/phone.py` | `normalize_phone` / `validate_phone` |
+
+To add Kavenegar/Twilio/…: implement `SmsProvider`, register in `_SMS_PROVIDERS`, set `SMS_PROVIDER=…`.
+
+### `OTP_TEST`
+
+| Env | Effect |
+|-----|--------|
+| `OTP_TEST=true` | Code is always `12345`; SMS is not sent (local / CI) |
+| `OTP_TEST=false` | Random code; `StubSmsProvider.send_otp` must be wired for real delivery |
+
+### Endpoint map (OTP)
+
+| Endpoint | Auth | Notes |
+|----------|------|-------|
+| `POST /api/v1/auth/otp/request/` | public | throttle `auth` |
+| `POST /api/v1/auth/otp/verify/` | public | throttle `auth`; creates user on first success |
+
+{%- endif %}
+
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+---
+
+## 🔐 Social login (Google / Microsoft / Apple)
+
+Frontend / mobile obtains an OIDC **id_token** from the provider SDK. This API verifies the token, links or creates a local user (`SocialAccount`), then continues with the project's normal auth mode
+{%- if cookiecutter.use_jwt == "y" %}
+ (**JWT** access + refresh)
+{%- else %}
+ (**session** cookie)
+{%- endif %}
+.
+
+### Endpoints
+
+| Provider | Path | Env |
+|----------|------|-----|
+{%- if cookiecutter.use_google_login == "y" %}
+| Google | `POST /api/v1/auth/social/google/` | `GOOGLE_OAUTH_CLIENT_ID` |
+{%- endif %}
+{%- if cookiecutter.use_microsoft_login == "y" %}
+| Microsoft | `POST /api/v1/auth/social/microsoft/` | `MICROSOFT_OAUTH_CLIENT_ID`, `MICROSOFT_OAUTH_TENANT` |
+{%- endif %}
+{%- if cookiecutter.use_apple_login == "y" %}
+| Apple | `POST /api/v1/auth/social/apple/` | `APPLE_OAUTH_CLIENT_ID` |
+{%- endif %}
+
+Body: `{ "id_token": "<provider id_token>" }`.
+
+### Provider pattern
+
+| Piece | Role |
+|-------|------|
+| `users/providers/social/base.py` | `SocialProvider` + `SocialIdentity` |
+| `users/providers/social/<provider>.py` | JWKS verify for that issuer |
+| `users/providers/social/__init__.py` | `get_social_provider()` factory |
+| `users/services/social_auth_services.py` | `social_login` → user + `SocialAccount` |
+| `users/models/social_account.py` | `(provider, subject)` unique link |
+
+Do not add a second token format after social login — reuse JWT/session helpers already used by password login.
+
+{%- endif %}
+
 ---
 
 ## 🔒 Password change & reset
@@ -227,6 +333,9 @@ Throttles: scope `password_reset` (see [Throttling](throttling.md)).
 {%- else %}
 | User model | `users.BaseUser` — email as `USERNAME_FIELD` |
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+| Phone | Optional unique `phone` (`9891…` digits); set on OTP verify |
+{%- endif %}
 | Profile | `bio`, `avatar`; created by [signal](../domain/signals.md) on user create |
 | Default avatar | Static `users/default_avatar.png` via selector |
 | Update | `PATCH /api/v1/users/profile/` — multipart for avatar |
@@ -243,7 +352,7 @@ These are intentionally **out of scope** for the template:
 |---------|----------|
 | Email verification | Add before issuing tokens / activating accounts if your product needs it |
 | Social login | Integrate a provider package in the product layer |
-| 2FA / MFA | Add after basic auth is stable |
+| TOTP / authenticator MFA | Separate from phone OTP login — add after basic auth is stable |
 
 Do not pretend they exist in clients or docs for a fresh project.
 
@@ -262,6 +371,10 @@ Do not pretend they exist in clients or docs for a fresh project.
 2. Ensure CSRF token on `POST`/`PATCH`/`PUT`/`DELETE`
 3. Logout via authenticated session logout endpoint
 4. Same-site / CORS settings must allow credentialed requests from your frontend origin
+{%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+6. OTP: `otp/request` then `otp/verify`; with `OTP_TEST=true` use code `12345`
+7. Send phones in any common form; server stores `9891…` digits
 {%- endif %}
 
 ---

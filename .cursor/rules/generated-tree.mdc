@@ -8,6 +8,7 @@ alwaysApply: false
 
 - Jinja must stay valid for all option combos; prefer `{%- if cookiecutter.… %}` over dead stubs.
 - Agent UX: `AGENTS.md` = router; `.cursor/rules/*.mdc` = actionable; `docs/style-guide/` = deep.
-- Feature-gated files removed in `post_gen`: Celery/WS/testing/code-quality rules + matching ops docs.
+- Feature-gated rules/docs removed in `post_gen` when off: OTP, social, i18n, Celery, WS, testing, code-quality, file-manager, Unfold, portal-permissions, Sentry, pgAdmin (+ matching ops docs / commands / locale).
 - Dual auth files coexist until `post_gen` prunes JWT **or** session — do not assume both ship.
 - Mirror conventions in `users/` when adding scaffold examples.
+- Changing a generated convention → update the matching generated `.mdc` **file contents** in the **same** change (see `template-core`).

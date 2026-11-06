@@ -39,7 +39,8 @@ assert_absent() {
 assert_grep() {
   local pattern="$1"
   local path="$2"
-  if rg -F -q "$pattern" "$path"; then
+  # `--` so patterns like `--fake` are not parsed as ripgrep flags.
+  if rg -F -q -- "$pattern" "$path"; then
     echo "  OK  '$pattern' in $path"
     pass=$((pass + 1))
   else
@@ -51,7 +52,7 @@ assert_grep() {
 assert_not_grep() {
   local pattern="$1"
   local path="$2"
-  if rg -F -q "$pattern" "$path"; then
+  if rg -F -q -- "$pattern" "$path"; then
     echo "  FAIL '$pattern' should not appear in $path"
     fail=$((fail + 1))
   else
@@ -102,6 +103,24 @@ assert_grep 'paginated_envelope_serializer' "$OUT/JwtDefaults/jwtdefaults/common
 assert_grep 'ENUM_NAME_OVERRIDES' "$OUT/JwtDefaults/config/settings/swagger.py"
 assert_file "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/seed_demo_data.py"
 assert_file "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/initial_system.py"
+assert_not_grep '--fake' "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/seed_demo_data.py"
+assert_grep 'seed_demo_data' "$OUT/JwtDefaults/docker/dev_entrypoint.sh"
+assert_grep 'admin@example.com' "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/seed_demo_data.py"
+assert_grep '_seed_local_admin' "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/seed_demo_data.py"
+assert_file "$OUT/JwtDefaults/.cursor/rules/commands.mdc"
+assert_absent "$OUT/JwtDefaults/.cursor/rules/otp-auth.mdc"
+assert_absent "$OUT/JwtDefaults/.cursor/rules/social-auth.mdc"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/users/providers"
+assert_absent "$OUT/JwtDefaults/config/settings/otp.py"
+assert_absent "$OUT/JwtDefaults/config/settings/social_auth.py"
+assert_absent "$OUT/JwtDefaults/.cursor/rules/i18n.mdc"
+assert_absent "$OUT/JwtDefaults/docs/style-guide/ops/translations.md"
+assert_absent "$OUT/JwtDefaults/scripts/update_translations.sh"
+assert_absent "$OUT/JwtDefaults/locale"
+assert_absent "$OUT/JwtDefaults/jwtdefaults/commands/management/commands/update_translations.py"
+assert_grep 'USE_I18N = False' "$OUT/JwtDefaults/config/settings/i18n.py"
+assert_not_grep 'LocaleMiddleware' "$OUT/JwtDefaults/config/settings/middleware.py"
+assert_not_grep 'django.conf.urls.i18n' "$OUT/JwtDefaults/config/urls.py"
 
 gen IntPk \
   use_uuid_pk=n use_jwt=y use_celery=n use_testing=y use_code_style=y use_ci=n
@@ -136,6 +155,62 @@ gen UsernameLogin \
   use_jwt=y user_login_field=username use_celery=n use_testing=y use_code_style=y use_ci=n
 assert_grep 'USERNAME_FIELD = "username"' "$OUT/UsernameLogin/usernamelogin/users/models/base_user.py"
 assert_grep 'username = serializers.CharField' "$OUT/UsernameLogin/usernamelogin/users/apis/users/register/users_register_serializers.py"
+assert_grep 'LOCAL_ADMIN_USERNAME = "admin"' "$OUT/UsernameLogin/usernamelogin/commands/management/commands/seed_demo_data.py"
+assert_grep 'create_superuser' "$OUT/UsernameLogin/usernamelogin/commands/management/commands/seed_demo_data.py"
+
+gen OtpLogin \
+  use_jwt=y use_otp_login=y use_celery=n use_testing=y use_code_style=y use_ci=n
+assert_file "$OUT/OtpLogin/.cursor/rules/otp-auth.mdc"
+assert_file "$OUT/OtpLogin/otplogin/users/providers/sms/stub.py"
+assert_file "$OUT/OtpLogin/otplogin/users/services/otp_services.py"
+assert_file "$OUT/OtpLogin/otplogin/users/apis/auth/auth_otp_apis.py"
+assert_file "$OUT/OtpLogin/config/settings/otp.py"
+assert_grep 'otp/request/' "$OUT/OtpLogin/otplogin/users/urls/auth_url.py"
+assert_grep 'phone = models.CharField' "$OUT/OtpLogin/otplogin/users/models/base_user.py"
+assert_grep '989134543456' "$OUT/OtpLogin/otplogin/users/validators/phone.py"
+assert_grep 'OTP_TEST' "$OUT/OtpLogin/.env.example"
+assert_grep 'OTP_TEST_CODE = "12345"' "$OUT/OtpLogin/config/settings/otp.py"
+assert_grep 'get_sms_provider' "$OUT/OtpLogin/otplogin/users/providers/sms/__init__.py"
+assert_grep 'seed_demo_data' "$OUT/OtpLogin/docker/dev_entrypoint.sh"
+assert_absent "$OUT/OtpLogin/otplogin/users/providers/social"
+
+gen WithI18n \
+  use_jwt=y use_i18n=y use_celery=n use_testing=y use_code_style=y use_ci=n
+assert_file "$OUT/WithI18n/.cursor/rules/i18n.mdc"
+assert_file "$OUT/WithI18n/docs/style-guide/ops/translations.md"
+assert_file "$OUT/WithI18n/scripts/update_translations.sh"
+assert_file "$OUT/WithI18n/locale/.gitkeep"
+assert_file "$OUT/WithI18n/withi18n/commands/management/commands/update_translations.py"
+assert_grep 'USE_I18N = True' "$OUT/WithI18n/config/settings/i18n.py"
+assert_grep 'LANGUAGES' "$OUT/WithI18n/config/settings/i18n.py"
+assert_grep 'LocaleMiddleware' "$OUT/WithI18n/config/settings/middleware.py"
+assert_grep 'django.conf.urls.i18n' "$OUT/WithI18n/config/urls.py"
+assert_grep 'LANGUAGE_CODE=en' "$OUT/WithI18n/.env.example"
+assert_grep 'update_translations' "$OUT/WithI18n/Makefile"
+assert_grep 'update_translations' "$OUT/WithI18n/AGENTS.md"
+assert_grep 'Keep rules current' "$OUT/WithI18n/AGENTS.md"
+assert_grep 'update_translations' "$OUT/WithI18n/.cursor/rules/commands.mdc"
+assert_grep 'LANGUAGE_CODE' "$OUT/WithI18n/.cursor/rules/infra.mdc"
+
+gen SocialLogin \
+  use_jwt=y use_google_login=y use_microsoft_login=y use_apple_login=y \
+  use_otp_login=n use_celery=n use_testing=y use_code_style=y use_ci=n
+assert_file "$OUT/SocialLogin/.cursor/rules/social-auth.mdc"
+assert_file "$OUT/SocialLogin/sociallogin/users/providers/social/google.py"
+assert_file "$OUT/SocialLogin/sociallogin/users/providers/social/microsoft.py"
+assert_file "$OUT/SocialLogin/sociallogin/users/providers/social/apple.py"
+assert_file "$OUT/SocialLogin/sociallogin/users/models/social_account.py"
+assert_file "$OUT/SocialLogin/sociallogin/users/services/social_auth_services.py"
+assert_file "$OUT/SocialLogin/config/settings/social_auth.py"
+assert_grep 'social/google/' "$OUT/SocialLogin/sociallogin/users/urls/auth_url.py"
+assert_grep 'GOOGLE_OAUTH_CLIENT_ID' "$OUT/SocialLogin/.env.example"
+assert_grep 'MICROSOFT_OAUTH_CLIENT_ID' "$OUT/SocialLogin/.env.example"
+assert_grep 'APPLE_OAUTH_CLIENT_ID' "$OUT/SocialLogin/.env.example"
+assert_grep 'PyJWT' "$OUT/SocialLogin/requirements/base.txt"
+assert_grep 'Keep rules current for the next agent' "$OUT/SocialLogin/.cursor/rules/core.mdc"
+assert_grep 'password/change' "$OUT/SocialLogin/.cursor/rules/auth.mdc"
+assert_grep 'start_domain_app' "$OUT/SocialLogin/.cursor/rules/commands.mdc"
+assert_absent "$OUT/SocialLogin/sociallogin/users/providers/sms"
 
 gen AsgiWs \
   use_jwt=y use_redis=y use_asgi=y use_websockets=y \

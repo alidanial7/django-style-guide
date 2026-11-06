@@ -1,6 +1,6 @@
 # 🌍 Translations (i18n)
 
-> User-facing strings use Django gettext. Prefer **lowercase**, **space-separated** English msgids (strong recommendation). Locale files live under `locale/` and are refreshed with `scripts/update_translations.sh`.
+> User-facing strings use Django gettext. Prefer **lowercase**, **space-separated** English msgids (strong recommendation). Locale files live under `locale/` and are refreshed with `python manage.py update_translations` (or `./scripts/update_translations.sh`).
 
 ---
 
@@ -11,11 +11,11 @@
 | Translatable API / validation messages | `_()` / `gettext_lazy` on messages |
 | Stable, deduplicated msgids | Lowercase English words separated by spaces |
 | Parameterized text | `params=` on `ValidationError` — not pre-interpolated msgids |
-| Operator workflow | One script for `makemessages` (+ optional compile) |
+| Operator workflow | One management command for `makemessages` (+ optional compile) |
 
 ```mermaid
 flowchart LR
-    CODE["_('password must include number')"] --> MAKE[makemessages / update_translations.sh]
+    CODE["_('password must include number')"] --> MAKE[update_translations]
     MAKE --> PO["locale/*/LC_MESSAGES/django.po"]
     PO --> COMP[compilemessages]
     COMP --> MO["django.mo"]
@@ -26,18 +26,24 @@ flowchart LR
 
 ## ⚙️ Settings
 
-From `config/settings/i18n.py`:
+From `config/settings/i18n.py` (generated with `use_i18n=y`):
 
 ```python
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = env("LANGUAGE_CODE", default="en")
+LANGUAGES = [("en", "English"), ("fa", "Persian")]
 USE_I18N = True
-USE_L10N = True
-USE_TZ = True
 LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
 ```
 
-Default language is US English. Add languages to Django’s `LANGUAGES` (and middleware / Accept-Language handling) when you productize multi-language responses.
+Also wired:
+
+| Piece | Where |
+|-------|--------|
+| `LocaleMiddleware` | After `SessionMiddleware` in `config/settings/middleware.py` |
+| Language switch | `POST /i18n/setlang/` via `django.conf.urls.i18n` |
+| Default language | `.env` → `LANGUAGE_CODE` (fallback `en`) |
+
+Clients can send `Accept-Language`; middleware activates the matching catalog.
 
 ---
 
@@ -115,24 +121,29 @@ Clients should key off **`messages.*.code`**, not English text — translations 
 
 ## 🧰 Updating catalogs
 
+Preferred (management command — source of truth):
+
+```bash
+python manage.py update_translations
+python manage.py update_translations --locale fa
+python manage.py update_translations --compile
+```
+
+Thin shell wrapper (maps legacy `--compile-messages` → `--compile`):
+
 ```bash
 ./scripts/update_translations.sh
 ./scripts/update_translations.sh --compile-messages
+make translations
+make translations ARGS='--compile'
 ```
 
-| Step | What the script does |
-|------|----------------------|
-| Bootstrap | If no locale exists, creates one from `LANGUAGE_CODE` via `makemessages` |
-| Update | Runs `makemessages` ignoring `venv`, `node_modules`, `staticfiles`, `media`, … |
-| Cleanup | Uses gettext tools (`msgattrib`, `msgcat`) — install gettext (`brew install gettext` on macOS) |
-| Compile | With `--compile-messages`, runs `compilemessages` for `.mo` files |
-
-Manual equivalent (simplified):
-
-```bash
-python manage.py makemessages -l en --no-location --no-wrap
-python manage.py compilemessages
-```
+| Step | What happens |
+|------|----------------|
+| Locales | Defaults to every code in `settings.LANGUAGES`; override with `--locale` |
+| Update | `makemessages` ignoring `venv`, `node_modules`, `staticfiles`, `media`, … |
+| Cleanup | Uses gettext tools (`msgattrib`, `msgcat`) when installed — `brew install gettext` on macOS |
+| Compile | With `--compile`, runs `compilemessages` for `.mo` files |
 
 Commit `.po` files with string changes. Prefer committing compiled `.mo` only if your deploy pipeline does not run `compilemessages` (many teams compile in Docker build).
 
@@ -154,15 +165,13 @@ Also spot-check new validators/services for missing `_()` on user-facing strings
 
 ---
 
-## ➕ Adding a new language (sketch)
+## ➕ Adding a new language
 
-1. `python manage.py makemessages -l fa` (or your locale)
-2. Translate `locale/fa/LC_MESSAGES/django.po`
-3. `compilemessages`
-4. Configure `LANGUAGES` + locale middleware / DRF language negotiation as your product requires
-5. Document how API clients send `Accept-Language`
-
-The template ships oriented around `en-us`; multi-language activation is a product decision.
+1. Add `("xx", "Name")` to `LANGUAGES` in `config/settings/i18n.py`
+2. `python manage.py update_translations --locale xx`
+3. Translate `locale/xx/LC_MESSAGES/django.po`
+4. `python manage.py update_translations --compile` (or deploy-time `compilemessages`)
+5. Document how API clients send `Accept-Language` / use `/i18n/setlang/`
 
 ---
 
@@ -177,6 +186,7 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 | Translating error **codes** | Keep codes stable English snake_case |
 | Editing `.mo` by hand | Edit `.po`, then compile |
 | Scattering raw English in APIs without `_()` | Wrap user-visible strings |
+| A second i18n library beside Django gettext | Stay on Django |
 
 ---
 
@@ -185,7 +195,7 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 1. Wrap with `_()` / `gettext_lazy`
 2. Prefer lowercase, space-separated msgid (strong recommendation)
 3. Use `params=` for dynamic values
-4. Run `./scripts/update_translations.sh`
+4. Run `python manage.py update_translations`
 5. Ensure API also sets a machine `code=` where applicable
 
 ---
@@ -197,4 +207,4 @@ The template ships oriented around `en-us`; multi-language activation is a produ
 | [Validation](../domain/validation.md) | Where most API messages live |
 | [Code quality](code-quality.md) | Translation lint hook |
 | [Settings](settings.md) | `i18n.py` |
-| [Commands](commands.md) | Script entrypoints |
+| [Commands](commands.md) | Script / make entrypoints |

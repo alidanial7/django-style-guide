@@ -13,5 +13,6 @@ alwaysApply: false
 {%- if cookiecutter.use_celery == "y" %}
 - Celery: eager/memory broker in test settings — assert task → service behavior, not worker process.
 {%- endif %}
+- Changing test conventions → update **this rule file** in the **same** change.
 
 Deep: `docs/style-guide/ops/testing.md`

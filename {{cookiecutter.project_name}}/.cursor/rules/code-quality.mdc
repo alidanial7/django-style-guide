@@ -7,8 +7,9 @@ alwaysApply: false
 # Code quality
 
 - Ruff + pre-commit enabled. After install: `pre-commit install`.
-- Prefer lowercase, space-separated gettext msgids for user-facing strings.
+- Prefer lowercase, space-separated gettext msgids for user-facing strings{% if cookiecutter.use_i18n == "y" %} — see `i18n` rule{% endif %}.
 - API classes: short docstring + `@extend_schema`. If Google-style docstrings: types in `(Type):` / `Raises:` must match.
 - Do not disable hooks to land broken formatting — fix or ask the user.
+- Changing lint / msgid conventions → update **this rule file**{% if cookiecutter.use_i18n == "y" %} (+ `i18n` when translation workflow changes){% endif %} in the **same** change.
 
-Deep: `docs/style-guide/ops/code-quality.md` · `docs/style-guide/ops/translations.md`
+Deep: `docs/style-guide/ops/code-quality.md`{% if cookiecutter.use_i18n == "y" %} · `docs/style-guide/ops/translations.md`{% endif %}

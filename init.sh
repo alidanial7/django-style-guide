@@ -3,10 +3,20 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+INPLACE=0
+FORWARD=()
 for arg in "$@"; do
     case "$arg" in
+        --inplace)
+            INPLACE=1
+            ;;
         --no-input|-f|--checkout|--config-file*)
+            # Plain cookiecutter path (no inplace flatten). Use the interactive
+            # UI / DSG_INPLACE for generate-into-current-directory.
             exec cookiecutter "$ROOT_DIR" "$@"
+            ;;
+        *)
+            FORWARD+=("$arg")
             ;;
     esac
 done
@@ -18,7 +28,11 @@ if ! command -v cookiecutter >/dev/null 2>&1; then
 fi
 
 if [[ ! -t 0 ]]; then
-    exec cookiecutter "$ROOT_DIR" "$@"
+    exec cookiecutter "$ROOT_DIR" "${FORWARD[@]}"
 fi
 
-exec python3 "$ROOT_DIR/hooks/interactive_prompts.py" "$ROOT_DIR"
+if [[ "$INPLACE" -eq 1 ]]; then
+    export DSG_INPLACE=1
+fi
+
+exec python3 "$ROOT_DIR/hooks/interactive_prompts.py" "$ROOT_DIR" ${INPLACE:+--inplace}

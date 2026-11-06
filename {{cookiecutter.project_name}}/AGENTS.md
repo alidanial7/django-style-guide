@@ -5,9 +5,9 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 ## Source of truth
 
 1. Patterns in `{{cookiecutter.project_slug}}/users/` — reference domain app.
-2. `.cursor/rules/` — actionable rules (prefer these).
+2. `.cursor/rules/` — actionable rules (prefer these). **Chat history does not carry forward** — the next agent only sees these files.
 3. `docs/style-guide/` — deep detail / convention changes only.
-4. Convention change → update the matching style-guide page in the **same** change.
+4. **Keep rules current:** whenever a convention, feature, auth/path/env, seed, or command changes, edit the matching `.cursor/rules/*.mdc` **file contents** (and this `AGENTS.md` index row / style-guide page when needed) in the **same** change. Stale rule text misleads the next agent.
 
 ## Hard don'ts
 
@@ -26,7 +26,7 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 - Writes via `model_create` / `model_update` / `model_save` / `model_delete`.
 - Model/admin stay in sync (`admin.py` when models change).
 - OpenAPI: Input/Output split; `envelope_serializer` / `paginated_envelope_serializer`; `request=None` for bodiless POST; document DELETE responses; register enums in `ENUM_NAME_OVERRIDES`.
-- Schema/data needing seeds → update `seed_demo_data` / `initial_system` (ask first).
+- Schema/data / default roles needing seeds → extend `seed_demo_data` (`_seed_*` methods) or `initial_system` in the same change (ask first). Local admin comes from `seed_demo_data` only.
 {%- if cookiecutter.use_uuid_pk == "y" %}
 - Domain models inherit `BaseModel` (UUID PK); URL ids `<uuid:entity_id>`.
 {%- else %}
@@ -36,6 +36,15 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 - Auth login field: **username** (`USERNAME_FIELD`); email remains unique for reset/notify.
 {%- else %}
 - Auth login field: **email** (`USERNAME_FIELD`).
+{%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+- Phone OTP: store as `98XXXXXXXXXX`; SMS via `SmsProvider` / `get_sms_provider()`; `OTP_TEST=true` → code `12345`.
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+- Social login: verify provider `id_token` → link `SocialAccount` → continue with project auth mode (JWT or session).
+{%- endif %}
+{%- if cookiecutter.use_i18n == "y" %}
+- i18n: Django gettext only — `_()` / `gettext_lazy`; refresh with `python manage.py update_translations` (or `make translations`).
 {%- endif %}
 {%- if cookiecutter.use_file_manager == "y" %}
 - Uploads: `ManagedFile` only — no ad-hoc `FileField` / `ImageField` on domain models.
@@ -51,6 +60,15 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 | services / selectors / types | `services-selectors` | [Services](docs/style-guide/domain/services.md) · [Selectors](docs/style-guide/domain/selectors.md) · [Types](docs/style-guide/domain/types.md) |
 | envelope / permissions / OpenAPI | `http-contract` | [Envelope](docs/style-guide/http/api-envelope.md) · [Permissions](docs/style-guide/http/permissions.md) · [Swagger](docs/style-guide/http/swagger.md) |
 | auth / users auth APIs | `auth` | [Authentication](docs/style-guide/http/authentication.md) |
+{%- if cookiecutter.use_otp_login == "y" %}
+| phone OTP / SMS providers | `otp-auth` | [Authentication](docs/style-guide/http/authentication.md) |
+{%- endif %}
+{%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
+| Google / Microsoft / Apple login | `social-auth` | [Authentication](docs/style-guide/http/authentication.md) |
+{%- endif %}
+{%- if cookiecutter.use_i18n == "y" %}
+| gettext / locales / `update_translations` | `i18n` | [Translations](docs/style-guide/ops/translations.md) |
+{%- endif %}
 {%- if cookiecutter.use_file_manager == "y" %}
 | file uploads / `ManagedFile` | `file-manager` | [File manager](docs/style-guide/domain/file-manager.md) |
 {%- endif %}
@@ -70,6 +88,7 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 | Channels / WS | `websockets` | [WebSockets](docs/style-guide/ops/websockets.md) |
 {%- endif %}
 | Docker / compose / `.env` / entrypoints | `infra` | [Docker](docs/style-guide/ops/docker-and-production.md) |
+| management commands / seeds | `commands` | [Commands](docs/style-guide/ops/commands.md) |
 {%- if cookiecutter.use_code_style == "y" %}
 | lint / pre-commit | `code-quality` | [Code quality](docs/style-guide/ops/code-quality.md) |
 {%- endif %}
@@ -80,7 +99,6 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 | pgAdmin (dev) | `pgadmin` | [Docker](docs/style-guide/ops/docker-and-production.md) |
 {%- endif %}
 | New domain app scaffold | — | [Domain apps](docs/style-guide/overview/domain-apps.md) |
-| Commands / seeds | — | [Commands](docs/style-guide/ops/commands.md) |
 
 ## Infra changes
 

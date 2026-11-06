@@ -1,17 +1,25 @@
+{%- if cookiecutter.use_i18n == "y" %}
 import os
 
-from config.env import BASE_DIR
+from config.env import BASE_DIR, env
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = env("LANGUAGE_CODE", default="en")
 
-TIME_ZONE = "UTC"
+LANGUAGES = [
+    ("en", "English"),
+    ("fa", "Persian"),
+]
 
 USE_I18N = True
-
-USE_L10N = True
-
-USE_TZ = True
 
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, "locale"),
 ]
+{%- else %}
+LANGUAGE_CODE = "en-us"
+
+USE_I18N = False
+{%- endif %}
+
+TIME_ZONE = "UTC"
+USE_TZ = True

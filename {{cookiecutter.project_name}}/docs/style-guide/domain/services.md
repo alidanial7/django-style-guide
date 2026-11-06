@@ -217,7 +217,7 @@ def change_password(*, user: BaseUser, data: ChangePasswordData) -> None:
 |-------|---------|
 | Field-keyed dict errors | Bare string-only errors when a field is known |
 | Domain `UserErrorCode` / app codes | Random undocumented string codes |
-| Lowercase gettext messages (strong recommendation) | Hard-coded untranslated UI strings (see [Translations](../ops/translations.md)) |
+| Lowercase gettext messages (strong recommendation) | Hard-coded untranslated UI strings{% if cookiecutter.use_i18n == "y" %} (see [Translations](../ops/translations.md)){% endif %} |
 | Let unexpected bugs propagate / log | Swallow `IntegrityError` without mapping |
 
 Other real services in this repo:

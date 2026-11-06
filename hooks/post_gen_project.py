@@ -1,9 +1,16 @@
 import os
+import re
 import shutil
+import subprocess
 from pathlib import Path
 
 license_choice = "{{cookiecutter.license}}"
 jwt = "{{cookiecutter.use_jwt}}"
+use_otp_login = "{{cookiecutter.use_otp_login}}"
+use_google_login = "{{cookiecutter.use_google_login}}"
+use_microsoft_login = "{{cookiecutter.use_microsoft_login}}"
+use_apple_login = "{{cookiecutter.use_apple_login}}"
+use_i18n = "{{cookiecutter.use_i18n}}"
 sentry = "{{cookiecutter.use_sentry}}"
 vscode = "{{cookiecutter.use_vscode}}"
 code_style = "{{cookiecutter.use_code_style}}"
@@ -32,6 +39,29 @@ def delete_resource(resource):
         shutil.rmtree(resource)
 
 
+def collapse_extra_blank_lines() -> None:
+    """Jinja conditionals often leave 3+ newlines; keep at most one blank line."""
+    skip_parts = {".git", ".venv", "venv", "node_modules", "__pycache__", "migrations"}
+    for path in Path(".").rglob("*.py"):
+        if skip_parts.intersection(path.parts):
+            continue
+        original = path.read_text(encoding="utf-8")
+        updated = re.sub(r"\n{3,}", "\n\n", original)
+        if updated != original:
+            path.write_text(updated, encoding="utf-8")
+
+
+def maybe_run_ruff() -> None:
+    """If ruff is on PATH, autofix import/format so generated CI starts green."""
+    if code_style != "y":
+        return
+    ruff = shutil.which("ruff")
+    if not ruff:
+        return
+    subprocess.run([ruff, "check", "--fix", "."], check=False)
+    subprocess.run([ruff, "format", "."], check=False)
+
+
 print()
 print("Customizing generated project...")
 
@@ -45,6 +75,41 @@ if jwt == "n":
 else:
     delete_resource(f"{project_slug}/users/apis/auth/auth_session_apis.py")
     delete_resource(f"{project_slug}/users/apis/auth/tests/test_auth_session.py")
+if use_otp_login == "n":
+    delete_resource(f"{project_slug}/users/providers/sms")
+    delete_resource(f"{project_slug}/users/services/otp_services.py")
+    delete_resource(f"{project_slug}/users/validators/phone.py")
+    delete_resource(f"{project_slug}/users/validators/tests/test_phone_validators.py")
+    delete_resource(f"{project_slug}/users/apis/auth/auth_otp_apis.py")
+    delete_resource(f"{project_slug}/users/apis/auth/tests/test_auth_otp.py")
+    delete_resource("config/settings/otp.py")
+    delete_resource(".cursor/rules/otp-auth.mdc")
+_social_any = (
+    use_google_login == "y" or use_microsoft_login == "y" or use_apple_login == "y"
+)
+if not _social_any:
+    delete_resource(f"{project_slug}/users/providers/social")
+    delete_resource(f"{project_slug}/users/services/social_auth_services.py")
+    delete_resource(f"{project_slug}/users/models/social_account.py")
+    delete_resource(f"{project_slug}/users/apis/auth/auth_social_apis.py")
+    delete_resource(f"{project_slug}/users/apis/auth/tests/test_auth_social.py")
+    delete_resource("config/settings/social_auth.py")
+    delete_resource(".cursor/rules/social-auth.mdc")
+else:
+    if use_google_login != "y":
+        delete_resource(f"{project_slug}/users/providers/social/google.py")
+    if use_microsoft_login != "y":
+        delete_resource(f"{project_slug}/users/providers/social/microsoft.py")
+    if use_apple_login != "y":
+        delete_resource(f"{project_slug}/users/providers/social/apple.py")
+if use_otp_login != "y" and not _social_any:
+    delete_resource(f"{project_slug}/users/providers")
+if use_i18n != "y":
+    delete_resource("scripts/update_translations.sh")
+    delete_resource(f"{project_slug}/commands/management/commands/update_translations.py")
+    delete_resource("locale")
+    delete_resource("docs/style-guide/ops/translations.md")
+    delete_resource(".cursor/rules/i18n.mdc")
 if sentry == "n":
     delete_resource("config/settings/sentry.py")
     delete_resource(".cursor/rules/sentry.mdc")
@@ -132,6 +197,9 @@ elif ci_provider == "gitlab":
 else:
     delete_resource(".github")
     delete_resource(".gitlab-ci.yml")
+
+collapse_extra_blank_lines()
+maybe_run_ruff()
 
 print("Done.")
 print()

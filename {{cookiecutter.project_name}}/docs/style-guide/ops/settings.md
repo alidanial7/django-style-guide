@@ -48,7 +48,7 @@ Copy `.env.example` → `.env` for local values.
 | `drf.py` | REST framework, exception handler, throttle rates, default auth/permissions (no auto filter backends — see pagination docs) |
 | `swagger.py` | `SPECTACULAR_SETTINGS` |
 | `logging.py` | Logging dictConfig + log env vars — see [Logging](logging.md) |
-| `i18n.py` | `LANGUAGE_CODE`, `TIME_ZONE`, `LOCALE_PATHS` — see [Translations](translations.md) |
+| `i18n.py` | `LANGUAGE_CODE`, `TIME_ZONE`{% if cookiecutter.use_i18n == "y" %}, `LANGUAGES`, `LOCALE_PATHS` — see [Translations](translations.md){% endif %} |
 | `email.py` | Email backend / from address |
 | `security.py` | HTTPS / HSTS / secure cookies (esp. production) |
 | `cors.py` | CORS allowed origins |

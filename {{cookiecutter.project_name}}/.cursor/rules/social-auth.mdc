@@ -1,0 +1,20 @@
+---
+description: Google / Microsoft / Apple social login (id_token → JWT/session)
+globs: "**/users/apis/auth/auth_social*.py,**/users/services/social_auth_services.py,**/users/providers/social/**/*.py,**/users/models/social_account.py,**/config/settings/social_auth.py"
+alwaysApply: false
+---
+
+# Social auth
+
+- Client obtains an OIDC **id_token** (Google / Microsoft / Apple SDK). Backend does **not** run the browser redirect dance for APIs.
+- Routes (enabled providers only):
+  - `POST /api/v1/auth/social/google/`
+  - `POST /api/v1/auth/social/microsoft/`
+  - `POST /api/v1/auth/social/apple/`
+  Body: `{ "id_token": "..." }`.
+- After verify → get/create user + `SocialAccount` link → issue **JWT** or **session** (same mode as the rest of the project). Do not invent a parallel auth stack.
+- Providers: Strategy via `SocialProvider` + `get_social_provider()`; configure env client IDs in `.env` / `config/settings/social_auth.py`.
+- Require verified email on first link; Apple may omit email on later logins (must already have `SocialAccount`).
+- Changing providers / routes / env → update **this rule file** + `auth` rule (+ `.env.example` / settings) in the **same** change.
+
+Deep: `docs/style-guide/http/authentication.md`
