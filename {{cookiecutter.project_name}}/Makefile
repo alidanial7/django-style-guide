@@ -1,4 +1,4 @@
-.PHONY: help install up down migrate makemigrations runserver test lint format check shell{% if cookiecutter.use_i18n == "y" %} translations{% endif %}
+.PHONY: help install up up-detach down migrate makemigrations runserver test lint format check shell{% if cookiecutter.use_i18n == "y" %} translations{% endif %}
 
 PYTHON ?= python
 PIP ?= pip
@@ -10,7 +10,8 @@ ARGS ?=
 help:
 	@echo "Targets:"
 	@echo "  install         Install requirements_dev.txt"
-	@echo "  up              Start local Docker infra (start-dev-services.sh)"
+	@echo "  up              Start local Docker infra (follow logs; Ctrl+C → down)"
+	@echo "  up-detach       Start local Docker infra in background (--detach)"
 	@echo "  down            Stop local Docker infra"
 	@echo "  migrate         Apply migrations"
 	@echo "  makemigrations  Create migrations"
@@ -32,6 +33,9 @@ install:
 
 up:
 	./start-dev-services.sh
+
+up-detach:
+	./start-dev-services.sh --detach
 
 down:
 	docker compose -f docker-compose.dev.yml down

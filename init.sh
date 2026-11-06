@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 INPLACE=0
 INPLACE_FORCE=0
+INPLACE_FORCE_TEMPLATE=0
 FORWARD=()
 for arg in "$@"; do
     case "$arg" in
@@ -14,6 +15,11 @@ for arg in "$@"; do
         --inplace-force)
             INPLACE=1
             INPLACE_FORCE=1
+            ;;
+        --inplace-force-template)
+            INPLACE=1
+            INPLACE_FORCE=1
+            INPLACE_FORCE_TEMPLATE=1
             ;;
         --no-input|-f|--checkout|--config-file*)
             # Plain cookiecutter path (no inplace flatten). Use the interactive
@@ -37,7 +43,12 @@ if [[ ! -t 0 ]]; then
 fi
 
 EXTRA_ARGS=()
-if [[ "$INPLACE_FORCE" -eq 1 ]]; then
+if [[ "$INPLACE_FORCE_TEMPLATE" -eq 1 ]]; then
+    export DSG_INPLACE=1
+    export DSG_INPLACE_FORCE=1
+    export DSG_INPLACE_FORCE_TEMPLATE=1
+    EXTRA_ARGS+=(--inplace-force-template)
+elif [[ "$INPLACE_FORCE" -eq 1 ]]; then
     export DSG_INPLACE=1
     export DSG_INPLACE_FORCE=1
     EXTRA_ARGS+=(--inplace-force)

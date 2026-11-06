@@ -38,3 +38,6 @@ from config.settings.sentry import *  # noqa
 {%- if cookiecutter.use_unfold_admin == "y" %}
 from config.settings.unfold import *  # noqa
 {%- endif %}
+{%- if cookiecutter.use_scoped_apis == "y" %}
+from config.settings.api_scopes import *  # noqa
+{%- endif %}

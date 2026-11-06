@@ -20,7 +20,11 @@ from {{cookiecutter.project_slug}}.users.apis.users.register.users_register_seri
 )
 from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS
 {%- if cookiecutter.use_otp_login == "y" %}
-from {{cookiecutter.project_slug}}.users.services.otp_services import PENDING_REGISTER, request_otp
+from {{cookiecutter.project_slug}}.users.services.otp_services import (
+    KIND_REGISTER,
+    hash_register_password,
+    request_otp,
+)
 {%- endif %}
 from {{cookiecutter.project_slug}}.users.services.user_services import register
 
@@ -37,6 +41,7 @@ class UsersRegisterApi(APIView):
         request=UsersRegisterInputSerializer,
 {%- if cookiecutter.use_otp_login == "y" %}
         responses={
+            201: envelope_serializer("UsersRegisterEnvelope", UsersRegisterOutputSerializer),
             202: envelope_serializer(
                 "UsersRegisterPendingEnvelope", UsersRegisterPendingOutputSerializer
             ),
@@ -50,33 +55,42 @@ class UsersRegisterApi(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 {%- if cookiecutter.use_otp_login == "y" %}
-        if data.get("avatar") is not None:
-            raise DjangoValidationError(
-                {"avatar": _("set avatar after phone verification.")}
-            )
-        # Stage account in OTP challenge; commit on POST /auth/otp/verify/.
-        pending_data = {
+        phone = data.get("phone")
+        if phone:
+            if data.get("avatar") is not None:
+                raise DjangoValidationError(
+                    {"avatar": _("set avatar after phone verification.")}
+                )
+            pending_data = {
 {%- if cookiecutter.user_login_field == "username" %}
-            "username": data["username"],
+                "username": data["username"],
 {%- endif %}
-            "email": data["email"],
-            "password": data["password"],
-            "phone": data["phone"],
-        }
-        if "bio" in data:
-            pending_data["bio"] = data.get("bio")
-        otp_challenge = request_otp(
-            phone=data["phone"],
-            pending={"kind": PENDING_REGISTER, "data": pending_data},
-        )
-        return api_response(
-            data=UsersRegisterPendingOutputSerializer(
-                {"detail": "otp_required", "otp": otp_challenge}
-            ).data,
-            http_status=status.HTTP_202_ACCEPTED,
-        )
-{%- else %}
+                "email": data["email"],
+                "password_hash": hash_register_password(password=data["password"]),
+                "phone": phone,
+            }
+            if "bio" in data:
+                pending_data["bio"] = data.get("bio")
+            otp_challenge = request_otp(
+                phone=phone,
+                kind=KIND_REGISTER,
+                pending={"kind": KIND_REGISTER, "data": pending_data},
+            )
+            return api_response(
+                data=UsersRegisterPendingOutputSerializer(
+                    {"detail": "otp_required", "otp": otp_challenge}
+                ).data,
+                http_status=status.HTTP_202_ACCEPTED,
+            )
+{%- endif %}
         user = register(data=data)
+{%- if cookiecutter.use_scoped_apis == "y" %}
+        from {{cookiecutter.project_slug}}.users.services.scope_membership import (
+            ensure_scope_membership_for_request,
+        )
+
+        ensure_scope_membership_for_request(request=request, user=user)
+{%- endif %}
 {%- if cookiecutter.use_jwt != "y" %}
         login(request, user)
 {%- endif %}
@@ -84,4 +98,3 @@ class UsersRegisterApi(APIView):
             data=UsersRegisterOutputSerializer(user, context={"request": request}).data,
             http_status=status.HTTP_201_CREATED,
         )
-{%- endif %}

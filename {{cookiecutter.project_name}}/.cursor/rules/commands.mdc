@@ -9,6 +9,9 @@ alwaysApply: false
 - Prefer `BaseCommand`; clear phases (`starting` / success / skip); `--dry-run` when mutating.
 - Multi-row writes: `@transaction.atomic`; keep steps **idempotent**.
 - New domain apps: `python manage.py start_domain_app <plural>` — never `startapp`.
+{%- if cookiecutter.use_scoped_apis == "y" %}
+- New API scope: `python manage.py add_api_scope <name>` then `makemigrations` / `migrate`. Gate views with `IsScopeMember`.
+{%- endif %}
 - Local demo / fixture rows → `seed_demo_data` (not ad-hoc shell one-liners). No `--fake` / skip flags — real idempotent seeds only.
 - Required bootstrap (flags, catalog roots) → `initial_system`.
 - Schema/feature that needs sample data or default roles → extend `seed_demo_data` in the **same** change (add a `_seed_*` method + call it from `handle`). Ask before inventing production-like data.

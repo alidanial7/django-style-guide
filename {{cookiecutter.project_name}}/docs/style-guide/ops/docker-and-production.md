@@ -38,9 +38,10 @@ flowchart TB
 ## 💻 Local infrastructure
 
 ```bash
-./start-dev-services.sh
+./start-dev-services.sh           # follow logs; Ctrl+C → down
+./start-dev-services.sh --detach  # leave running (make up-detach)
 ./start-dev-services.sh --clean   # wipe volumes, fresh DB
-make up                           # same as start-dev-services.sh
+make up                           # same as start-dev-services.sh (attached)
 # Ctrl+C / closing the terminal → compose down (volumes kept unless --clean)
 
 make down                         # stop dev compose
@@ -207,7 +208,7 @@ CI was not enabled at generation (`use_ci=n`). Add GitHub Actions or GitLab CI l
 | Publishing Postgres to `0.0.0.0` without need | Keep DB on the internal Compose network |
 | Bind-mounting code into prod Compose and “hot reload” | Rebuild images for deploys |
 | Leaving `DEBUG=True` / default `SECRET_KEY` | Fail closed |
-| Expecting Swagger at `/` in production | DEBUG-only by design |
+| Expecting Swagger at `/api/docs/` in production | DEBUG-only by design |
 
 ---
 

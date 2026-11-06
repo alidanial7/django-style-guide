@@ -86,14 +86,15 @@ pre-commit install
 
 cp .env.example .env
 
-./start-dev-services.sh
+./start-dev-services.sh --detach
 python manage.py devserver
 ```
 
 Defaults work with local Compose services. `devserver` runs migrations, creates a default superuser (`admin@example.com` / `admin`), and starts the server{%- if cookiecutter.use_celery == "y" %} (plus a Celery worker){%- endif %}.
 
-Use `./start-dev-services.sh --clean` to wipe volumes and start fresh.  
-Ctrl+C or closing the terminal runs `docker compose down` (volumes kept unless `--clean`).
+- `./start-dev-services.sh` — follow logs; Ctrl+C / closing the terminal runs `compose down`
+- `./start-dev-services.sh --detach` (or `make up-detach`) — leave containers running in the background
+- `./start-dev-services.sh --clean` — wipe volumes and start fresh
 
 More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & production](docs/style-guide/ops/docker-and-production.md) · [Logging](docs/style-guide/ops/logging.md).
 
@@ -101,14 +102,17 @@ More detail: [Commands](docs/style-guide/ops/commands.md) · [Docker & productio
 
 | URL | Description |
 |-----|-------------|
-| http://localhost:8000/ | Swagger UI (**DEBUG only**) |
-| http://localhost:8000/redoc/ | ReDoc (**DEBUG only**) |
-| http://localhost:8000/schema/ | OpenAPI schema (**DEBUG only**) |
+| http://localhost:8000/api/docs/ | Swagger UI (**DEBUG only**) |
+| http://localhost:8000/api/docs/redoc/ | ReDoc (**DEBUG only**) |
+| http://localhost:8000/api/docs/schema/ | OpenAPI schema (**DEBUG only**) |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| http://localhost:8000/api/docs/`{scope}`/ | Scoped Swagger (scopes: `{{ cookiecutter.api_scopes }}`) |
+{%- endif %}
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API routes (v1) |
-| http://localhost:8000/api/v1/health/ | Platform health check |
+| http://localhost:8000/api/v1/health/ | Platform health (use this for probes) |
 {%- if cookiecutter.use_scoped_apis == "y" %}
-| http://localhost:8000/api/v1/site/health/ | Scoped sample (same probe under `/site/`) |
+| http://localhost:8000/api/v1/`{scope}`/… | Domain APIs per scope (auth, users, sample health) |
 {%- endif %}
 
 Auth, register, and profile endpoints: [Authentication](docs/style-guide/http/authentication.md).

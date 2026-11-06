@@ -11,6 +11,7 @@ alwaysApply: false
 - Pagination helpers wrap list payloads inside the envelope.
 - Optional filters: django-filter FilterSet under `apis/`; wire query params in the list view + OpenAPI.
 - Schema: `envelope_serializer(...)` / `paginated_envelope_serializer(...)` so Swagger matches runtime.
+- Docs URL: DEBUG-only under `/api/docs/` (not `/`); scoped surfaces at `/api/docs/<scope>/` via `make_scoped_schema_generator`.
 - OpenAPI: Input/Output split; `request=None` for bodiless POST; document DELETE responses; extend `ENUM_NAME_OVERRIDES` for domain enums.
 - Changing envelope / OpenAPI conventions → update **this rule file** in the **same** change.
 

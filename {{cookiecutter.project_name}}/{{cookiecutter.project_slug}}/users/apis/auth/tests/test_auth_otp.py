@@ -1,6 +1,6 @@
 import pytest
 from django.test import override_settings
-from django.urls import reverse
+from {{cookiecutter.project_slug}}.users.tests.api_urls import api_reverse
 from rest_framework import status
 
 from {{cookiecutter.project_slug}}.users.models import BaseUser
@@ -10,8 +10,8 @@ from {{cookiecutter.project_slug}}.users.models import BaseUser
 class TestAuthOtp:
     @override_settings(OTP_TEST=True, OTP_TEST_CODE="12345")
     def test_request_and_verify_creates_user(self, api_client):
-        request_url = reverse("api:auth:otp-request")
-        verify_url = reverse("api:auth:otp-verify")
+        request_url = api_reverse("auth:otp-request")
+        verify_url = api_reverse("auth:otp-verify")
 
         requested = api_client.post(
             request_url,
@@ -25,7 +25,7 @@ class TestAuthOtp:
 
         verified = api_client.post(
             verify_url,
-            data={"phone": "989134543456", "code": "12345"},
+            data={"phone": "989134543456", "code": "12345", "kind": "login"},
             format="json",
         )
         assert verified.status_code == status.HTTP_200_OK
@@ -40,18 +40,18 @@ class TestAuthOtp:
 
     @override_settings(OTP_TEST=True, OTP_TEST_CODE="12345")
     def test_verify_rejects_wrong_code(self, api_client):
-        request_url = reverse("api:auth:otp-request")
-        verify_url = reverse("api:auth:otp-verify")
+        request_url = api_reverse("auth:otp-request")
+        verify_url = api_reverse("auth:otp-verify")
         api_client.post(request_url, data={"phone": "989134543456"}, format="json")
         response = api_client.post(
             verify_url,
-            data={"phone": "989134543456", "code": "00000"},
+            data={"phone": "989134543456", "code": "00000", "kind": "login"},
             format="json",
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["success"] is False
 
     def test_request_rejects_invalid_phone(self, api_client):
-        url = reverse("api:auth:otp-request")
+        url = api_reverse("auth:otp-request")
         response = api_client.post(url, data={"phone": "123"}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST

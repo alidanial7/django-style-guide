@@ -41,7 +41,7 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 - Auth methods stack: password{% if cookiecutter.use_jwt == "y" %} JWT{% else %} session{% endif %}{% if cookiecutter.use_otp_login == "y" %} + OTP{% endif %}{% if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %} + social{% endif %} share one auth mode (not mutually exclusive).
 {%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
-- Phone OTP: store as `98XXXXXXXXXX`; SMS via `SmsProvider` / `get_sms_provider()`; `OTP_TEST=true` → code `12345`.
+- Phone OTP: store as `98XXXXXXXXXX`; SMS via `SmsProvider` / `get_sms_provider()`; `OTP_TEST=true` → code `12345`. Challenges keyed by `kind`; register phone optional; profile OTP only for phone changes; Redis required.
 {%- endif %}
 {%- if cookiecutter.use_google_login == "y" or cookiecutter.use_microsoft_login == "y" or cookiecutter.use_apple_login == "y" %}
 - Social login: verify provider `id_token` → link `SocialAccount` → continue with project auth mode (JWT or session).
@@ -51,6 +51,9 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 {%- endif %}
 {%- if cookiecutter.use_file_manager == "y" %}
 - Uploads: `ManagedFile` only — no ad-hoc `FileField` / `ImageField` on domain models.
+{%- endif %}
+{%- if cookiecutter.use_scoped_apis == "y" %}
+- Multi-scope: domain routes only under `/api/v1/<scope>/` (scopes: `{{ cookiecutter.api_scopes }}`). Shared `BaseUser`; empty MTI `*User` tables per scope. One user may belong to many scopes. Docs at `/api/docs/<scope>/`. Gate with `IsScopeMember`. Add a scope later: `python manage.py add_api_scope <name>`.
 {%- endif %}
 
 ## Read only when needed
@@ -75,7 +78,9 @@ Minimal always-on index. **Do not** bulk-read `docs/style-guide/`. Cursor loads 
 {%- if cookiecutter.use_file_manager == "y" %}
 | file uploads / `ManagedFile` | `file-manager` | [File manager](docs/style-guide/domain/file-manager.md) |
 {%- endif %}
-{%- if cookiecutter.use_portal_permissions == "y" %}
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| scoped APIs / scope users | `scoped-apis` | [APIs](docs/style-guide/domain/apis.md) · [URLs](docs/style-guide/domain/urls.md) |
+{%- elif cookiecutter.use_portal_permissions == "y" %}
 | portal gates | `portal-permissions` | [Permissions](docs/style-guide/http/permissions.md) |
 {%- endif %}
 {%- if cookiecutter.use_unfold_admin == "y" %}

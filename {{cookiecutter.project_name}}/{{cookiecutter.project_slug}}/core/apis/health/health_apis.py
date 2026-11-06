@@ -23,8 +23,9 @@ class HealthApi(APIView):
 
     @extend_schema(
         tags=["system"],
-        summary="Health check",
+        summary="Platform health check",
         description=(
+            "Canonical load-balancer / k8s probe at `/api/v1/health/`. "
             "Reports Django, database"
             "{% if cookiecutter.use_redis == 'y' %}, Redis{% endif %}"
             "{% if cookiecutter.use_rabbitmq == 'y' %}, RabbitMQ{% endif %}"
@@ -32,6 +33,10 @@ class HealthApi(APIView):
             " status without leaking hostnames, credentials, or DEBUG flags. "
             "Returns HTTP 503 when any enabled dependency is unavailable. "
             "Public by design for probes — do not add secrets to the payload."
+            "{% if cookiecutter.use_scoped_apis == 'y' %} "
+            "Scoped surfaces also expose `/api/v1/<scope>/health/` samples that reuse "
+            "this same check — prefer this path for real probes."
+            "{% endif %}"
         ),
         responses=envelope_serializer("HealthEnvelope", OutputSerializer),
     )

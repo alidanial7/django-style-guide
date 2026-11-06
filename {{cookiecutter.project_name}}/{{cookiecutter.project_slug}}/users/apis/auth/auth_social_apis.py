@@ -49,6 +49,13 @@ class _AuthSocialLoginBase(APIView):
             provider=self.provider_name,
             id_token=serializer.validated_data["id_token"],
         )
+{%- if cookiecutter.use_scoped_apis == "y" %}
+        from {{cookiecutter.project_slug}}.users.services.scope_membership import (
+            ensure_scope_membership_for_request,
+        )
+
+        ensure_scope_membership_for_request(request=request, user=user)
+{%- endif %}
 {%- if cookiecutter.use_jwt == "y" %}
         refresh = RefreshToken.for_user(user)
         payload = {

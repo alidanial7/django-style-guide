@@ -19,10 +19,12 @@ alwaysApply: false
 
 ## Scoped `/api/v1/<scope>/…`
 
-- `apis/<scope>/<resource>/` (+ `id/` for detail). Never root `apis/` for scoped routes.
-- Leaf `tests/` next to each collection **and** `id/` leaf (when testing enabled).
-- Dedicated `<Scope>*` serializers + `@extend_schema_serializer(component_name="…")`.
-- URLs: `urls/<scope>_<app>_url.py` → `api/<scope>_urls.py`.
+Scopes: `{{ cookiecutter.api_scopes }}`.
+
+- Domain mounts only under a scope (`api/<scope>_urls.py`). Do not add product routes at bare `/api/v1/`.
+- New resources: prefer `apis/<scope>/<resource>/` with `<Scope>*` serializers (see `scoped-apis` rule).
+- Scope user tables: `users/models/<scope>_user.py` subclasses `BaseUser` (empty by default).
+- Gate with `IsScopeMember` (`request.api_scope`). Add scopes with `add_api_scope`.
 {%- endif %}
 - Changing URL/layout conventions → update **this rule file** in the **same** change.
 

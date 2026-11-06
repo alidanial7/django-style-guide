@@ -8,10 +8,6 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-{%- if cookiecutter.use_scoped_apis == "y" %}
-from {{cookiecutter.project_slug}}.common.http.schema import SiteSchemaGenerator
-{%- endif %}
-
 urlpatterns = [
     path("admin/", admin.site.urls),
 {%- if cookiecutter.use_i18n == "y" %}
@@ -21,20 +17,15 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns = [
+    # OpenAPI / Swagger under /api/docs/ (not `/`).
+    # Multi-scope mode: post_gen adds /api/docs/<scope>/ mounts.
+    docs_urlpatterns = [
         path("schema/", SpectacularAPIView.as_view(api_version="v1"), name="schema"),
-{%- if cookiecutter.use_scoped_apis == "y" %}
-        path(
-            "schema/site/",
-            SpectacularAPIView.as_view(
-                api_version="v1",
-                generator_class=SiteSchemaGenerator,
-            ),
-            name="schema-site",
-        ),
-{%- endif %}
         path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
         path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    ]
+    urlpatterns = [
+        path("api/docs/", include(docs_urlpatterns)),
         *urlpatterns,
     ]
     urlpatterns += [

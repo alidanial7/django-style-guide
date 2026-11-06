@@ -81,7 +81,7 @@ def envelope_error_serializer(name: str = "ApiErrorEnvelope"):
 
 
 class PrefixFilteredSchemaGenerator(SchemaGenerator):
-    """Filter OpenAPI paths by URL prefix (per-client schemas)."""
+    """Filter OpenAPI paths by URL prefix (per-client / portal schemas)."""
 
     allowed_prefixes: tuple[str, ...] = ()
 
@@ -96,11 +96,17 @@ class PrefixFilteredSchemaGenerator(SchemaGenerator):
         ]
 
 
-{%- if cookiecutter.use_scoped_apis == "y" %}
+def make_scoped_schema_generator(*prefixes: str) -> type[PrefixFilteredSchemaGenerator]:
+    """
+    Build a schema generator limited to ``/api/v1/<scope>/…`` paths.
 
+    Mount the matching Swagger UI at ``/api/docs/<scope>/`` (DEBUG only), e.g.
+    ``/api/docs/admin/``, ``/api/docs/factory/``.
+    """
 
-class SiteSchemaGenerator(PrefixFilteredSchemaGenerator):
-    """OpenAPI schema for ``/api/v1/site/…`` only."""
+    class _ScopedSchemaGenerator(PrefixFilteredSchemaGenerator):
+        allowed_prefixes = tuple(prefixes)
 
-    allowed_prefixes = ("/api/v1/site",)
-{%- endif %}
+    _ScopedSchemaGenerator.__name__ = "ScopedSchemaGenerator"
+    _ScopedSchemaGenerator.__qualname__ = "ScopedSchemaGenerator"
+    return _ScopedSchemaGenerator

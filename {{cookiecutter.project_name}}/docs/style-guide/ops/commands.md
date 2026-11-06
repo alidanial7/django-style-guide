@@ -20,6 +20,9 @@
 | Django check | `make check` |
 | Shell | `make shell` |
 | New domain app | `python manage.py start_domain_app <name>` |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| New API scope | `python manage.py add_api_scope <name>` |
+{%- endif %}
 {%- if cookiecutter.use_i18n == "y" %}
 | Translations | `make translations` / `python manage.py update_translations` |
 {%- endif %}
@@ -97,6 +100,19 @@ python manage.py start_domain_app blogs --no-tests
 
 Scaffolds the style-guide layout (models/types.py/services/selectors/apis/…). Full guide: [Domain apps](../overview/domain-apps.md).
 
+{%- if cookiecutter.use_scoped_apis == "y" %}
+
+### `add_api_scope`
+
+```bash
+python manage.py add_api_scope customer
+python manage.py makemigrations users
+python manage.py migrate
+```
+
+Adds a new multi-scope surface after generate: empty `<Scope>User` MTI model, `/api/v1/<scope>/` mounts (auth/users/health), `/api/docs/<scope>/`, registry + settings entries. Gate views with `IsScopeMember` (see `scoped-apis` rule).
+{%- endif %}
+
 ### `seed_demo_data` / `initial_system`
 
 ```bash
@@ -126,7 +142,9 @@ When a schema change needs seed updates, extend these commands in the **same** c
 
 | Script | Purpose |
 |--------|---------|
-| `./start-dev-services.sh` | Start (or `--clean` recreate) `docker-compose.dev.yml`; exit/Ctrl+C → `compose down` |
+| `./start-dev-services.sh` | Start `docker-compose.dev.yml` and follow logs; exit/Ctrl+C → `compose down` |
+| `./start-dev-services.sh --detach` | Same start, leave containers running (`make up-detach`) |
+| `./start-dev-services.sh --clean` | Recreate with wiped volumes |
 {%- if cookiecutter.use_i18n == "y" %}
 | `./scripts/update_translations.sh` | Thin wrapper → `manage.py update_translations` — see [Translations](translations.md) |
 {%- endif %}
@@ -137,14 +155,17 @@ When a schema change needs seed updates, extend these commands in the **same** c
 
 | URL | Description |
 |-----|-------------|
-| http://localhost:8000/ | Swagger UI (**DEBUG only**) |
-| http://localhost:8000/redoc/ | ReDoc (**DEBUG only**) |
-| http://localhost:8000/schema/ | OpenAPI schema (**DEBUG only**) |
+| http://localhost:8000/api/docs/ | Swagger UI (**DEBUG only**) |
+| http://localhost:8000/api/docs/redoc/ | ReDoc (**DEBUG only**) |
+| http://localhost:8000/api/docs/schema/ | OpenAPI schema (**DEBUG only**) |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| http://localhost:8000/api/docs/`{scope}`/ | Scoped Swagger (`{{ cookiecutter.api_scopes }}`) |
+{%- endif %}
 | http://localhost:8000/admin/ | Django admin |
 | http://localhost:8000/api/v1/ | API v1 |
-| http://localhost:8000/api/v1/health/ | Platform health |
+| http://localhost:8000/api/v1/health/ | Platform health (canonical probe) |
 {%- if cookiecutter.use_scoped_apis == "y" %}
-| http://localhost:8000/api/v1/site/health/ | Scoped sample health (same checks) |
+| http://localhost:8000/api/v1/`{scope}`/… | Domain APIs per scope |
 {%- endif %}
 
 Auth/register paths: [Authentication](../http/authentication.md), [URLs](../domain/urls.md).

@@ -1,5 +1,5 @@
 import pytest
-from django.urls import reverse
+from {{cookiecutter.project_slug}}.users.tests.api_urls import api_reverse
 from rest_framework import status
 
 {%- if cookiecutter.user_login_field == "username" %}
@@ -20,7 +20,7 @@ def _login_payload(user, *, password: str = "Password1!x") -> dict:
 @pytest.mark.django_db
 class TestAuthSession:
     def test_session_login_success(self, api_client, user):
-        url = reverse("api:auth:login")
+        url = api_reverse("auth:login")
         response = api_client.post(
             url,
             data=_login_payload(user),
@@ -35,7 +35,7 @@ class TestAuthSession:
         assert response.data["result"]["email"] == user.email
 
     def test_session_login_invalid_credentials(self, api_client, user):
-        url = reverse("api:auth:login")
+        url = api_reverse("auth:login")
         response = api_client.post(
             url,
             data=_login_payload(user, password="wrong-password"),
@@ -47,10 +47,10 @@ class TestAuthSession:
 
     def test_session_logout(self, api_client, user):
         api_client.force_login(user)
-        response = api_client.post(reverse("api:auth:logout"), format="json")
+        response = api_client.post(api_reverse("auth:logout"), format="json")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["success"] is True
 
     def test_session_logout_unauthenticated(self, api_client):
-        response = api_client.post(reverse("api:auth:logout"), format="json")
+        response = api_client.post(api_reverse("auth:logout"), format="json")
         assert response.status_code == status.HTTP_403_FORBIDDEN

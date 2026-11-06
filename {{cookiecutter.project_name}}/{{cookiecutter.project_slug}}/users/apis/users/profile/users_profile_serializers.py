@@ -15,6 +15,7 @@ class UsersProfileOtpChallengeSerializer(serializers.Serializer):
     expires_in = serializers.IntegerField()
     resend_in = serializers.IntegerField()
     test_mode = serializers.BooleanField()
+    kind = serializers.CharField()
 
 
 class UsersProfilePendingOutputSerializer(serializers.Serializer):
@@ -64,9 +65,9 @@ class UsersProfileUpdateInputSerializer(serializers.Serializer):
         allow_null=True,
         max_length=20,
         help_text=(
-            "Optional new mobile. Profile changes are staged until "
-            "POST /api/v1/auth/otp/verify/. OTP is sent to this number, or to the "
-            "current phone when omitted. Avatar must be set in a later request."
+            "Changing or clearing phone returns 202 and requires "
+            "POST /auth/otp/verify/ with kind=profile_update while authenticated. "
+            "Bio/avatar without phone apply immediately."
         ),
     )
 

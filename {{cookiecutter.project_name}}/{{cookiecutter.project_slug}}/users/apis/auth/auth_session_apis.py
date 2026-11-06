@@ -50,6 +50,13 @@ class AuthSessionLoginApi(APIView):
                 code=ErrorCode.INVALID,
             )
         login(request, user)
+{%- if cookiecutter.use_scoped_apis == "y" %}
+        from {{cookiecutter.project_slug}}.users.services.scope_membership import (
+            ensure_scope_membership_for_request,
+        )
+
+        ensure_scope_membership_for_request(request=request, user=user)
+{%- endif %}
 {%- if cookiecutter.user_login_field == "username" %}
         return api_response(data={"username": user.username, "email": user.email})
 {%- else %}

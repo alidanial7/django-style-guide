@@ -8,18 +8,28 @@
 
 ## 🎯 What you get in development
 
-Mounted in `config/urls.py` when `DEBUG` is on:
+Mounted in `config/urls.py` under **`/api/docs/`** when `DEBUG` is on (not at `/`):
 
 | URL | What it is |
 |-----|------------|
-| http://localhost:8000/ | **Swagger UI** — try requests in the browser |
-| http://localhost:8000/redoc/ | **ReDoc** — readable reference |
-| http://localhost:8000/schema/ | Raw OpenAPI schema (JSON/YAML depending on client) |
+| http://localhost:8000/api/docs/ | **Swagger UI** — full `/api/v1/` surface |
+| http://localhost:8000/api/docs/redoc/ | **ReDoc** — readable reference |
+| http://localhost:8000/api/docs/schema/ | Raw OpenAPI schema (JSON/YAML depending on client) |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| http://localhost:8000/api/docs/`{scope}`/ | Swagger for `/api/v1/{scope}/…` (scopes: `{{ cookiecutter.api_scopes }}`) |
+| http://localhost:8000/api/docs/`{scope}`/schema/ | OpenAPI schema for that scope only |
+{%- endif %}
+
+{%- if cookiecutter.use_scoped_apis == "y" %}
+Each configured scope mounts under `/api/v1/<scope>/` and `/api/docs/<scope>/` via `make_scoped_schema_generator("/api/v1/<scope>")`.
+{%- else %}
+If you enable multi-scope later, mount APIs under `/api/v1/<scope>/` and docs at `/api/docs/<scope>/` using `make_scoped_schema_generator`.
+{%- endif %}
 
 ```mermaid
 flowchart LR
     DEBUG{DEBUG=True?}
-    DEBUG -->|yes| UI[Swagger / ReDoc / schema]
+    DEBUG -->|yes| UI["/api/docs/ + scoped /api/docs/scope/"]
     DEBUG -->|no| API["/api/v1/ + admin only"]
     UI --> SPEC[drf-spectacular AutoSchema]
     SPEC --> VIEWS["@extend_schema on APIViews"]
@@ -122,7 +132,7 @@ Health uses `tags=["system"]`. Keep tag strings **lowercase and stable** — cli
 {%- if cookiecutter.use_jwt == "y" %}
 ## 🔓 Trying JWT in Swagger UI
 
-1. Open http://localhost:8000/
+1. Open http://localhost:8000/api/docs/
 2. Call **register** or **JWT login**
 3. Copy the `access` token from `result` (envelope)
 4. Click **Authorize**
@@ -135,7 +145,7 @@ Because responses use the [API envelope](api-envelope.md), the token lives under
 {%- else %}
 ## 🔓 Trying session auth in Swagger UI
 
-1. Open http://localhost:8000/
+1. Open http://localhost:8000/api/docs/
 2. Call **session login** (or register) so the browser stores the session cookie
 3. For unsafe methods, ensure CSRF is satisfied (Swagger/browser cookie flows can be fiddly — many teams use the UI mainly for GET, and use httpie/Postman for session CSRF POSTs)
 4. Call protected routes like **profile**
@@ -178,7 +188,7 @@ Clients must still treat [API envelope](api-envelope.md) as the transport contra
 ```bash
 # smoke: schema must generate without errors
 python manage.py spectacular --validate --fail-on-warn  # if available in your spectacular version
-# or simply open /schema/ under DEBUG
+# or simply open /api/docs/schema/ under DEBUG
 ```
 
 ---

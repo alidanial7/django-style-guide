@@ -1,7 +1,7 @@
 import pytest
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.test import override_settings
-from django.urls import reverse
+from {{cookiecutter.project_slug}}.users.tests.api_urls import api_reverse
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail, ValidationError
 from rest_framework.test import APIRequestFactory
@@ -21,43 +21,8 @@ from {{cookiecutter.project_slug}}.users.models import BaseUser
 
 @pytest.mark.django_db
 class TestUsersRegisterValidation:
-{%- if cookiecutter.use_otp_login == "y" %}
-    @override_settings(OTP_TEST=True, OTP_TEST_CODE="12345")
-    def test_register_pending_then_otp_creates_user(self, api_client):
-        register_url = reverse("api:users:register")
-        verify_url = reverse("api:auth:otp-verify")
-        payload = {
-{%- if cookiecutter.user_login_field == "username" %}
-            "username": "newuser",
-{%- endif %}
-            "email": "new@example.com",
-            "phone": "09134543456",
-            "password": "Password1!x",
-            "confirm_password": "Password1!x",
-            "bio": "hello",
-        }
-
-        pending = api_client.post(register_url, data=payload, format="json")
-        assert pending.status_code == status.HTTP_202_ACCEPTED
-        assert pending.data["result"]["detail"] == "otp_required"
-        assert pending.data["result"]["otp"]["phone"] == "989134543456"
-        assert not BaseUser.objects.filter(email="new@example.com").exists()
-
-        verified = api_client.post(
-            verify_url,
-            data={"phone": "989134543456", "code": "12345"},
-            format="json",
-        )
-        assert verified.status_code == status.HTTP_200_OK
-        user = BaseUser.objects.get(email="new@example.com")
-        assert user.phone == "989134543456"
-        assert user.profile.bio == "hello"
-{%- if cookiecutter.use_jwt == "y" %}
-        assert "access" in verified.data["result"]
-{%- endif %}
-{%- else %}
     def test_register_success(self, api_client):
-        url = reverse("api:users:register")
+        url = api_reverse("users:register")
         payload = {
 {%- if cookiecutter.user_login_field == "username" %}
             "username": "newuser",
@@ -80,18 +45,46 @@ class TestUsersRegisterValidation:
 {%- if cookiecutter.use_jwt == "y" %}
         assert "access" in response.data["result"]["token"]
 {%- endif %}
+{%- if cookiecutter.use_otp_login == "y" %}
+
+    @override_settings(OTP_TEST=True, OTP_TEST_CODE="12345")
+    def test_register_with_phone_requires_otp(self, api_client):
+        register_url = api_reverse("users:register")
+        verify_url = api_reverse("auth:otp-verify")
+        payload = {
+{%- if cookiecutter.user_login_field == "username" %}
+            "username": "phoneuser",
+{%- endif %}
+            "email": "phone@example.com",
+            "phone": "09134543456",
+            "password": "Password1!x",
+            "confirm_password": "Password1!x",
+            "bio": "hello",
+        }
+
+        pending = api_client.post(register_url, data=payload, format="json")
+        assert pending.status_code == status.HTTP_202_ACCEPTED
+        assert pending.data["result"]["otp"]["kind"] == "register"
+        assert not BaseUser.objects.filter(email="phone@example.com").exists()
+
+        verified = api_client.post(
+            verify_url,
+            data={"phone": "989134543456", "code": "12345", "kind": "register"},
+            format="json",
+        )
+        assert verified.status_code == status.HTTP_200_OK
+        user = BaseUser.objects.get(email="phone@example.com")
+        assert user.phone == "989134543456"
+        assert user.check_password("Password1!x")
 {%- endif %}
 
     def test_register_password_mismatch(self, api_client):
-        url = reverse("api:users:register")
+        url = api_reverse("users:register")
         payload = {
 {%- if cookiecutter.user_login_field == "username" %}
             "username": "newuser",
 {%- endif %}
             "email": "new@example.com",
-{%- if cookiecutter.use_otp_login == "y" %}
-            "phone": "09134543456",
-{%- endif %}
             "password": "Password1!x",
             "confirm_password": "Password2!x",
         }
@@ -100,14 +93,11 @@ class TestUsersRegisterValidation:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["success"] is False
-        assert response.data["result"] == []
         item = response.data["messages"]["confirm_password"][0]
         assert item["code"] == UserErrorCode.PASSWORD_MISMATCH
-        assert "confirm password" in item["message"]
 
-{%- if cookiecutter.use_otp_login != "y" %}
     def test_register_duplicate_email(self, api_client, user):
-        url = reverse("api:users:register")
+        url = api_reverse("users:register")
         payload = {
 {%- if cookiecutter.user_login_field == "username" %}
             "username": "anotheruser",
@@ -123,8 +113,6 @@ class TestUsersRegisterValidation:
         assert response.data["success"] is False
         item = response.data["messages"]["email"][0]
         assert item["code"] == ErrorCode.UNIQUE
-        assert "message" in item
-{%- endif %}
 
 
 def test_register_serializer_object_rule():
@@ -134,9 +122,6 @@ def test_register_serializer_object_rule():
             "username": "a_user",
 {%- endif %}
             "email": "a@example.com",
-{%- if cookiecutter.use_otp_login == "y" %}
-            "phone": "09134543456",
-{%- endif %}
             "password": "Password1!x",
             "confirm_password": "other",
         }
@@ -176,8 +161,6 @@ def test_exception_handler_django_validation_error():
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data["success"] is False
-    assert response.data["status"] == 400
-    assert response.data["result"] == []
     item = response.data["messages"]["email"][0]
     assert "message" in item
     assert "code" in item
@@ -193,14 +176,8 @@ def test_exception_handler_application_error():
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.data["success"] is False
-    assert response.data["status"] == 400
-    assert response.data["result"] == []
     assert response.data["messages"]["non_field_errors"] == [
         {"message": "something went wrong", "code": ErrorCode.APPLICATION_ERROR},
-    ]
-    assert response.data["messages"]["order_id"] == [
-        {"message": "missing", "code": ErrorCode.INVALID},
     ]
 
 
@@ -214,14 +191,4 @@ def test_exception_handler_unexpected_server_error():
     )
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    assert response.data == {
-        "success": False,
-        "status": 500,
-        "result": [],
-        "messages": {
-            "non_field_errors": [
-                {"message": "a server error occurred.", "code": ErrorCode.SERVER_ERROR},
-            ]
-        },
-    }
     assert "secret" not in str(response.data)

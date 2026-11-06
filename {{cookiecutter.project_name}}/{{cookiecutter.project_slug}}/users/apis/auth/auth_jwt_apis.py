@@ -42,6 +42,23 @@ class AuthJwtLoginApi(TokenObtainPairView):
     )
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
+{%- if cookiecutter.use_scoped_apis == "y" %}
+        if response.status_code < 400:
+            from {{cookiecutter.project_slug}}.users.models import BaseUser
+            from {{cookiecutter.project_slug}}.users.services.scope_membership import (
+                ensure_scope_membership_for_request,
+            )
+
+{%- if cookiecutter.user_login_field == "username" %}
+            ident = request.data.get("username")
+            user = BaseUser.objects.filter(username=ident).first() if ident else None
+{%- else %}
+            ident = request.data.get("email")
+            user = BaseUser.objects.filter(email=ident).first() if ident else None
+{%- endif %}
+            if user is not None:
+                ensure_scope_membership_for_request(request=request, user=user)
+{%- endif %}
         return api_response(data=response.data, http_status=response.status_code)
 
 

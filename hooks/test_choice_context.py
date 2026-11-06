@@ -61,6 +61,7 @@ def base_answers(**overrides: str) -> dict[str, str]:
         "use_i18n": "n",
         "use_uuid_pk": "y",
         "use_scoped_apis": "n",
+        "api_scopes": "",
         "use_file_manager": "n",
         "use_unfold_admin": "n",
         "use_portal_permissions": "n",

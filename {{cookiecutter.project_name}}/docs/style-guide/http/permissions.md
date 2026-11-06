@@ -127,7 +127,17 @@ Browser session clients must send CSRF on `POST`/`PATCH`/`PUT`/`DELETE`.
 
 ---
 
-{%- if cookiecutter.use_portal_permissions == "y" %}
+{%- if cookiecutter.use_scoped_apis == "y" %}
+## Scope membership (`users.permissions`)
+
+| Class | Gate |
+|-------|------|
+| `IsScopeMember` | Authenticated + membership in `request.api_scope` |
+| `IsScopeMember.for_scope("admin")` | Same check pinned to a fixed scope |
+
+`ApiScopeMiddleware` sets `request.api_scope` from `/api/v1/<scope>/…`. Prefer this over per-scope permission stubs.
+
+{%- elif cookiecutter.use_portal_permissions == "y" %}
 ## Portal stubs (`users.permissions`)
 
 | Class | Gate |

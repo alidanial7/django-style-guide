@@ -18,7 +18,7 @@ from {{cookiecutter.project_slug}}.users.constants import USERS_TAGS
 from {{cookiecutter.project_slug}}.users.selectors.users_selectors import get_profile
 {%- if cookiecutter.use_otp_login == "y" %}
 from {{cookiecutter.project_slug}}.users.services.otp_services import (
-    PENDING_PROFILE_UPDATE,
+    KIND_PROFILE_UPDATE,
     request_otp,
 )
 {%- endif %}
@@ -43,6 +43,7 @@ class UsersProfileApi(ApiAuthMixin, APIView):
         request=UsersProfileUpdateInputSerializer,
 {%- if cookiecutter.use_otp_login == "y" %}
         responses={
+            200: envelope_serializer("UsersProfileUpdateEnvelope", UsersProfileOutputSerializer),
             202: envelope_serializer(
                 "UsersProfilePendingEnvelope", UsersProfilePendingOutputSerializer
             ),
@@ -54,41 +55,46 @@ class UsersProfileApi(ApiAuthMixin, APIView):
     def patch(self, request):
         serializer = UsersProfileUpdateInputSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+        data = dict(serializer.validated_data)
 
         profile = get_profile(user=request.user)
 {%- if cookiecutter.use_otp_login == "y" %}
-        if data.get("avatar") is not None:
-            raise DjangoValidationError(
-                {"avatar": _("set avatar after phone verification.")}
+        # OTP only when changing/clearing phone — bio/avatar apply immediately.
+        if "phone" in data:
+            if data.get("avatar") is not None:
+                raise DjangoValidationError(
+                    {
+                        "avatar": _(
+                            "cannot change avatar in the same request as phone; "
+                            "update avatar separately."
+                        )
+                    }
+                )
+            new_phone = data.get("phone")
+            challenge_phone = new_phone or profile.user.phone
+            if not challenge_phone:
+                raise DjangoValidationError(
+                    {
+                        "phone": _(
+                            "cannot clear phone before one is set; provide a phone to verify."
+                        )
+                    }
+                )
+            otp_challenge = request_otp(
+                phone=challenge_phone,
+                kind=KIND_PROFILE_UPDATE,
+                pending={
+                    "kind": KIND_PROFILE_UPDATE,
+                    "user_id": str(profile.user.pk),
+                    "data": {"phone": new_phone},
+                },
             )
-
-        challenge_phone = data.get("phone") or profile.user.phone
-        if not challenge_phone:
-            raise DjangoValidationError(
-                {
-                    "phone": _(
-                        "phone is required to update profile when OTP auth is enabled."
-                    )
-                }
+            return api_response(
+                data=UsersProfilePendingOutputSerializer(
+                    {"detail": "otp_required", "otp": otp_challenge}
+                ).data,
+                http_status=status.HTTP_202_ACCEPTED,
             )
-
-        pending_data = {key: data[key] for key in data if key != "avatar"}
-        otp_challenge = request_otp(
-            phone=challenge_phone,
-            pending={
-                "kind": PENDING_PROFILE_UPDATE,
-                "user_id": str(profile.user.pk),
-                "data": pending_data,
-            },
-        )
-        return api_response(
-            data=UsersProfilePendingOutputSerializer(
-                {"detail": "otp_required", "otp": otp_challenge}
-            ).data,
-            http_status=status.HTTP_202_ACCEPTED,
-        )
-{%- else %}
+{%- endif %}
         profile = profile_update(profile=profile, data=data)
         return api_response(data=UsersProfileOutputSerializer(profile, context={"request": request}).data)
-{%- endif %}

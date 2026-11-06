@@ -40,14 +40,20 @@ apis/
 
 ### Client / surface-scoped APIs (`/api/v1/<scope>/…`)
 
-For scoped surfaces (`/api/v1/site/…`, `/api/v1/admin/…`):
+{%- if cookiecutter.use_scoped_apis == "y" %}
+Enabled scopes: `{{ cookiecutter.api_scopes }}`. Domain auth/users mount under each scope; do not add product routes at bare `/api/v1/`.
 
-1. **Directory mirror** — `apis/<scope>/…` matches URL segments (`/api/v1/site/…/cities/` → `…/apis/site/cities/`)
-2. **Files** — scope prefix: `site_cities_apis.py`, `site_cities_serializers.py`, `tests/test_site_cities_apis.py`
-3. **Classes** — `SiteCityListApiView`, `SiteCityOutputSerializer`, `SiteCityListEnvelope`
-4. **OpenAPI** — `@extend_schema_serializer(component_name="Site…")` to avoid codegen collisions
-5. **URLs** — `urls/site_<app>_url.py` mounted in `{{cookiecutter.project_slug}}/api/site_urls.py`
-6. **Leaf tests** — every leaf (collection **and** `id/`) has its own `tests/`; never aggregate detail into collection tests
+1. **Directory mirror** — `apis/<scope>/…` matches URL segments
+2. **Files / classes** — scope prefix (`AdminCityListApiView`, …)
+3. **OpenAPI** — `@extend_schema_serializer(component_name="Admin…")` to avoid codegen collisions
+4. **URLs** — `api/<scope>_urls.py` includes auth/users (+ sample health)
+5. **Users** — shared `BaseUser`; empty MTI `<Scope>User` tables for scope-only fields
+6. **Authz** — `ApiScopeMiddleware` → `request.api_scope`; gate with `IsScopeMember` / `IsScopeMember.for_scope("…")`
+7. **Add later** — `python manage.py add_api_scope <name>` then migrate
+8. **Leaf tests** — every leaf (collection **and** `id/`) has its own `tests/`; scope contracts in `users/tests/test_scope_contracts.py`
+{%- else %}
+When multi-scope is enabled at generation time, each scope gets `/api/v1/<scope>/…`, `/api/docs/<scope>/`, and an empty `<Scope>User` MTI model. See the `scoped-apis` Cursor rule in a scoped project.
+{%- endif %}
 
 ### `APIView` class naming
 

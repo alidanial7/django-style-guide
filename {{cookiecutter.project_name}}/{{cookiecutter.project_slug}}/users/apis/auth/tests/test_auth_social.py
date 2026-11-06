@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from django.urls import reverse
+from {{cookiecutter.project_slug}}.users.tests.api_urls import api_reverse
 from rest_framework import status
 
 from {{cookiecutter.project_slug}}.users.models import BaseUser, SocialAccount
@@ -23,7 +23,7 @@ class TestAuthGoogleSocial:
         ) as get_provider:
             get_provider.return_value.verify_id_token.return_value = identity
             response = api_client.post(
-                reverse("api:auth:social-google"),
+                api_reverse("auth:social-google"),
                 data={"id_token": "fake.google.token"},
                 format="json",
             )
@@ -56,7 +56,7 @@ class TestAuthMicrosoftSocial:
         ) as get_provider:
             get_provider.return_value.verify_id_token.return_value = identity
             response = api_client.post(
-                reverse("api:auth:social-microsoft"),
+                api_reverse("auth:social-microsoft"),
                 data={"id_token": "fake.ms.token"},
                 format="json",
             )
@@ -83,7 +83,7 @@ class TestAuthAppleSocial:
         ) as get_provider:
             get_provider.return_value.verify_id_token.return_value = identity
             response = api_client.post(
-                reverse("api:auth:social-apple"),
+                api_reverse("auth:social-apple"),
                 data={"id_token": "fake.apple.token"},
                 format="json",
             )

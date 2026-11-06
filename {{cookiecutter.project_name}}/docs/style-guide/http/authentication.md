@@ -150,7 +150,7 @@ python manage.py migrate
 `POST /api/v1/users/register/` is public (throttled `register`). Output serializer includes JWT `token.refresh` / `token.access` so the client can authenticate immediately without a separate login call.
 {%- if cookiecutter.use_otp_login == "y" %}
 
-With OTP enabled, register **requires** `phone`, returns **`202`** with `otp`, and does **not** create the user until `POST /api/v1/auth/otp/verify/`.
+With OTP enabled, register `phone` is **optional**. When provided, the API returns **`202`** with `otp` and does **not** create the user until `POST /api/v1/auth/otp/verify/` with `kind=register` (password is hashed before caching). Without `phone`, register completes immediately as usual.
 {%- endif %}
 
 ### Endpoint map (JWT)
@@ -213,10 +213,12 @@ Unsafe methods with session cookies need a valid CSRF token (`X-CSRFToken` or fo
 
 Optional SMS OTP alongside password auth. Phone numbers are **normalized and stored** as digits with country code and **no** `+` (example: `989134543456`).
 
+Challenges are namespaced by `kind` (`login` / `register` / `profile_update`) so flows do not overwrite each other. Redis is required so challenges work across workers.
+
 ### Flow (OTP-only login)
 
 1. `POST /api/v1/auth/otp/request/` with `{ "phone": "0913…" }` → challenge cached; SMS via provider (skipped when `OTP_TEST=true`)
-2. `POST /api/v1/auth/otp/verify/` with `{ "phone", "code" }` → get-or-create user by `phone`, then
+2. `POST /api/v1/auth/otp/verify/` with `{ "phone", "code", "kind": "login" }` → get-or-create user by `phone`, then
 {%- if cookiecutter.use_jwt == "y" %}
    issue JWT access/refresh
 {%- else %}
@@ -225,12 +227,12 @@ Optional SMS OTP alongside password auth. Phone numbers are **normalized and sto
 
 ### Flow (register / profile — commit on verify)
 
-1. `POST /users/register/` (phone required) or `PATCH /users/profile/` → **`202`** `{ detail: otp_required, otp: {…} }`; data is staged in the OTP challenge (not written yet). Profile OTP is sent to the new phone if provided, otherwise the current phone.
-2. `POST /auth/otp/verify/` with `{ "phone", "code" }` → applies pending register / profile update, then
+1. `POST /users/register/` **with optional `phone`**, or `PATCH /users/profile/` **with `phone` in the body** → **`202`** `{ detail: otp_required, otp: {…} }`. Bio/avatar profile updates apply immediately (no OTP). Register without phone creates the user immediately.
+2. `POST /auth/otp/verify/` with `{ "phone", "code", "kind": "register"|"profile_update" }` → applies the staged change. `profile_update` requires the **same authenticated** user who staged it.
 {%- if cookiecutter.use_jwt == "y" %}
-   issues JWT
+   Then issues JWT.
 {%- else %}
-   establishes a session
+   Then establishes a session.
 {%- endif %}
 
 Avatar cannot be staged in the OTP step — upload it after the account/phone is verified.
@@ -350,11 +352,11 @@ Throttles: scope `password_reset` (see [Throttling](throttling.md)).
 | User model | `users.BaseUser` — email as `USERNAME_FIELD` |
 {%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
-| Phone | Unique `phone` (`9891…`); register/profile commit only after OTP verify |
+| Phone | Unique `phone` (`9891…`); optional on register; phone changes commit only after OTP verify |
 {%- endif %}
 | Profile | `bio`, `avatar`{% if cookiecutter.use_otp_login == "y" %}, `phone` (on user){% endif %}; created by [signal](../domain/signals.md) on user create |
 | Default avatar | Static `users/default_avatar.png` via selector |
-| Update | `PATCH /api/v1/users/profile/` — multipart for avatar{% if cookiecutter.use_otp_login == "y" %}; with OTP: `202` + verify (avatar after){% endif %} |
+| Update | `PATCH /api/v1/users/profile/` — multipart for avatar{% if cookiecutter.use_otp_login == "y" %}; OTP only when changing `phone` (`202` + `kind=profile_update`){% endif %} |
 
 Password policy for admin/`set_password` is wired in `AUTH_PASSWORD_VALIDATORS` (`config/settings/auth.py`) including domain `Password*DjangoValidator` adapters — keep in sync with API `PASSWORD_VALIDATORS`.
 
@@ -367,7 +369,9 @@ These are intentionally **out of scope** for the template:
 | Feature | Guidance |
 |---------|----------|
 | Email verification | Add before issuing tokens / activating accounts if your product needs it |
-| Social login | Integrate a provider package in the product layer |
+{%- if cookiecutter.use_google_login != "y" and cookiecutter.use_microsoft_login != "y" and cookiecutter.use_apple_login != "y" %}
+| Social login | Not selected at generation — enable Google/Microsoft/Apple options in the template wizard |
+{%- endif %}
 | TOTP / authenticator MFA | Separate from phone OTP login — add after basic auth is stable |
 
 Do not pretend they exist in clients or docs for a fresh project.
@@ -389,8 +393,9 @@ Do not pretend they exist in clients or docs for a fresh project.
 4. Same-site / CORS settings must allow credentialed requests from your frontend origin
 {%- endif %}
 {%- if cookiecutter.use_otp_login == "y" %}
-6. OTP: `otp/request` then `otp/verify`; with `OTP_TEST=true` use code `12345`
+6. OTP: `otp/request` then `otp/verify` with matching `kind`; with `OTP_TEST=true` use code `12345`
 7. Send phones in any common form; server stores `9891…` digits
+8. Profile phone change: authenticate, `PATCH` phone → `202`, then `otp/verify` with `kind=profile_update`
 {%- endif %}
 
 ---

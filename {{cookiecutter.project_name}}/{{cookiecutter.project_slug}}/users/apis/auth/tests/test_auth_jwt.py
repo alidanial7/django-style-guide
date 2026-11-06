@@ -1,5 +1,5 @@
 import pytest
-from django.urls import reverse
+from {{cookiecutter.project_slug}}.users.tests.api_urls import api_reverse
 from rest_framework import status
 
 {%- if cookiecutter.user_login_field == "username" %}
@@ -20,7 +20,7 @@ def _login_payload(user, *, password: str = "Password1!x") -> dict:
 @pytest.mark.django_db
 class TestAuthJwt:
     def test_login_success(self, api_client, user):
-        url = reverse("api:auth:login")
+        url = api_reverse("auth:login")
         response = api_client.post(
             url,
             data=_login_payload(user),
@@ -33,7 +33,7 @@ class TestAuthJwt:
         assert "refresh" in response.data["result"]
 
     def test_login_invalid_credentials(self, api_client, user):
-        url = reverse("api:auth:login")
+        url = api_reverse("auth:login")
         response = api_client.post(
             url,
             data=_login_payload(user, password="wrong-password"),
@@ -44,8 +44,8 @@ class TestAuthJwt:
         assert response.data["success"] is False
 
     def test_refresh_rotates_token(self, api_client, user):
-        login_url = reverse("api:auth:login")
-        refresh_url = reverse("api:auth:refresh")
+        login_url = api_reverse("auth:login")
+        refresh_url = api_reverse("auth:refresh")
 
         login = api_client.post(
             login_url,
@@ -66,14 +66,14 @@ class TestAuthJwt:
 
     def test_logout_blacklists_refresh(self, api_client, user):
         login = api_client.post(
-            reverse("api:auth:login"),
+            api_reverse("auth:login"),
             data=_login_payload(user),
             format="json",
         )
         refresh = login.data["result"]["refresh"]
 
         logout = api_client.post(
-            reverse("api:auth:logout"),
+            api_reverse("auth:logout"),
             data={"refresh": refresh},
             format="json",
         )
@@ -81,7 +81,7 @@ class TestAuthJwt:
         assert logout.data["success"] is True
 
         reuse = api_client.post(
-            reverse("api:auth:refresh"),
+            api_reverse("auth:refresh"),
             data={"refresh": refresh},
             format="json",
         )

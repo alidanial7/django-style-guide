@@ -6,14 +6,15 @@ alwaysApply: false
 
 # OTP auth
 
-- Routes: `POST /api/v1/auth/otp/request/` · `POST /api/v1/auth/otp/verify/`.
+- Routes: `POST /api/v1/auth/otp/request/` · `POST /api/v1/auth/otp/verify/` (pass `kind`: `login` | `register` | `profile_update`).
 - Phone **storage**: digits only with country code, no `+` — e.g. `989134543456` (`validate_phone` / `normalize_phone`).
-- **Commit-on-verify:** `POST /users/register/` and `PATCH /users/profile/` stage data + send OTP (`202` + `otp`); nothing is persisted until `POST /auth/otp/verify/`. Register requires `phone`. Profile OTP goes to new phone if provided, else current phone. No avatar in the OTP step — set avatar after.
-- OTP-only login: `otp/request` → `otp/verify` (no pending; get-or-create by phone).
+- **Commit-on-verify:** register with optional `phone` → `202` + OTP; profile OTP **only when `phone` is in the PATCH body**. Bio/avatar apply immediately. Nothing phone-related persists until `otp/verify` with matching `kind`. Register password is stored **hashed** in the pending challenge. Profile verify requires the **same authenticated user** who staged the change.
+- Cache keys are namespaced: `otp:challenge:{kind}:{phone}` (login/register/profile do not overwrite each other).
+- OTP-only login: `otp/request` → `otp/verify` with `kind=login` (get-or-create by phone).
+- **Redis is required** with OTP (shared challenges across workers); LocMem is fine only in single-process tests.
 - SMS delivery: Strategy via `SmsProvider` + `get_sms_provider()` (`SMS_PROVIDER` env). Default `StubSmsProvider` is intentionally empty — implement your gateway there (or register a new class in the provider map).
 - `OTP_TEST=true` → code is always `12345`, SMS is skipped (local/CI only). Env documented in `.env.example`.
-- Challenges live in Django cache (hashed code); keep steps idempotent and throttle auth routes.
-- Do not invent a second OTP stack — extend `otp_services` / providers.
+- Keep steps idempotent and throttle auth routes. Do not invent a second OTP stack — extend `otp_services` / providers.
 - Changing OTP routes / phone format / providers / env → update **this rule file** + `auth` rule (+ `.env.example` / settings) in the **same** change.
 
 Deep: `docs/style-guide/http/authentication.md`

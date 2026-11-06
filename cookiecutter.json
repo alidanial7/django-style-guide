@@ -52,6 +52,7 @@
     "n",
     "y"
   ],
+  "api_scopes": "admin,factory",
   "use_file_manager": [
     "n",
     "y"
@@ -300,10 +301,11 @@
       "n": "No (BigAutoField)"
     },
     "use_scoped_apis": {
-      "__prompt__": "Include scoped API sample (/api/v1/site/…)?",
-      "n": "No",
-      "y": "Yes"
+      "__prompt__": "Multi-scope APIs? (per-scope /api/v1/<scope>/ + docs)",
+      "n": "No (flat /api/v1/auth|users)",
+      "y": "Yes (comma-separated scopes next)"
     },
+    "api_scopes": "API scopes (comma-separated, e.g. admin,factory,customer)",
     "use_file_manager": {
       "__prompt__": "Include ManagedFile file_manager app?",
       "n": "No",

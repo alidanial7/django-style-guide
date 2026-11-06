@@ -9,6 +9,9 @@ use_ci = "{{ cookiecutter.use_ci }}"
 ci_provider = "{{ cookiecutter.ci_provider }}"
 use_asgi = "{{ cookiecutter.use_asgi }}"
 use_websockets = "{{ cookiecutter.use_websockets }}"
+use_otp_login = "{{ cookiecutter.use_otp_login }}"
+use_scoped_apis = "{{ cookiecutter.use_scoped_apis }}"
+api_scopes = "{{ cookiecutter.api_scopes }}"
 reverse_proxy = "{{ cookiecutter.reverse_proxy }}"
 postgres_version = "{{ cookiecutter.postgres_version }}"
 project_slug = "{{ cookiecutter.project_slug }}"
@@ -60,6 +63,52 @@ if use_websockets == "y" and use_asgi != "y":
 
 if use_websockets == "y" and redis != "y":
     fail("WebSockets require Redis for the channel layer. Set use_redis=y.")
+
+if use_otp_login == "y" and redis != "y":
+    fail(
+        "Phone OTP requires Redis so OTP challenges are shared across workers. "
+        "Set use_redis=y (or enable Redis in the feature checklist)."
+    )
+
+if use_scoped_apis == "y":
+    # Keep validation in sync with hooks/scopes.py (this file runs from a temp path).
+    scope_re = re.compile(r"^[a-z][a-z0-9_]*$")
+    reserved = {
+        "api",
+        "v1",
+        "docs",
+        "schema",
+        "static",
+        "media",
+        "health",
+        "i18n",
+        "auth",
+        "users",
+        "files",
+    }
+    scopes: list[str] = []
+    seen: set[str] = set()
+    for part in (api_scopes or "").split(","):
+        name = part.strip().lower()
+        if not name:
+            continue
+        if name in seen:
+            continue
+        seen.add(name)
+        scopes.append(name)
+    if not scopes:
+        fail(
+            "Multi-scope APIs require api_scopes "
+            "(e.g. admin,factory,customer)."
+        )
+    for name in scopes:
+        if not scope_re.match(name):
+            fail(
+                f"Invalid API scope {name!r}. Use lowercase English letters, "
+                "digits, underscore; start with a letter; no spaces."
+            )
+        if name in reserved:
+            fail(f"API scope {name!r} is reserved for platform routes.")
 
 if celery == "y":
     if celery_broker not in ("redis", "rabbitmq"):

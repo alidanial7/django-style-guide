@@ -63,7 +63,7 @@ Details: [Permissions](permissions.md).
 
 | Surface | When available |
 |---------|----------------|
-| Swagger / ReDoc / `/schema/` | `DEBUG=True` only |
+| Swagger / ReDoc / `/api/docs/` | `DEBUG=True` only |
 | Detailed error internals in API body | Never — handler returns `server_error` |
 
 Do not mount schema UI in production URLconf.

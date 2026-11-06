@@ -23,10 +23,13 @@ class UsersRegisterInputSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
 {%- if cookiecutter.use_otp_login == "y" %}
     phone = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
         max_length=20,
         help_text=(
-            "Required mobile (stored as 98XXXXXXXXXX). Registration completes after "
-            "POST /api/v1/auth/otp/verify/ with the SMS code."
+            "Optional mobile (98XXXXXXXXXX). When set, returns 202 and completes only "
+            "after POST /api/v1/auth/otp/verify/ with kind=register."
         ),
     )
 {%- endif %}
@@ -37,6 +40,8 @@ class UsersRegisterInputSerializer(serializers.Serializer):
 
 {%- if cookiecutter.use_otp_login == "y" %}
     def validate_phone(self, value):
+        if value in (None, ""):
+            return None
         try:
             return validate_phone(phone=value)
         except DjangoValidationError as error:
@@ -68,6 +73,7 @@ class UsersRegisterOtpChallengeSerializer(serializers.Serializer):
     expires_in = serializers.IntegerField()
     resend_in = serializers.IntegerField()
     test_mode = serializers.BooleanField()
+    kind = serializers.CharField()
 
 
 class UsersRegisterPendingOutputSerializer(serializers.Serializer):
@@ -80,17 +86,28 @@ class UsersRegisterOutputSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField("get_token")
 {%- endif %}
     avatar = serializers.SerializerMethodField()
+{%- if cookiecutter.use_otp_login == "y" %}
+    phone = serializers.CharField(read_only=True, allow_null=True)
+{%- endif %}
 
     class Meta:
         model = BaseUser
 {%- if cookiecutter.user_login_field == "username" %}
-{%- if cookiecutter.use_jwt == "y" %}
+{%- if cookiecutter.use_otp_login == "y" and cookiecutter.use_jwt == "y" %}
+        fields = ("username", "email", "phone", "avatar", "token", "created_at", "updated_at")
+{%- elif cookiecutter.use_otp_login == "y" %}
+        fields = ("username", "email", "phone", "avatar", "created_at", "updated_at")
+{%- elif cookiecutter.use_jwt == "y" %}
         fields = ("username", "email", "avatar", "token", "created_at", "updated_at")
 {%- else %}
         fields = ("username", "email", "avatar", "created_at", "updated_at")
 {%- endif %}
 {%- else %}
-{%- if cookiecutter.use_jwt == "y" %}
+{%- if cookiecutter.use_otp_login == "y" and cookiecutter.use_jwt == "y" %}
+        fields = ("email", "phone", "avatar", "token", "created_at", "updated_at")
+{%- elif cookiecutter.use_otp_login == "y" %}
+        fields = ("email", "phone", "avatar", "created_at", "updated_at")
+{%- elif cookiecutter.use_jwt == "y" %}
         fields = ("email", "avatar", "token", "created_at", "updated_at")
 {%- else %}
         fields = ("email", "avatar", "created_at", "updated_at")

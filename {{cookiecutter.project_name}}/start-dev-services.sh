@@ -7,22 +7,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 usage() {
-    echo "Usage: $(basename "$0") [--clean]"
+    echo "Usage: $(basename "$0") [--clean] [--detach|-d]"
     echo
     echo "Start local development infrastructure (Postgres{%- if cookiecutter.use_rabbitmq == "y" %}, RabbitMQ{%- endif %}{%- if cookiecutter.use_redis == "y" %}, Redis{%- endif %}{%- if cookiecutter.use_pgadmin == "y" %}, pgAdmin{%- endif %})."
     echo
-    echo "Containers stay up while this script runs (log follow). Ctrl+C / closing the"
-    echo "terminal stops and removes the compose services (volumes are kept unless --clean)."
+    echo "Default: containers stay up while this script runs (log follow). Ctrl+C / closing"
+    echo "the terminal stops and removes the compose services (volumes kept unless --clean)."
     echo
-    echo "  --clean   Stop containers and remove named volumes (fresh database state)"
-    echo "  -h, --help  Show this help"
+    echo "  --detach, -d  Start in the background and exit (containers keep running)"
+    echo "  --clean       Stop containers and remove named volumes (fresh database state)"
+    echo "  -h, --help    Show this help"
 }
 
 CLEAN=false
+DETACH=false
 
 for arg in "$@"; do
     case "$arg" in
         --clean) CLEAN=true ;;
+        --detach|-d) DETACH=true ;;
         -h|--help) usage; exit 0 ;;
         *)
             echo "Unknown argument: $arg" >&2
@@ -57,8 +60,10 @@ cleanup() {
     docker compose -f "$COMPOSE_FILE" down --remove-orphans || true
 }
 
-# INT/TERM/HUP: Ctrl+C, kill, terminal/editor close. EXIT: any process end.
-trap cleanup EXIT INT TERM HUP
+if [ "$DETACH" = false ]; then
+    # INT/TERM/HUP: Ctrl+C, kill, terminal/editor close. EXIT: any process end.
+    trap cleanup EXIT INT TERM HUP
+fi
 
 if [ "$CLEAN" = true ]; then
     echo "Cleaning development containers and volumes..."
@@ -101,5 +106,12 @@ echo "Run Django locally with:"
 echo "  python manage.py migrate"
 echo "  python manage.py runserver"
 echo
+
+if [ "$DETACH" = true ]; then
+    echo "Detached. Stop later with: docker compose -f $COMPOSE_FILE down"
+    echo "Or: make down"
+    exit 0
+fi
+
 echo "Following container logs (Ctrl+C or closing this terminal stops services)..."
 docker compose -f "$COMPOSE_FILE" logs -f

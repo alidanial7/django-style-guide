@@ -21,6 +21,7 @@ ci_provider = "{{cookiecutter.ci_provider}}"
 use_websockets = "{{cookiecutter.use_websockets}}"
 use_pgadmin = "{{cookiecutter.use_pgadmin}}"
 use_scoped_apis = "{{cookiecutter.use_scoped_apis}}"
+api_scopes = "{{cookiecutter.api_scopes}}"
 use_file_manager = "{{cookiecutter.use_file_manager}}"
 use_unfold_admin = "{{cookiecutter.use_unfold_admin}}"
 use_portal_permissions = "{{cookiecutter.use_portal_permissions}}"
@@ -166,10 +167,36 @@ if testing == "n":
         if path.is_file():
             delete_resource(str(path))
 
-if use_scoped_apis != "y":
-    delete_resource(f"{project_slug}/api/site_urls.py")
-    delete_resource(f"{project_slug}/core/urls/site_core_url.py")
-    delete_resource(f"{project_slug}/core/apis/site")
+# Always remove legacy hardcoded site sample (scopes are scaffolded dynamically).
+delete_resource(f"{project_slug}/api/site_urls.py")
+delete_resource(f"{project_slug}/core/urls/site_core_url.py")
+delete_resource(f"{project_slug}/core/apis/site")
+
+if use_scoped_apis == "y":
+    import sys
+
+    # Cookiecutter runs this hook from a temp copy, so __file__ is not hooks/.
+    repo_hooks = Path(r"{{ cookiecutter._repo_dir }}") / "hooks"
+    if str(repo_hooks) not in sys.path:
+        sys.path.insert(0, str(repo_hooks))
+    from scope_scaffold import scaffold_scopes
+
+    scaffold_scopes(
+        project_root=Path(".").resolve(),
+        project_slug=project_slug,
+        api_scopes_raw=api_scopes,
+        use_file_manager=use_file_manager == "y",
+        use_i18n=use_i18n == "y",
+        reverse_proxy=reverse_proxy,
+        use_testing=testing == "y",
+        use_jwt=jwt == "y",
+        user_login_field="{{ cookiecutter.user_login_field }}",
+    )
+    # Scope mode ships IsScopeMember instead of legacy portal stubs.
+    delete_resource(".cursor/rules/portal-permissions.mdc")
+elif use_portal_permissions != "y":
+    delete_resource(f"{project_slug}/users/permissions.py")
+    delete_resource(".cursor/rules/portal-permissions.mdc")
 
 if use_file_manager != "y":
     delete_resource(f"{project_slug}/file_manager")
@@ -182,10 +209,6 @@ if use_unfold_admin != "y":
     delete_resource(f"{project_slug}/administration")
     delete_resource("docs/style-guide/ops/admin-unfold.md")
     delete_resource(".cursor/rules/unfold-admin.mdc")
-
-if use_portal_permissions != "y":
-    delete_resource(f"{project_slug}/users/permissions.py")
-    delete_resource(".cursor/rules/portal-permissions.mdc")
 
 if use_ci != "y":
     delete_resource(".github")

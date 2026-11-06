@@ -76,10 +76,10 @@ FEATURE_OPTIONS: tuple[tuple[str, str], ...] = (
     ("use_apple_login", "Apple social login (id_token)"),
     ("use_i18n", "Django i18n / multi-language (LocaleMiddleware + locales)"),
     ("use_uuid_pk", "UUID primary keys for models (off = BigAutoField)"),
-    ("use_scoped_apis", "Scoped API sample (/api/v1/site/…)"),
+    ("use_scoped_apis", "Multi-scope APIs (/api/v1/<scope>/… + /api/docs/<scope>/)"),
     ("use_file_manager", "ManagedFile file_manager app"),
     ("use_unfold_admin", "Django Unfold admin UI"),
-    ("use_portal_permissions", "Portal permission stubs (IsAdmin / IsCustomer)"),
+    ("use_portal_permissions", "Portal permission stubs (IsAdmin / IsCustomer; unused when multi-scope)"),
     ("use_sentry", "Sentry monitoring"),
     ("use_vscode", "VS Code configuration"),
     ("use_pgadmin", "pgAdmin (dev)"),
@@ -567,14 +567,22 @@ def _collect_answers_impl() -> dict[str, str] | None:
     cwd = Path.cwd()
     force_inplace = os.environ.get("DSG_INPLACE") == "1"
     force_clean = os.environ.get("DSG_INPLACE_FORCE") == "1"
+    force_template = os.environ.get("DSG_INPLACE_FORCE_TEMPLATE") == "1"
     inplace_force = "n"
+    inplace_force_template = "n"
 
-    if force_inplace or force_clean:
+    if force_inplace or force_clean or force_template:
         inplace = "y"
-        flag = "--inplace-force" if force_clean else "--inplace"
+        if force_template:
+            flag = "--inplace-force-template"
+        elif force_clean:
+            flag = "--inplace-force"
+        else:
+            flag = "--inplace"
         print(
             f"  {COLORS.dim}↳ {flag} — will generate into the current directory"
-            f"{' (force-clean non-git files)' if force_clean else ''}{COLORS.reset}"
+            f"{' (force-clean non-git files)' if force_clean or force_template else ''}"
+            f"{COLORS.reset}"
         )
     else:
         inplace = prompt_yn(
@@ -596,13 +604,27 @@ def _collect_answers_impl() -> dict[str, str] | None:
                 f"  {COLORS.yellow}Directory has non-git files that must be removed "
                 f"for inplace:{COLORS.reset}\n{listed}"
             )
-            if is_cookiecutter_template_root(cwd):
+            template_root = is_cookiecutter_template_root(cwd)
+            if template_root:
                 print(
                     f"  {COLORS.yellow}↳ This looks like the cookiecutter template itself. "
-                    f"Force-clean keeps .git*, copies the template aside, then replaces "
-                    f"cwd with the generated app.{COLORS.reset}"
+                    f"Force-clean is destructive — requires --inplace-force-template "
+                    f"(or type FORCE below).{COLORS.reset}"
                 )
-            if force_clean:
+            if force_template:
+                inplace_force = "y"
+                inplace_force_template = "y"
+                print(
+                    f"  {COLORS.dim}↳ DSG_INPLACE_FORCE_TEMPLATE=1 — will snapshot, "
+                    f"delete non-git files, then generate.{COLORS.reset}"
+                )
+            elif force_clean:
+                if template_root:
+                    print(
+                        f"  {COLORS.yellow}Refusing --inplace-force on the template repo. "
+                        f"Use --inplace-force-template if you really mean it.{COLORS.reset}"
+                    )
+                    return None
                 inplace_force = "y"
                 print(
                     f"  {COLORS.dim}↳ DSG_INPLACE_FORCE=1 — will delete the files above "
@@ -616,6 +638,18 @@ def _collect_answers_impl() -> dict[str, str] | None:
                 if inplace_force != "y":
                     print(f"  {COLORS.dim}Cancelled.{COLORS.reset}")
                     return None
+                if template_root:
+                    typed = prompt_text(
+                        "Type FORCE to replace this cookiecutter template",
+                        "",
+                    ).strip()
+                    if typed != "FORCE":
+                        print(
+                            f"  {COLORS.dim}Cancelled "
+                            f"(expected FORCE, got {typed!r}).{COLORS.reset}"
+                        )
+                        return None
+                    inplace_force_template = "y"
                 print(
                     f"  {COLORS.green}↳ Will force-clean then generate inplace.{COLORS.reset}"
                 )
@@ -685,6 +719,33 @@ def _collect_answers_impl() -> dict[str, str] | None:
     use_testing = yn(selected_features, "use_testing")
     use_ci = yn(selected_features, "use_ci")
 
+    api_scopes = "admin,factory"
+    if use_scoped_apis == "y":
+        print_section("API scopes")
+        from scopes import parse_api_scopes, validate_api_scopes
+
+        while True:
+            api_scopes = prompt_text(
+                "Scopes (comma-separated)",
+                "admin,factory",
+            ).strip()
+            print(
+                f"  {COLORS.dim}Example: admin,factory,customer — lowercase English, "
+                f"no spaces; used in /api/v1/<scope>/ and model names.{COLORS.reset}"
+            )
+            try:
+                validate_api_scopes(parse_api_scopes(api_scopes))
+                break
+            except ValueError as error:
+                print(f"  {COLORS.yellow}{error}{COLORS.reset}")
+        if use_portal_permissions == "y":
+            print(
+                f"  {COLORS.dim}↳ Multi-scope generates Is<Scope>User permissions; "
+                f"legacy IsAdmin/IsCustomer stubs are skipped.{COLORS.reset}"
+            )
+    else:
+        api_scopes = ""
+
     print_section("Infra alerts")
     infra_repo_name = prompt_text(
         "Infra repo name (optional)",
@@ -729,6 +790,14 @@ def _collect_answers_impl() -> dict[str, str] | None:
             )
             use_redis = "y"
             selected_features.add("use_redis")
+
+    if use_otp_login == "y" and use_redis != "y":
+        print(
+            f"  {COLORS.yellow}↳ Phone OTP requires Redis for shared challenges — "
+            f"Redis will be enabled.{COLORS.reset}"
+        )
+        use_redis = "y"
+        selected_features.add("use_redis")
 
     print_section("Production reverse proxy")
     reverse_proxy = prompt_radio(
@@ -831,6 +900,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
     return {
         "_inplace": inplace,
         "_inplace_force": inplace_force,
+        "_inplace_force_template": inplace_force_template,
         "project_name": project_name,
         "project_slug": project_slug,
         "first_name": first_name,
@@ -848,6 +918,7 @@ def _collect_answers_impl() -> dict[str, str] | None:
         "use_i18n": use_i18n,
         "use_uuid_pk": use_uuid_pk,
         "use_scoped_apis": use_scoped_apis,
+        "api_scopes": api_scopes,
         "use_file_manager": use_file_manager,
         "use_unfold_admin": use_unfold_admin,
         "use_portal_permissions": use_portal_permissions,
@@ -917,6 +988,10 @@ def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) ->
 
     inplace = answers.pop("_inplace", "n") == "y"
     inplace_force = answers.pop("_inplace_force", "n") == "y"
+    inplace_force_template = (
+        answers.pop("_inplace_force_template", "n") == "y"
+        or os.environ.get("DSG_INPLACE_FORCE_TEMPLATE") == "1"
+    )
     answers = validate_choice_answers(answers)
     target = Path(output_dir).resolve()
     template_src = Path(repo_dir).resolve()
@@ -930,8 +1005,20 @@ def generate_project(repo_dir: str, output_dir: str, answers: dict[str, str]) ->
             if offenders and not inplace_force:
                 assert_inplace_target_ok(target)
             if offenders and inplace_force:
+                cleaning_template = (
+                    is_cookiecutter_template_root(target)
+                    or template_src == target
+                    or template_src.is_relative_to(target)
+                )
+                if cleaning_template and not inplace_force_template:
+                    raise ValueError(
+                        "Refusing to force-clean a cookiecutter template root. "
+                        "Pass --inplace-force-template (or DSG_INPLACE_FORCE_TEMPLATE=1) "
+                        "if you intentionally want to replace the template with a "
+                        "generated app."
+                    )
                 # Cleaning cwd would delete the template if it lives here — snapshot first.
-                if template_src == target or template_src.is_relative_to(target):
+                if cleaning_template:
                     print(
                         f"  {c.dim}↳ Snapshotting template aside before force-clean…{c.reset}"
                     )
@@ -996,13 +1083,17 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(
             "Usage: interactive_prompts.py <template-directory> "
-            "[--inplace|--inplace-force]",
+            "[--inplace|--inplace-force|--inplace-force-template]",
             file=sys.stderr,
         )
         sys.exit(2)
     repo = sys.argv[1]
     flags = set(sys.argv[2:])
-    if "--inplace-force" in flags:
+    if "--inplace-force-template" in flags:
+        os.environ["DSG_INPLACE"] = "1"
+        os.environ["DSG_INPLACE_FORCE"] = "1"
+        os.environ["DSG_INPLACE_FORCE_TEMPLATE"] = "1"
+    elif "--inplace-force" in flags:
         os.environ["DSG_INPLACE"] = "1"
         os.environ["DSG_INPLACE_FORCE"] = "1"
     elif "--inplace" in flags:

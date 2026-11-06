@@ -15,10 +15,12 @@ from interactive_prompts import (  # noqa: E402
     assert_inplace_target_ok,
     clean_inplace_target,
     flatten_generated_project,
+    generate_project,
     is_cookiecutter_template_root,
     list_non_git_entries,
     _copy_template_snapshot,
 )
+from test_choice_context import base_answers  # noqa: E402
 
 
 class InplaceTargetTests(unittest.TestCase):
@@ -124,24 +126,42 @@ class InplaceTargetTests(unittest.TestCase):
             (root / ".git").mkdir()
             (root / ".gitignore").write_text("old\n", encoding="utf-8")
 
-            generated = root / "saryzd"
+            generated = root / "demopkg"
             generated.mkdir()
-            pkg = generated / "saryzd"
+            pkg = generated / "demopkg"
             pkg.mkdir()
             (pkg / "__init__.py").write_text("", encoding="utf-8")
             (generated / "manage.py").write_text("print(1)\n", encoding="utf-8")
             (generated / ".gitignore").write_text("new\n", encoding="utf-8")
 
-            flatten_generated_project(root, "saryzd")
+            flatten_generated_project(root, "demopkg")
 
             self.assertTrue((root / ".git").is_dir())
-            # Package landed at root/saryzd (same path name as the old cookiecutter folder).
-            self.assertTrue((root / "saryzd" / "__init__.py").is_file())
+            # Package landed at root/demopkg (same path name as the old cookiecutter folder).
+            self.assertTrue((root / "demopkg" / "__init__.py").is_file())
             self.assertTrue((root / "manage.py").is_file())
-            self.assertFalse((root / "saryzd" / "saryzd").exists())
+            self.assertFalse((root / "demopkg" / "demopkg").exists())
             self.assertEqual((root / ".gitignore").read_text(encoding="utf-8"), "new\n")
             # No leftover staging dir.
             self.assertFalse(any(root.glob(".dsg_inplace_*")))
+
+    def test_force_clean_template_root_requires_explicit_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".git").mkdir()
+            (root / "cookiecutter.json").write_text("{}\n", encoding="utf-8")
+            (root / "{{cookiecutter.project_name}}").mkdir()
+            (root / "hooks").mkdir()
+            (root / "README.md").write_text("tpl\n", encoding="utf-8")
+
+            answers = base_answers(project_name="Demo", project_slug="demo")
+            answers["_inplace"] = "y"
+            answers["_inplace_force"] = "y"
+            answers["_inplace_force_template"] = "n"
+            with self.assertRaises(ValueError) as ctx:
+                generate_project(str(root), str(root), answers)
+            self.assertIn("--inplace-force-template", str(ctx.exception))
+            self.assertTrue((root / "cookiecutter.json").is_file())
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
-from django.urls import reverse
+from {{cookiecutter.project_slug}}.users.tests.api_urls import api_reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
@@ -12,7 +12,7 @@ from {{cookiecutter.project_slug}}.users.errors.codes import UserErrorCode
 @pytest.mark.django_db
 class TestAuthPassword:
     def test_change_password(self, auth_client, api_client, user):
-        url = reverse("api:auth:password-change")
+        url = api_reverse("auth:password-change")
         response = auth_client.post(
             url,
             data={
@@ -26,7 +26,7 @@ class TestAuthPassword:
         assert response.data["success"] is True
 
         login = api_client.post(
-            reverse("api:auth:login"),
+            api_reverse("auth:login"),
             data={"email": user.email, "password": "Password2!x"},
             format="json",
         )
@@ -34,7 +34,7 @@ class TestAuthPassword:
 
     def test_change_password_wrong_current(self, auth_client):
         response = auth_client.post(
-            reverse("api:auth:password-change"),
+            api_reverse("auth:password-change"),
             data={
                 "current_password": "WrongPass1!",
                 "new_password": "Password2!x",
@@ -47,7 +47,7 @@ class TestAuthPassword:
 
     def test_password_reset_flow(self, api_client, user):
         request_resp = api_client.post(
-            reverse("api:auth:password-reset"),
+            api_reverse("auth:password-reset"),
             data={"email": user.email},
             format="json",
         )
@@ -58,7 +58,7 @@ class TestAuthPassword:
         token = PasswordResetTokenGenerator().make_token(user)
 
         confirm = api_client.post(
-            reverse("api:auth:password-reset-confirm"),
+            api_reverse("auth:password-reset-confirm"),
             data={
                 "uid": uid,
                 "token": token,
@@ -70,7 +70,7 @@ class TestAuthPassword:
         assert confirm.status_code == status.HTTP_200_OK
 
         login = api_client.post(
-            reverse("api:auth:login"),
+            api_reverse("auth:login"),
             data={"email": user.email, "password": "Password3!x"},
             format="json",
         )
@@ -78,7 +78,7 @@ class TestAuthPassword:
 
     def test_password_reset_unknown_email_is_silent(self, api_client):
         response = api_client.post(
-            reverse("api:auth:password-reset"),
+            api_reverse("auth:password-reset"),
             data={"email": "missing@example.com"},
             format="json",
         )

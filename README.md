@@ -98,9 +98,18 @@ Or skip the prompt:
 DSG_INPLACE_FORCE=1 ./init.sh
 ```
 
-Force-clean keeps only git metadata, then generates. If you run it from **inside this
-template repo**, the template is snapshotted to a temp dir first so generation still works,
-then cwd is replaced by the generated app (destructive — use only when intentional).
+Force-clean keeps only git metadata, then generates.
+
+**Template-repo safety:** `--inplace-force` **refuses** when cwd is this cookiecutter
+template. To intentionally replace the template with a generated app:
+
+```bash
+./init.sh --inplace-force-template
+# or
+DSG_INPLACE_FORCE_TEMPLATE=1 ./init.sh
+```
+
+That path snapshots the template aside, force-cleans cwd, then generates (destructive).
 
 `project_name` is still used as a temporary folder name during generation, then contents are moved up into `.`.
 
@@ -137,7 +146,7 @@ cp .env.example .env
 python manage.py devserver
 ```
 
-📖 Open API docs when `DEBUG=True` (Swagger via drf-spectacular).  
+📖 Open API docs at `/api/docs/` when `DEBUG=True` (Swagger via drf-spectacular; scoped UIs at `/api/docs/<scope>/`).  
 Full setup notes live in the **generated** project’s `README.md`.
 
 > 💡 After the interactive UI finishes, the process may exit with code **143**. That is expected — Cookiecutter is stopped so you are not prompted twice.
@@ -175,7 +184,7 @@ MyProject/
 | | Area | Options |
 |:---:|:---|:---|
 | 🔐 | **Auth & models** | JWT / session · email or username · OTP · Google/Microsoft/Apple · UUID PKs · portal stubs |
-| 🗂️ | **Domains** | Scoped `/api/v1/site/…` · `ManagedFile` uploads · Unfold admin |
+| 🗂️ | **Domains** | Multi-scope `/api/v1/<scope>/…` · `ManagedFile` uploads · Unfold admin |
 | ⏳ | **Async & cache** | Redis · RabbitMQ · Celery · ASGI · Channels |
 | 🚢 | **Ops** | Nginx / Traefik · Sentry · pgAdmin · GitHub or GitLab CI |
 | ✨ | **Quality** | Ruff + pre-commit · pytest · VS Code settings |
@@ -209,7 +218,8 @@ Defaults match the interactive UI.
 | | `use_apple_login` | n | Apple `id_token` → JWT/session |
 | 🌍 | `use_i18n` | n | Django i18n (`LocaleMiddleware`, `locale/`, `update_translations`) |
 | 🆔 | `use_uuid_pk` | y | UUID PK on `BaseModel` |
-| 🌐 | `use_scoped_apis` | n | Sample site mount + per-client schema |
+| 🌐 | `use_scoped_apis` | n | Multi-scope `/api/v1/<scope>/` + `/api/docs/<scope>/` |
+| | `api_scopes` | `admin,factory` | Comma-separated lowercase names (e.g. `admin,factory,customer`); ignored if scoped APIs are off |
 | 📁 | `use_file_manager` | n | `ManagedFile` uploads app |
 | 🎨 | `use_unfold_admin` | n | Django Unfold + `administration/` |
 | 🛂 | `use_portal_permissions` | n | `IsAdmin` / `IsCustomer` stubs |
@@ -217,7 +227,7 @@ Defaults match the interactive UI.
 | 🛰️ | `use_sentry` | n | Sentry when `SENTRY_DSN` is set |
 | 💻 | `use_vscode` | n | VS Code settings |
 | 🗄️ | `use_pgadmin` | n | pgAdmin in dev Compose (`:5050`) |
-| 🔴 | `use_redis` | n | Redis cache (+ Celery Redis / WebSockets) |
+| 🔴 | `use_redis` | n | Redis cache (+ OTP / Celery Redis / WebSockets) |
 | 🐇 | `use_rabbitmq` | n | RabbitMQ broker |
 | 🥬 | `use_celery` | n | Worker + beat |
 | 🔗 | `celery_broker` | redis | `redis` or `rabbitmq` |
@@ -234,6 +244,8 @@ Defaults match the interactive UI.
 
 | Rule | Requirement |
 |------|-------------|
+| 🌐 Multi-scope | `use_scoped_apis=y` needs non-empty `api_scopes` (e.g. `admin,factory`) |
+| 📲 OTP | `use_redis=y` (shared challenges across workers; UI / pre_gen enforce) |
 | 🥬 Celery → broker | Redis broker → `use_redis=y` · RabbitMQ broker → `use_rabbitmq=y` |
 | 📡 WebSockets | `use_asgi=y` **and** `use_redis=y` |
 | 🤖 CI | Pick `ci_provider` when `use_ci=y` |

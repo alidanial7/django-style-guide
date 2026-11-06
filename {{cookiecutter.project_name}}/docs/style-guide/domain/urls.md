@@ -43,9 +43,15 @@ This file is the Django `ROOT_URLCONF`. It mounts **admin**, the **versioned API
 |------|---------|----------------|
 | `/admin/` | Django admin | Always |
 | `/api/v1/` | All product + system HTTP APIs | Always |
-| `/` | Swagger UI | **DEBUG only** |
-| `/redoc/` | ReDoc | **DEBUG only** |
-| `/schema/` | Raw OpenAPI schema | **DEBUG only** |
+| `/api/docs/` | Swagger UI (full API) | **DEBUG only** |
+| `/api/docs/redoc/` | ReDoc | **DEBUG only** |
+| `/api/docs/schema/` | Raw OpenAPI schema | **DEBUG only** |
+{%- if cookiecutter.use_scoped_apis == "y" %}
+| `/api/docs/<scope>/` | Swagger for `/api/v1/<scope>/…` | **DEBUG only** (scopes: `{{ cookiecutter.api_scopes }}`) |
+| `/api/v1/<scope>/…` | Domain APIs (auth, users, …) | Always when multi-scope is on |
+{%- else %}
+| `/api/docs/<scope>/` | Swagger for a scoped surface | **DEBUG only** (if you add scopes later) |
+{%- endif %}
 | `/media/…` | Uploaded media via Django | DEBUG, or production when no reverse proxy was selected |
 
 ```python
@@ -56,10 +62,14 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns = [
+    docs_urlpatterns = [
         path("schema/", SpectacularAPIView.as_view(api_version="v1"), name="schema"),
         path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
         path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+        # Multi-scope: /api/docs/admin/, /api/docs/factory/, …
+    ]
+    urlpatterns = [
+        path("api/docs/", include(docs_urlpatterns)),
         *urlpatterns,
     ]
     # + media serving in DEBUG
@@ -67,7 +77,7 @@ if settings.DEBUG:
 
 ### Why Swagger is DEBUG-only
 
-Exposing the full schema in production leaks endpoint inventory and often auth details. Locally you want it at http://localhost:8000/ — see [Swagger](../http/swagger.md).
+Exposing the full schema in production leaks endpoint inventory and often auth details. Locally open http://localhost:8000/api/docs/ — see [Swagger](../http/swagger.md).
 
 ### Media
 
@@ -218,7 +228,7 @@ When the app grows, **prefer more `*_url.py` modules** (like `users`: `auth_url.
 | Breaking changes | Add `/api/v2/` (new include module), **keep v1 working** until clients migrate |
 | Non-breaking additions | New paths / optional fields under v1 are fine |
 | Removals / renames / type changes | Breaking → new version, or a documented deprecation window |
-| Admin / schema | Stay outside `/api/v1/` (admin is `/admin/`; schema is DEBUG-only at `/schema/`) |
+| Admin / docs | Admin is `/admin/`; OpenAPI UI is DEBUG-only under `/api/docs/` (scoped docs at `/api/docs/<scope>/`) |
 
 ```python
 # future sketch — do not remove v1 when adding v2
